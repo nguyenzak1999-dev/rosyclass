@@ -16,7 +16,8 @@ A comprehensive web application for an English language center built with Next.j
 - UI: [Tailwind CSS](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/)
 - Database: [PostgreSQL](https://www.postgresql.org/)
 - ORM: [Prisma](https://www.prisma.io/)
-- Authentication: [NextAuth.js](https://next-auth.js.org/)
+- Authentication: [Supabase](https://supabase.com/)
+- Media Storage: [Cloudinary](https://cloudinary.com/)
 
 ## Getting Started
 

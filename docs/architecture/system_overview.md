@@ -8,7 +8,8 @@ RosyClass is a comprehensive management system for English centers. It combines 
 - **Styling**: Tailwind CSS, Shadcn UI
 - **Database**: PostgreSQL
 - **ORM**: Prisma
-- **Authentication**: NextAuth.js
+- **Authentication**: Supabase Auth
+- **Media Storage**: Cloudinary
 
 ## Core Modules
 1. **Dashboard**: High-level KPIs and metrics.
