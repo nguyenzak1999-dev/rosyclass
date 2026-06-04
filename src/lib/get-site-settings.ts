@@ -3,17 +3,23 @@ import { DEFAULT_SITE_SETTINGS, SITE_SETTINGS_SLUG, type SiteSettings } from "./
 
 export async function getSiteSettings(): Promise<SiteSettings> {
   try {
-    const page = await prisma.page.findUnique({
+    const fetchSettings = prisma.page.findUnique({
       where: { slug: SITE_SETTINGS_SLUG }
-    })
+    });
+    
+    // Timeout sau 3 giây để tránh treo Build trên Vercel hoặc sập web
+    const timeoutPromise = new Promise<null>((resolve) => 
+      setTimeout(() => resolve(null), 3000)
+    );
 
-    if (page?.content) {
-      const parsed = JSON.parse(page.content)
-      // Merge với defaults để đảm bảo các field mới luôn có giá trị
-      return { ...DEFAULT_SITE_SETTINGS, ...parsed }
+    const page = await Promise.race([fetchSettings, timeoutPromise]);
+
+    if (page && page.content) {
+      const parsed = JSON.parse(page.content);
+      return { ...DEFAULT_SITE_SETTINGS, ...parsed };
     }
-  } catch {
-    // Trả về mặc định nếu có lỗi
+  } catch (error) {
+    console.error("Lỗi lấy cấu hình web:", error);
   }
 
   return DEFAULT_SITE_SETTINGS
