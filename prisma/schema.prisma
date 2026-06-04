@@ -1,0 +1,512 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// NextAuth Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum RoleEnum {
+  SUPER_ADMIN
+  ADMIN
+  CONSULTANT
+  ACCOUNTANT
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          RoleEnum  @default(STUDENT)
+
+  accounts Account[]
+  sessions Session[]
+
+  // Relations
+  studentProfile Student?
+  parentProfile  Parent?
+  teacherProfile Teacher?
+  staffProfile   Staff?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  permissions Permission[] @relation("RolePermissions")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  action      String // e.g., create:student
+  resource    String
+  description String?
+  roles       Role[]  @relation("RolePermissions")
+}
+
+model Student {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  code        String    @unique
+  dateOfBirth DateTime?
+  gender      String?
+  address     String?
+  phone       String?
+
+  parentId String?
+  parent   Parent? @relation(fields: [parentId], references: [id])
+
+  learningGoal String?
+  englishLevel String?
+
+  classStudents ClassStudent[]
+  attendances   Attendance[]
+  invoices      Invoice[]
+  testResults   TestResult[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Parent {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  phone   String
+  address String?
+
+  students Student[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Teacher {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  code        String   @unique
+  bio         String?  @db.Text
+  specialties String[]
+
+  // Classes where this teacher is the main teacher
+  classes          Class[] @relation("MainTeacher")
+  // Classes where this teacher is an assistant
+  assistantClasses Class[] @relation("AssistantTeacher")
+
+  sessions ClassSession[] @relation("SessionTeacher")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Staff {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  code       String  @unique
+  position   String?
+  department String?
+
+  managedLeads Lead[] @relation("Consultant")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  NO_ANSWER
+  CONSULTED
+  PLACEMENT_TEST_BOOKED
+  TESTED
+  WAITING_FOR_PAYMENT
+  ENROLLED
+  LOST
+}
+
+model Lead {
+  id     String     @id @default(cuid())
+  name   String
+  phone  String
+  email  String?
+  source String?
+  status LeadStatus @default(NEW)
+
+  consultantId String?
+  consultant   Staff?  @relation("Consultant", fields: [consultantId], references: [id])
+
+  followUpDate DateTime?
+
+  notes          LeadNote[]
+  placementTests PlacementTest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LeadNote {
+  id        String @id @default(cuid())
+  leadId    String
+  lead      Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  content   String @db.Text
+  createdBy String // userId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id                 String  @id @default(cuid())
+  code               String  @unique
+  name               String
+  description        String? @db.Text
+  level              String
+  tuitionFee         Float
+  numberOfSessions   Int
+  durationPerSession Int // in minutes
+  learningOutcomes   String? @db.Text
+  isPublished        Boolean @default(false)
+  thumbnail          String?
+
+  classes Class[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ClassStatus {
+  UPCOMING
+  ACTIVE
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+model Branch {
+  id      String  @id @default(cuid())
+  name    String
+  address String
+  phone   String?
+
+  rooms   Room[]
+  classes Class[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Room {
+  id       String @id @default(cuid())
+  name     String
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  capacity Int
+
+  classes  Class[]
+  sessions ClassSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Class {
+  id       String @id @default(cuid())
+  code     String @unique
+  name     String
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  teacherId String?
+  teacher   Teacher? @relation("MainTeacher", fields: [teacherId], references: [id])
+
+  assistantId String?
+  assistant   Teacher? @relation("AssistantTeacher", fields: [assistantId], references: [id])
+
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [id])
+
+  maxStudents Int
+  startDate   DateTime
+  endDate     DateTime
+  status      ClassStatus @default(UPCOMING)
+
+  students  ClassStudent[]
+  schedules ClassSchedule[]
+  sessions  ClassSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  TRANSFERRED
+  RESERVED
+  DROPPED
+}
+
+model ClassStudent {
+  id        String  @id @default(cuid())
+  classId   String
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  status    EnrollmentStatus @default(ACTIVE)
+  joinedAt  DateTime         @default(now())
+  droppedAt DateTime?
+
+  @@unique([classId, studentId])
+}
+
+model ClassSchedule {
+  id      String @id @default(cuid())
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int // 0 = Sunday, 1 = Monday, etc.
+  startTime String // "18:00"
+  endTime   String // "19:30"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum SessionStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model ClassSession {
+  id      String @id @default(cuid())
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  date      DateTime
+  startTime String
+  endTime   String
+
+  teacherId String?
+  teacher   Teacher? @relation("SessionTeacher", fields: [teacherId], references: [id])
+
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [id])
+
+  status SessionStatus @default(SCHEDULED)
+
+  attendances Attendance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT_WITH_PERMISSION
+  ABSENT_WITHOUT_PERMISSION
+  LATE
+  MAKE_UP
+}
+
+model Attendance {
+  id        String       @id @default(cuid())
+  sessionId String
+  session   ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  status  AttendanceStatus
+  comment String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sessionId, studentId])
+}
+
+model Invoice {
+  id        String  @id @default(cuid())
+  code      String  @unique
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id])
+
+  totalAmount   Float
+  paidAmount    Float     @default(0)
+  remainingDebt Float
+  dueDate       DateTime?
+  isFullyPaid   Boolean   @default(false)
+
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+}
+
+model Payment {
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  amount    Float
+  method    PaymentMethod
+  reference String? // transaction id for bank transfer/card
+  notes     String?
+
+  createdAt DateTime @default(now())
+}
+
+model PlacementTest {
+  id     String @id @default(cuid())
+  leadId String
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  testDate    DateTime
+  interviewer String?
+
+  result TestResult?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TestResult {
+  id     String        @id @default(cuid())
+  testId String        @unique
+  test   PlacementTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  studentId String?
+  student   Student? @relation(fields: [studentId], references: [id])
+
+  grammarScore    Float?
+  vocabularyScore Float?
+  speakingScore   Float?
+  listeningScore  Float?
+  readingScore    Float?
+  writingScore    Float?
+  overallScore    Float?
+
+  teacherComment String? @db.Text
+  suggestedLevel String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id      String  @id @default(cuid())
+  userId  String // Recipient
+  title   String
+  content String  @db.Text
+  type    String // REMINDER, ABSENCE, SCHEDULE_CHANGE, etc.
+  isRead  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+// Website CMS Models
+model BlogPost {
+  id          String  @id @default(cuid())
+  title       String
+  slug        String  @unique
+  excerpt     String? @db.Text
+  content     String  @db.Text
+  thumbnail   String?
+  authorId    String
+  isPublished Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Page {
+  id          String  @id @default(cuid())
+  title       String
+  slug        String  @unique
+  content     String  @db.Text
+  isPublished Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Banner {
+  id       String  @id @default(cuid())
+  title    String
+  imageUrl String
+  link     String?
+  isActive Boolean @default(true)
+  order    Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SeoSetting {
+  id          String  @id @default(cuid())
+  page        String  @unique // e.g., "home", "courses", "about"
+  title       String
+  description String  @db.Text
+  keywords    String?
+  ogImage     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
