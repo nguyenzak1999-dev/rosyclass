@@ -21,7 +21,7 @@ const data = [
 const chartConfig = {
   leads: {
     label: "Khách hàng mới",
-    color: "hsl(var(--chart-3))",
+    color: "var(--chart-3)",
   },
 } satisfies ChartConfig
 
@@ -32,11 +32,11 @@ export function LeadsChart() {
         <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="hsl(var(--chart-5))" stopOpacity={0} />
+              <stop offset="5%" stopColor="var(--chart-3)" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="var(--chart-5)" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
           <XAxis
             dataKey="month"
             stroke="#888888"
@@ -54,11 +54,11 @@ export function LeadsChart() {
           <Area
             type="monotone"
             dataKey="leads"
-            stroke="hsl(var(--chart-3))"
+            stroke="var(--chart-3)"
             strokeWidth={3}
             fillOpacity={1}
             fill="url(#colorLeads)"
-            activeDot={{ r: 6, fill: "hsl(var(--chart-3))" }}
+            activeDot={{ r: 6, fill: "var(--chart-3)" }}
           />
         </AreaChart>
       </ResponsiveContainer>

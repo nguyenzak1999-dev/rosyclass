@@ -19,31 +19,43 @@ import { upsertParent } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
+import { Checkbox } from "@/components/ui/checkbox"
+
 interface ParentDialogProps {
   initialData?: any
+  students?: any[]
   trigger?: React.ReactNode
 }
 
-export function ParentDialog({ initialData, trigger }: ParentDialogProps) {
+export function ParentDialog({ initialData, students = [], trigger }: ParentDialogProps) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<ParentFormValues>({
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue, watch } = useForm<ParentFormValues>({
     resolver: zodResolver(parentSchema) as any,
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+      ...initialData,
+      studentIds: initialData.students?.map((s: any) => s.id) || []
+    } : {
       fullName: "",
       phone: "",
       email: "",
       relationship: "",
       address: "",
-      notes: ""
+      notes: "",
+      studentIds: []
     }
   })
+
+  const selectedStudentIds = watch("studentIds") || []
 
   React.useEffect(() => {
     if (open) {
       if (initialData) {
-        reset(initialData)
+        reset({
+          ...initialData,
+          studentIds: initialData.students?.map((s: any) => s.id) || []
+        })
       } else {
         reset({
           fullName: "",
@@ -51,7 +63,8 @@ export function ParentDialog({ initialData, trigger }: ParentDialogProps) {
           email: "",
           relationship: "",
           address: "",
-          notes: ""
+          notes: "",
+          studentIds: []
         })
       }
     }
@@ -108,6 +121,33 @@ export function ParentDialog({ initialData, trigger }: ParentDialogProps) {
           <div className="space-y-2">
             <Label htmlFor="notes">Ghi chú</Label>
             <Textarea id="notes" {...register("notes")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Liên kết học viên</Label>
+            <div className="max-h-40 overflow-y-auto border rounded-md p-3 space-y-2">
+              {students.length === 0 && (
+                <p className="text-sm text-muted-foreground">Không có học viên nào.</p>
+              )}
+              {students.map((student) => (
+                <div key={student.id} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`student-${student.id}`} 
+                    checked={selectedStudentIds.includes(student.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setValue("studentIds", [...selectedStudentIds, student.id])
+                      } else {
+                        setValue("studentIds", selectedStudentIds.filter(id => id !== student.id))
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`student-${student.id}`} className="font-normal cursor-pointer">
+                    {student.fullName} {student.phone ? `- ${student.phone}` : ""}
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="pt-4 flex justify-end space-x-2">

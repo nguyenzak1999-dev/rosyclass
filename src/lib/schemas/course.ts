@@ -11,6 +11,7 @@ export const courseSchema = z.object({
   sessionDurationMinutes: z.coerce.number().min(1, "Thời lượng phải lớn hơn 0").default(90),
   isPublished: z.boolean().default(false),
   status: z.enum(['ACTIVE', 'INACTIVE', 'ARCHIVED']).default('ACTIVE'),
+  thumbnail: z.string().optional(),
 })
 
 export type CourseFormValues = z.infer<typeof courseSchema>

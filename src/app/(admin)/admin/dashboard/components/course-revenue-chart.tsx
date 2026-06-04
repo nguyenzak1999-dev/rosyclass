@@ -23,19 +23,19 @@ const data = [
 const chartConfig = {
   kids: {
     label: "Tiếng Anh Trẻ Em",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
   teens: {
     label: "Tiếng Anh Thiếu Niên",
-    color: "hsl(var(--chart-2))",
+    color: "var(--chart-2)",
   },
   ielts: {
     label: "IELTS",
-    color: "hsl(var(--chart-3))",
+    color: "var(--chart-3)",
   },
   communication: {
     label: "Giao Tiếp",
-    color: "hsl(var(--chart-4))",
+    color: "var(--chart-4)",
   },
 } satisfies ChartConfig
 
@@ -44,7 +44,7 @@ export function CourseRevenueChart() {
     <ChartContainer config={chartConfig} className="h-[350px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
           <XAxis
             dataKey="month"
             stroke="#888888"

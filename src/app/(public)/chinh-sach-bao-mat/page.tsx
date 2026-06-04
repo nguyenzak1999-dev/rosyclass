@@ -6,21 +6,21 @@ import { ShieldCheck } from "lucide-react"
 export default function PrivacyPolicyPage() {
   return (
     <div className="flex flex-col w-full min-h-screen pb-20">
-      <section className="pt-16 pb-20 bg-lilac-gradient overflow-hidden">
+      <section className="pt-24 pb-20 bg-[#fcf5eb] overflow-hidden">
         <div className="max-w-[1200px] px-4 sm:px-8 mx-auto relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center rounded-full bg-pure-white/80 backdrop-blur-md border border-stone/20 px-4 py-1.5 text-[14px] text-midnight-ink font-medium mb-6"
+            className="inline-flex items-center rounded-full bg-white border border-[#e9edef] px-4 py-1.5 text-[14px] text-[#54656f] font-medium mb-6 shadow-sm"
           >
-            <ShieldCheck className="w-4 h-4 mr-2 text-amethyst" /> Thông tin pháp lý
+            <ShieldCheck className="w-4 h-4 mr-2 text-[#25d366]" /> Thông tin pháp lý
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl font-bold tracking-tight text-midnight-ink mb-6"
+            className="text-[40px] md:text-[56px] font-medium tracking-tight text-[#111b21] mb-6 leading-tight"
           >
             Chính sách bảo mật
           </motion.h1>
@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="max-w-2xl mx-auto text-stone text-[18px] leading-relaxed"
+            className="max-w-2xl mx-auto text-[#54656f] text-[18px] leading-relaxed"
           >
             Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn một cách an toàn và minh bạch nhất.
           </motion.p>
@@ -36,8 +36,8 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section className="py-24">
-        <div className="max-w-[800px] px-4 sm:px-8 mx-auto bg-pure-white rounded-[32px] p-8 md:p-12 border border-stone/10 shadow-sm">
-          <div className="prose prose-stone max-w-none text-stone prose-h2:text-midnight-ink prose-h2:text-2xl prose-h2:font-bold prose-h2:mb-4 prose-p:leading-relaxed prose-p:mb-6">
+        <div className="max-w-[800px] px-4 sm:px-8 mx-auto bg-white rounded-[24px] p-8 md:p-12 border border-[#e9edef] shadow-sm">
+          <div className="prose prose-stone max-w-none text-[#54656f] prose-h2:text-[#111b21] prose-h2:text-[24px] prose-h2:font-medium prose-h2:mb-4 prose-p:leading-relaxed prose-p:mb-6">
             <h2>1. Thu thập thông tin</h2>
             <p>
               RosyClass thu thập các thông tin cá nhân cơ bản như họ tên, số điện thoại, và email khi bạn đăng ký nhận tư vấn, làm bài kiểm tra trình độ, hoặc tham gia khóa học tại trung tâm. 

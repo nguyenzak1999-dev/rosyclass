@@ -19,10 +19,10 @@ const data = [
 ]
 
 const COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
 ]
 
 const chartConfig = {
@@ -31,19 +31,19 @@ const chartConfig = {
   },
   "Tiếng Anh Trẻ Em": {
     label: "Trẻ em",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
   "Tiếng Anh Thiếu Niên": {
     label: "Thiếu niên",
-    color: "hsl(var(--chart-2))",
+    color: "var(--chart-2)",
   },
   "IELTS": {
     label: "IELTS",
-    color: "hsl(var(--chart-3))",
+    color: "var(--chart-3)",
   },
   "Giao Tiếp": {
     label: "Giao tiếp",
-    color: "hsl(var(--chart-4))",
+    color: "var(--chart-4)",
   },
 } satisfies ChartConfig
 

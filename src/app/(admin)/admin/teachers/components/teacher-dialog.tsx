@@ -24,6 +24,7 @@ import {
 import { upsertTeacher } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { ImageUploader } from "@/components/ui/image-uploader"
 
 interface TeacherDialogProps {
   teacher?: TeacherFormValues
@@ -139,10 +140,13 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
                 <Label htmlFor="bio">Giới thiệu ngắn (Kinh nghiệm)</Label>
                 <Input id="bio" {...register("bio")} placeholder="5 năm kinh nghiệm giảng dạy" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="avatar">Link Avatar (URL)</Label>
-                <Input id="avatar" {...register("avatar")} placeholder="https://..." />
-              </div>
+              <ImageUploader
+                label="Ảnh đại diện (Avatar)"
+                value={watch("avatar") || ""}
+                onChange={(url) => setValue("avatar", url)}
+                folder="teachers"
+                aspectRatio="1/1"
+              />
             </>
           )}
 

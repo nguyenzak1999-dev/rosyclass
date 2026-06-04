@@ -4,28 +4,41 @@ import { columns } from "./components/columns"
 import { StudentDialog } from "./components/student-dialog"
 
 export default async function StudentsPage() {
-  const students = await prisma.user.findMany({
-    where: {
-      role: {
-        code: 'STUDENT'
-      }
-    },
+  const students = await prisma.student.findMany({
     include: {
-      role: true
+      parent: true,
+      classStudents: {
+        include: {
+          class: {
+            include: { course: true }
+          }
+        }
+      }
     },
     orderBy: {
       createdAt: 'desc'
     }
   })
 
-  const formattedStudents = students.map(student => ({
-    id: student.id,
-    fullName: student.fullName,
-    email: student.email,
-    phone: student.phone,
-    status: student.status,
-    createdAt: student.createdAt,
-  }))
+  // Format data for table
+  const formattedStudents = students.map(student => {
+    const currentClassStudent = student.classStudents.find(cs => cs.status === 'ACTIVE')
+    const currentClass = currentClassStudent?.class
+
+    return {
+      id: student.id,
+      fullName: student.fullName,
+      email: student.email,
+      phone: student.phone,
+      status: student.status,
+      currentLevel: student.currentLevel,
+      parentName: student.parent?.fullName,
+      className: currentClass?.name,
+      courseName: currentClass?.course?.name,
+      joinedAt: student.joinedAt,
+      createdAt: student.createdAt,
+    }
+  })
 
   return (
     <div className="flex flex-col gap-4">
@@ -35,10 +48,10 @@ export default async function StudentsPage() {
       </div>
 
       <DataTable 
-        columns={columns} 
+        columns={columns as any} 
         data={formattedStudents} 
         searchKey="fullName" 
-        searchPlaceholder="Tìm kiếm học viên theo tên..." 
+        searchPlaceholder="Tìm kiếm học viên theo tên, số điện thoại..." 
       />
     </div>
   )

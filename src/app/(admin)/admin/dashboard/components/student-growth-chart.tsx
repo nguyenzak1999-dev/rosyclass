@@ -23,11 +23,11 @@ const data = [
 const chartConfig = {
   totalStudents: {
     label: "Tổng học viên",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
   newStudents: {
     label: "Học viên mới",
-    color: "hsl(var(--chart-5))",
+    color: "var(--chart-5)",
   },
 } satisfies ChartConfig
 
@@ -36,7 +36,7 @@ export function StudentGrowthChart() {
     <ChartContainer config={chartConfig} className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
           <XAxis
             dataKey="month"
             stroke="#888888"

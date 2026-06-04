@@ -8,6 +8,7 @@ export const parentSchema = z.object({
   relationship: z.string().optional(),
   address: z.string().optional(),
   notes: z.string().optional(),
+  studentIds: z.array(z.string()).optional(),
 })
 
 export type ParentFormValues = z.infer<typeof parentSchema>

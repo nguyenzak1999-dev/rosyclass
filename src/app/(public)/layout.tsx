@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { PhoneCall, MapPin, Mail, Globe, PlayCircle, MessageCircle, Music2 } from "lucide-react"
+import { ChevronDown, Download, MessageCircle, Music2, PlayCircle } from "lucide-react"
 import { PublicNavbar } from "@/components/navigation/public-navbar"
 import { getSiteSettings } from "@/lib/get-site-settings"
 
@@ -9,118 +9,165 @@ export default async function PublicLayout({
   children: React.ReactNode
 }) {
   const s = await getSiteSettings()
+  const footerColumns = [
+    {
+      eyebrow: "Học gì",
+      links: [
+        { label: "Tiếng Anh trẻ em", href: "/khoa-hoc?level=kids" },
+        { label: "Tiếng Anh thiếu niên", href: "/khoa-hoc?level=teens" },
+        { label: "Luyện thi IELTS", href: "/khoa-hoc?level=ielts" },
+        { label: "Giao tiếp thực chiến", href: "/khoa-hoc?level=communication" },
+      ],
+    },
+    {
+      eyebrow: "RosyClass",
+      links: [
+        { label: "Về chúng tôi", href: "/ve-chung-toi" },
+        { label: "Giáo viên", href: "/giao-vien" },
+        { label: "Góc học tập", href: "/goc-hoc-tap" },
+        { label: "Chính sách bảo mật", href: "/chinh-sach-bao-mat" },
+      ],
+    },
+    {
+      eyebrow: "Bắt đầu",
+      links: [
+        { label: "Kiểm tra trình độ", href: "/kiem-tra-trinh-do" },
+        { label: "Lịch khai giảng", href: "/lich-khai-giang" },
+        { label: "Khóa học", href: "/khoa-hoc" },
+        { label: "Hỏi đáp", href: "/hoi-dap" },
+      ],
+    },
+    {
+      eyebrow: "Cần hỗ trợ?",
+      links: [
+        { label: "Liên hệ tư vấn", href: "/lien-he" },
+        ...(s.phone ? [{ label: s.phone, href: `tel:${s.phone.replace(/\s/g, "")}` }] : []),
+        ...(s.email ? [{ label: s.email, href: `mailto:${s.email}` }] : []),
+        ...(s.workingHours ? [{ label: s.workingHours, href: "/lien-he" }] : []),
+      ],
+    },
+  ]
 
   return (
-    <div className="flex flex-col min-h-screen font-sans bg-sky-wash relative">
+    <div className="theme-client flex flex-col min-h-screen font-sans bg-background relative">
       <PublicNavbar siteName={s.siteName} logoUrl={s.logoUrl} />
       
-      <main className="flex-1 pt-24">{children}</main>
+      <main className="flex-1 pt-[80px]">{children}</main>
 
-      <footer className="bg-sky-wash text-stone py-20 mt-16 border-t border-black/5">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
-          {/* Brand */}
-          <div className="space-y-6">
-            <div className="flex items-center space-x-2">
-              {s.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={s.logoUrl} alt={s.siteName} className="h-10 object-contain" />
-              ) : (
-                <>
-                  <div className="w-8 h-8 rounded-lg bg-midnight-ink flex items-center justify-center text-white font-bold text-lg">
-                    {s.siteName.charAt(0)}
-                  </div>
-                  <span className="font-bold inline-block text-midnight-ink text-xl tracking-tight">{s.siteName}</span>
-                </>
-              )}
+      <footer className="mt-0 bg-[#111b21] text-[#f7fbf8]">
+        <div className="mx-auto max-w-[1206px] px-6 pb-10 pt-20 sm:px-8 lg:pb-12 lg:pt-28">
+          <div className="grid gap-12 lg:grid-cols-[240px_1fr] lg:gap-16">
+            <div className="flex flex-col items-start gap-8 lg:min-h-[220px] lg:justify-between">
+              <Link href="/" className="flex items-center gap-3">
+                {s.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={s.logoUrl} alt={s.siteName} className="h-10 max-w-[190px] object-contain brightness-0 invert" />
+                ) : (
+                  <>
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#f7fbf8] text-[22px] font-semibold leading-none text-[#f7fbf8]">
+                      {s.siteName.charAt(0)}
+                    </div>
+                    <span className="inline-block text-[28px] font-semibold tracking-tight text-[#f7fbf8]">{s.siteName}</span>
+                  </>
+                )}
+              </Link>
+
+              <Link
+                href="/kiem-tra-trinh-do"
+                className="inline-flex min-h-[60px] items-center gap-4 rounded-full bg-[#25d366] px-8 text-[18px] font-medium tracking-tight text-[#06140b] transition-colors hover:bg-[#d9fdd3]"
+              >
+                <span>Đăng ký test</span>
+                <Download className="h-5 w-5" strokeWidth={2.2} />
+              </Link>
             </div>
-            <p className="text-[14px] text-stone leading-relaxed tracking-tight">
-              {s.tagline}
-            </p>
-            {s.workingHours && (
-              <p className="text-[13px] text-fog">{s.workingHours}</p>
-            )}
+
+            <nav className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
+              {footerColumns.map((column) => (
+                <div key={column.eyebrow}>
+                  <h3 className="mb-8 text-[13px] font-semibold tracking-tight text-[#f7fbf8]/70">{column.eyebrow}</h3>
+                  <ul className="space-y-6">
+                    {column.links.map((link) => (
+                      <li key={`${column.eyebrow}-${link.label}`}>
+                        <Link
+                          href={link.href}
+                          className="group inline-flex items-center gap-3 text-[20px] font-medium leading-tight tracking-tight text-[#f7fbf8] transition-colors hover:text-[#25d366]"
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#1f2b31] transition-colors group-hover:bg-[#25d366]" />
+                          <span>{link.label}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </nav>
           </div>
 
-          {/* Khóa học */}
-          <div>
-            <h4 className="text-midnight-ink font-semibold mb-6 text-[16px] tracking-tight">Khóa học</h4>
-            <ul className="space-y-4 text-[14px] tracking-tight">
-              <li><Link href="/khoa-hoc?level=kids" className="hover:text-midnight-ink transition-colors">Tiếng Anh Trẻ Em</Link></li>
-              <li><Link href="/khoa-hoc?level=teens" className="hover:text-midnight-ink transition-colors">Tiếng Anh Thiếu Niên</Link></li>
-              <li><Link href="/khoa-hoc?level=ielts" className="hover:text-midnight-ink transition-colors">Luyện thi IELTS</Link></li>
-              <li><Link href="/khoa-hoc?level=communication" className="hover:text-midnight-ink transition-colors">Tiếng Anh Giao Tiếp</Link></li>
-            </ul>
-          </div>
+          <div className="mt-20 border-t border-[#d9fdd3]/20 pt-9">
+            {s.address && (
+              <p className="mb-8 max-w-[560px] text-[15px] leading-6 tracking-tight text-[#f7fbf8]/70">
+                {s.address}
+              </p>
+            )}
 
-          {/* Hỗ trợ */}
-          <div>
-            <h4 className="text-midnight-ink font-semibold mb-6 text-[16px] tracking-tight">Hỗ trợ</h4>
-            <ul className="space-y-4 text-[14px] tracking-tight">
-              <li><Link href="/khoa-hoc" className="hover:text-midnight-ink transition-colors">Lịch khai giảng</Link></li>
-              <li><Link href="/kiem-tra-trinh-do" className="hover:text-midnight-ink transition-colors">Kiểm tra trình độ</Link></li>
-              <li><Link href="/hoi-dap" className="hover:text-midnight-ink transition-colors">Hỏi đáp (FAQ)</Link></li>
-              <li><Link href="/chinh-sach-bao-mat" className="hover:text-midnight-ink transition-colors">Chính sách bảo mật</Link></li>
-            </ul>
-          </div>
+            <div className="grid gap-8 lg:grid-cols-[1fr_auto_260px] lg:items-center">
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-3 text-[14px] font-medium leading-tight tracking-tight text-[#f7fbf8]">
+                <span className="max-w-[180px] text-[#f7fbf8]">{s.copyright}</span>
+                <Link href="/chinh-sach-bao-mat" className="transition-colors hover:text-[#25d366]">
+                  Chính sách bảo mật
+                </Link>
+                <Link href="/khoa-hoc" className="transition-colors hover:text-[#25d366]">
+                  Sitemap
+                </Link>
+              </div>
 
-          {/* Liên hệ */}
-          <div>
-            <h4 className="text-midnight-ink font-semibold mb-6 text-[16px] tracking-tight">Liên hệ</h4>
-            <ul className="space-y-4 text-[14px] tracking-tight">
-              {s.address && (
-                <li className="flex items-start">
-                  <MapPin className="w-4 h-4 mr-3 mt-0.5 shrink-0" />
-                  <span>{s.address}</span>
-                </li>
-              )}
-              {s.phone && (
-                <li className="flex items-center">
-                  <PhoneCall className="w-4 h-4 mr-3 shrink-0" />
-                  <a href={`tel:${s.phone.replace(/\s/g, "")}`} className="hover:text-midnight-ink transition-colors">{s.phone}</a>
-                </li>
-              )}
-              {s.email && (
-                <li className="flex items-center">
-                  <Mail className="w-4 h-4 mr-3 shrink-0" />
-                  <a href={`mailto:${s.email}`} className="hover:text-midnight-ink transition-colors">{s.email}</a>
-                </li>
-              )}
-            </ul>
-          </div>
-        </div>
+              <div className="flex items-center gap-4 text-[#f7fbf8]">
+                {s.facebook ? (
+                  <Link href={s.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#f7fbf8] text-[22px] font-semibold transition-colors hover:border-[#25d366] hover:text-[#25d366]">
+                    f
+                  </Link>
+                ) : (
+                  <span aria-label="Facebook" className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#f7fbf8] text-[22px] font-semibold">
+                    f
+                  </span>
+                )}
+                {s.youtube ? (
+                  <Link href={s.youtube} target="_blank" rel="noopener noreferrer" aria-label="YouTube" className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#f7fbf8] transition-colors hover:border-[#25d366] hover:text-[#25d366]">
+                    <PlayCircle className="h-5 w-5" />
+                  </Link>
+                ) : (
+                  <span aria-label="YouTube" className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#f7fbf8]">
+                    <PlayCircle className="h-5 w-5" />
+                  </span>
+                )}
+                {s.zalo ? (
+                  <Link href={s.zalo} target="_blank" rel="noopener noreferrer" aria-label="Zalo" className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#f7fbf8] transition-colors hover:border-[#25d366] hover:text-[#25d366]">
+                    <MessageCircle className="h-5 w-5" />
+                  </Link>
+                ) : (
+                  <span aria-label="Zalo" className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#f7fbf8]">
+                    <MessageCircle className="h-5 w-5" />
+                  </span>
+                )}
+                {s.tiktok ? (
+                  <Link href={s.tiktok} target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#f7fbf8] transition-colors hover:border-[#25d366] hover:text-[#25d366]">
+                    <Music2 className="h-5 w-5" />
+                  </Link>
+                ) : (
+                  <span aria-label="TikTok" className="flex h-[58px] w-[58px] items-center justify-center rounded-full border border-[#f7fbf8]">
+                    <Music2 className="h-5 w-5" />
+                  </span>
+                )}
+              </div>
 
-        {/* Bottom bar */}
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-8 mt-16 pt-8 border-t border-black/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-[14px] text-fog tracking-tight">{s.copyright}</p>
-          <div className="flex space-x-6">
-            {s.facebook && (
-              <Link href={s.facebook} target="_blank" rel="noopener noreferrer" className="text-fog hover:text-midnight-ink transition-colors">
-                <Globe className="w-5 h-5" />
-              </Link>
-            )}
-            {s.youtube && (
-              <Link href={s.youtube} target="_blank" rel="noopener noreferrer" className="text-fog hover:text-midnight-ink transition-colors">
-                <PlayCircle className="w-5 h-5" />
-              </Link>
-            )}
-            {s.zalo && (
-              <Link href={s.zalo} target="_blank" rel="noopener noreferrer" className="text-fog hover:text-midnight-ink transition-colors">
-                <MessageCircle className="w-5 h-5" />
-              </Link>
-            )}
-            {s.tiktok && (
-              <Link href={s.tiktok} target="_blank" rel="noopener noreferrer" className="text-fog hover:text-midnight-ink transition-colors">
-                <Music2 className="w-5 h-5" />
-              </Link>
-            )}
-            {/* Hiển thị icons mặc định nếu chưa điền */}
-            {!s.facebook && !s.youtube && !s.zalo && !s.tiktok && (
-              <>
-                <span className="text-fog"><Globe className="w-5 h-5" /></span>
-                <span className="text-fog"><PlayCircle className="w-5 h-5" /></span>
-                <span className="text-fog"><MessageCircle className="w-5 h-5" /></span>
-              </>
-            )}
+              <button
+                type="button"
+                className="flex h-[66px] w-full items-center justify-between rounded-full border-2 border-[#f7fbf8] px-8 text-left text-[18px] font-semibold tracking-tight text-[#f7fbf8] transition-colors hover:border-[#25d366] hover:text-[#25d366]"
+              >
+                <span>Tiếng Việt</span>
+                <ChevronDown className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
       </footer>

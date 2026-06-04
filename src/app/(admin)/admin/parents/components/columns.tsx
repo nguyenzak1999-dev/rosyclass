@@ -21,7 +21,7 @@ export type ParentData = {
   relationship: string | null
 }
 
-export const columns: ColumnDef<ParentData>[] = [
+export const columns = (students: any[]): ColumnDef<ParentData>[] => [
   {
     accessorKey: "fullName",
     header: ({ column }) => {
@@ -58,6 +58,7 @@ export const columns: ColumnDef<ParentData>[] = [
         <div className="flex items-center justify-end">
           <ParentDialog 
             initialData={parent as any} 
+            students={students}
             trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
           />
           <DropdownMenu>

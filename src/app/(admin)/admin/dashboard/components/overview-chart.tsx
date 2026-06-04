@@ -63,7 +63,7 @@ const data = [
 const chartConfig = {
   total: {
     label: "Doanh thu",
-    color: "hsl(var(--primary))",
+    color: "var(--primary)",
   },
 } satisfies ChartConfig
 
@@ -74,11 +74,11 @@ export function OverviewChart() {
         <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={1} />
-              <stop offset="100%" stopColor="hsl(var(--chart-2))" stopOpacity={0.6} />
+              <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={1} />
+              <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.6} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
           <XAxis
             dataKey="name"
             stroke="#888888"

@@ -80,32 +80,50 @@ export function StudentDialog({ student, trigger }: StudentDialogProps) {
           <DialogTitle>{student ? "Sửa học viên" : "Thêm học viên mới"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Họ và tên</Label>
-            <Input id="fullName" {...register("fullName")} placeholder="Nguyễn Văn A" />
-            {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Họ và tên *</Label>
+              <Input id="fullName" {...register("fullName")} placeholder="Nguyễn Văn A" />
+              {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Số điện thoại</Label>
+              <Input id="phone" {...register("phone")} placeholder="0901234567" />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" {...register("email")} placeholder="nguyenvana@example.com" />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" {...register("email")} placeholder="nguyenvana@example.com" />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Trạng thái</Label>
+              <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ACTIVE">Đang học</SelectItem>
+                  <SelectItem value="WAITING_CLASS">Chờ xếp lớp</SelectItem>
+                  <SelectItem value="RESERVED">Bảo lưu</SelectItem>
+                  <SelectItem value="PAUSED">Tạm dừng</SelectItem>
+                  <SelectItem value="COMPLETED">Hoàn thành</SelectItem>
+                  <SelectItem value="DROPPED">Đã nghỉ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="phone">Số điện thoại</Label>
-            <Input id="phone" {...register("phone")} placeholder="0901234567" />
+            <Label htmlFor="currentLevel">Trình độ hiện tại</Label>
+            <Input id="currentLevel" {...register("currentLevel")} placeholder="Ví dụ: Starters, Movers, A1..." />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="status">Trạng thái</Label>
-            <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ACTIVE">Đang học (Hoạt động)</SelectItem>
-                <SelectItem value="INACTIVE">Đã nghỉ</SelectItem>
-                <SelectItem value="BANNED">Đình chỉ</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="notes">Ghi chú</Label>
+            <Input id="notes" {...register("notes")} />
           </div>
           <div className="pt-4 flex justify-end space-x-2">
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>

@@ -25,6 +25,7 @@ import {
 import { upsertBlogPost } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { ImageUploader } from "@/components/ui/image-uploader"
 
 interface BlogPostDialogProps {
   initialData?: any
@@ -98,10 +99,13 @@ export function BlogPostDialog({ initialData, trigger }: BlogPostDialogProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="thumbnail">Link ảnh thumbnail (URL)</Label>
-            <Input id="thumbnail" {...register("thumbnail")} placeholder="https://..." />
-          </div>
+          <ImageUploader
+            label="Ảnh thumbnail"
+            value={watch("thumbnail") || ""}
+            onChange={(url) => setValue("thumbnail", url)}
+            folder="blog"
+            aspectRatio="16/9"
+          />
 
           <div className="space-y-2">
             <Label htmlFor="excerpt">Mô tả ngắn (Excerpt)</Label>

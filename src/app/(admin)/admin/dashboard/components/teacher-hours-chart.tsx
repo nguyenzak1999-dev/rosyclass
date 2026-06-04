@@ -51,11 +51,11 @@ const data = [
 const chartConfig = {
   A: {
     label: "Giáo viên VN",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
   B: {
     label: "Giáo viên NN",
-    color: "hsl(var(--chart-3))",
+    color: "var(--chart-3)",
   },
 } satisfies ChartConfig
 

@@ -90,7 +90,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.72 0.11 195);
+  --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -101,12 +101,12 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.72 0.11 195);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --ring: oklch(0.145 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -125,8 +125,8 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.72 0.11 195);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -136,12 +136,12 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.72 0.11 195);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --ring: oklch(0.145 0 0);
+  --chart-1: oklch(0.53 0.23 37);
+  --chart-2: oklch(0.53 0.14 185);
+  --chart-3: oklch(0.6 0.17 250);
+  --chart-4: oklch(0.6 0.17 300);
+  --chart-5: oklch(0.65 0.2 340);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -176,4 +176,45 @@
   @keyframes shimmer {
     100% { transform: translateX(100%); }
   }
+}
+
+.theme-client {
+  --background: #fcf5eb;
+  --foreground: #1c1e21;
+  --card: #ffffff;
+  --card-foreground: #1c1e21;
+  --popover: #ffffff;
+  --popover-foreground: #1c1e21;
+  --primary: #25d366;
+  --primary-foreground: #ffffff;
+  --secondary: #f0f4f9;
+  --secondary-foreground: #1c1e21;
+  --muted: #f0f4f9;
+  --muted-foreground: #5e5e5e;
+  --accent: #f0f4f9;
+  --accent-foreground: #1c1e21;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #25d366;
+  --radius: 16px;
+}
+
+.dark .theme-client {
+  --background: #1c1e21;
+  --foreground: #fcf5eb;
+  --card: #1c1e21;
+  --card-foreground: #fcf5eb;
+  --popover: #1c1e21;
+  --popover-foreground: #fcf5eb;
+  --primary: #25d366;
+  --primary-foreground: #ffffff;
+  --secondary: #111b21;
+  --secondary-foreground: #fcf5eb;
+  --muted: #111b21;
+  --muted-foreground: #a0aab2;
+  --accent: #111b21;
+  --accent-foreground: #fcf5eb;
+  --border: #2a3238;
+  --input: #2a3238;
+  --ring: #25d366;
 }

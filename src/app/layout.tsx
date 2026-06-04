@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/providers/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { getSiteSettings } from "@/lib/get-site-settings"
+import { StyleProvider } from "@/components/style-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -56,6 +57,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <StyleProvider />
           <TooltipProvider>
             {children}
           </TooltipProvider>

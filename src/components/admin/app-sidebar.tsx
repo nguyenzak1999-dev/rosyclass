@@ -14,8 +14,10 @@ import {
   Settings,
   MonitorPlay,
   FileText,
-  Globe
+  Globe,
+  Images,
 } from "lucide-react"
+
 
 import {
   Sidebar,
@@ -128,6 +130,11 @@ const data = {
           icon: FileText,
         },
         {
+          title: "Thư viện Media",
+          url: "/admin/media",
+          icon: Images,
+        },
+        {
           title: "Cài đặt Website",
           url: "/admin/settings/site",
           icon: Globe,
@@ -136,6 +143,11 @@ const data = {
           title: "Chi nhánh",
           url: "/admin/settings/branches",
           icon: Settings,
+        },
+        {
+          title: "Tài khoản & Tùy chọn",
+          url: "/admin/settings/preferences",
+          icon: UserCheck,
         },
       ]
     }

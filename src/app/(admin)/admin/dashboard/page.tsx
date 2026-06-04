@@ -63,7 +63,7 @@ export default async function DashboardPage() {
       
       {/* Metrics Row — Real Data */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-chart-1/10 to-transparent border-chart-1/20">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tổng Học Viên</CardTitle>
             <Users className="h-4 w-4 text-chart-1" />
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground">Đang học tích cực</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-chart-2/10 to-transparent border-chart-2/20">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Doanh Thu Tháng</CardTitle>
             <DollarSign className="h-4 w-4 text-chart-2" />
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground">Tháng {now.getMonth() + 1}/{now.getFullYear()}</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-chart-3/10 to-transparent border-chart-3/20">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Lớp Đang Mở</CardTitle>
             <BookOpen className="h-4 w-4 text-chart-3" />
@@ -93,7 +93,7 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground">Lớp đang hoạt động</p>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-chart-4/10 to-transparent border-chart-4/20">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Tỷ lệ đi học</CardTitle>
             <BarChart2 className="h-4 w-4 text-chart-4" />
@@ -107,7 +107,7 @@ export default async function DashboardPage() {
       
       {/* Main Charts Row 1 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 border-t-4 border-t-chart-1">
+        <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Doanh thu theo khóa học</CardTitle>
             <CardDescription>Cơ cấu doanh thu các tháng gần đây</CardDescription>
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
             <CourseRevenueChart />
           </CardContent>
         </Card>
-        <Card className="col-span-3 border-t-4 border-t-chart-2">
+        <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Biến động học viên</CardTitle>
             <CardDescription>Tăng trưởng học viên mới và tổng số</CardDescription>
@@ -129,7 +129,7 @@ export default async function DashboardPage() {
 
       {/* Main Charts Row 2 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-3 border-t-4 border-t-chart-3">
+        <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Tổng quan doanh thu (chung)</CardTitle>
           </CardHeader>
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
             <OverviewChart />
           </CardContent>
         </Card>
-        <Card className="col-span-4 border-t-4 border-t-chart-4">
+        <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Giao dịch gần đây</CardTitle>
             <CardDescription>Các khoản thanh toán mới nhất.</CardDescription>
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
 
       {/* Additional Charts Row */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-t-4 border-t-chart-5">
+        <Card>
           <CardHeader>
             <CardTitle>Phân bổ giờ dạy</CardTitle>
             <CardDescription>Giáo viên VN vs Nước Ngoài</CardDescription>
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
             <TeacherHoursChart />
           </CardContent>
         </Card>
-        <Card className="border-t-4 border-t-chart-1">
+        <Card>
           <CardHeader>
             <CardTitle>Tỷ lệ chuyên cần</CardTitle>
             <CardDescription>Biến động trong tuần này</CardDescription>
@@ -168,7 +168,7 @@ export default async function DashboardPage() {
             <AttendanceChart />
           </CardContent>
         </Card>
-        <Card className="border-t-4 border-t-chart-2">
+        <Card>
           <CardHeader>
             <CardTitle>Phân bổ học viên</CardTitle>
             <CardDescription>Theo các chương trình học</CardDescription>
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
       
       {/* Bottom Chart */}
       <div className="grid gap-4 md:grid-cols-1">
-        <Card className="border-t-4 border-t-chart-3">
+        <Card>
           <CardHeader>
             <CardTitle>Khách hàng tiềm năng (Leads)</CardTitle>
             <CardDescription>Số lượng leads thu thập 6 tháng gần nhất</CardDescription>

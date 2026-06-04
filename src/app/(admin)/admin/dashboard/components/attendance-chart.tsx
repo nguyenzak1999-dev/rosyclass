@@ -22,7 +22,7 @@ const data = [
 const chartConfig = {
   rate: {
     label: "Tỷ lệ đi học (%)",
-    color: "hsl(var(--chart-4))",
+    color: "var(--chart-4)",
   },
 } satisfies ChartConfig
 
@@ -33,12 +33,12 @@ export function AttendanceChart() {
         <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(var(--chart-4))" stopOpacity={0.9} />
-              <stop offset="50%" stopColor="hsl(var(--chart-2))" stopOpacity={0.5} />
-              <stop offset="100%" stopColor="hsl(var(--chart-4))" stopOpacity={0.0} />
+              <stop offset="0%" stopColor="var(--chart-4)" stopOpacity={0.9} />
+              <stop offset="50%" stopColor="var(--chart-2)" stopOpacity={0.5} />
+              <stop offset="100%" stopColor="var(--chart-4)" stopOpacity={0.0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted))" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
           <XAxis
             dataKey="day"
             stroke="#888888"
@@ -58,11 +58,11 @@ export function AttendanceChart() {
           <Area
             type="monotone"
             dataKey="rate"
-            stroke="hsl(var(--chart-4))"
+            stroke="var(--chart-4)"
             strokeWidth={3}
             fillOpacity={1}
             fill="url(#colorRate)"
-            activeDot={{ r: 6, fill: "hsl(var(--chart-4))" }}
+            activeDot={{ r: 6, fill: "var(--chart-4)" }}
           />
         </AreaChart>
       </ResponsiveContainer>

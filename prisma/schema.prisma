@@ -465,6 +465,22 @@ model Banner {
   updatedAt DateTime @updatedAt
 }
 
+model MediaFile {
+  id        String  @id @default(uuid())
+  url       String  // Cloudinary secure_url
+  publicId  String  @unique // Cloudinary public_id (for deletion)
+  name      String  // Original file name
+  alt       String? // Alt text
+  folder    String  @default("general") // Cloudinary folder / category
+  format    String? // jpg, png, webp...
+  width     Int?
+  height    Int?
+  bytes     Int?    // file size in bytes
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Testimonial {
   id          String  @id @default(uuid())
   authorName  String

@@ -25,6 +25,7 @@ import {
 import { upsertCourse } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { ImageUploader } from "@/components/ui/image-uploader"
 
 interface CourseDialogProps {
   course?: any
@@ -42,6 +43,7 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
       slug: "",
       level: "BEGINNER",
       description: "",
+      thumbnail: "",
       tuitionFee: 0,
       totalSessions: 10,
       sessionDurationMinutes: 90,
@@ -157,6 +159,14 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
               </SelectContent>
             </Select>
           </div>
+
+          <ImageUploader
+            label="Ảnh thumbnail khóa học"
+            value={(watch("thumbnail") as string) || ""}
+            onChange={(url) => setValue("thumbnail", url)}
+            folder="courses"
+            aspectRatio="16/9"
+          />
 
           <div className="flex items-center space-x-2 pt-2">
             <Checkbox 

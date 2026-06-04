@@ -1,4 +1,4 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/admin/app-sidebar"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -10,6 +10,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UserNav } from "@/components/admin/user-nav"
 
 export default function AdminLayout({
   children,
@@ -19,8 +20,8 @@ export default function AdminLayout({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main className="flex w-full flex-col min-h-screen">
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 w-full bg-background">
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-background">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
@@ -36,14 +37,15 @@ export default function AdminLayout({
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-4">
             <ThemeToggle />
+            <UserNav />
           </div>
         </header>
-        <div className="flex-1 p-4 md:p-6 bg-muted/30">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {children}
         </div>
-      </main>
+      </SidebarInset>
     </SidebarProvider>
   )
 }

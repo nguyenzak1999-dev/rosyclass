@@ -1,28 +1,21 @@
 import { prisma } from "@/lib/prisma"
-import { DataTable } from "@/components/ui/data-table"
-import { columns } from "./components/columns"
-import { ParentDialog } from "./components/parent-dialog"
+import { ParentsClient } from "./components/parents-client"
 
 export default async function ParentsPage() {
   const parents = await prisma.parent.findMany({
+    include: {
+      students: true
+    },
     orderBy: {
       createdAt: 'desc'
     }
   })
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Quản lý Phụ huynh</h1>
-        <ParentDialog />
-      </div>
+  const students = await prisma.student.findMany({
+    orderBy: {
+      fullName: 'asc'
+    }
+  })
 
-      <DataTable 
-        columns={columns} 
-        data={parents} 
-        searchKey="fullName" 
-        searchPlaceholder="Tìm kiếm phụ huynh theo tên..." 
-      />
-    </div>
-  )
+  return <ParentsClient parents={parents} students={students} />
 }

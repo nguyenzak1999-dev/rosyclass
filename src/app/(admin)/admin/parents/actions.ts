@@ -8,14 +8,30 @@ export async function upsertParent(data: ParentFormValues) {
   try {
     const parsedData = parentSchema.parse(data)
     
+    const { studentIds, ...restData } = parsedData
+    
     if (parsedData.id) {
       await prisma.parent.update({
         where: { id: parsedData.id },
-        data: { ...parsedData }
+        data: { 
+          ...restData,
+          ...(studentIds ? {
+            students: {
+              set: studentIds.map(id => ({ id }))
+            }
+          } : {})
+        }
       })
     } else {
       await prisma.parent.create({
-        data: { ...parsedData }
+        data: { 
+          ...restData,
+          ...(studentIds && studentIds.length > 0 ? {
+            students: {
+              connect: studentIds.map(id => ({ id }))
+            }
+          } : {})
+        }
       })
     }
 

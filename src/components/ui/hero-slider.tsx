@@ -40,7 +40,7 @@ export function HeroSlider() {
   }, [])
 
   return (
-    <div className="relative w-full aspect-[4/3] md:aspect-[16/9] lg:aspect-[21/9] max-w-[1200px] mx-auto rounded-[32px] overflow-hidden group">
+    <div className="relative w-full h-full overflow-hidden group">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentIndex}

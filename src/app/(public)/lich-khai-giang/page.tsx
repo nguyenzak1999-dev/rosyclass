@@ -1,5 +1,6 @@
 import { Metadata } from "next"
-import { ScheduleClient } from "./schedule-client"
+import { ScheduleClient } from "@/app/(public)/lich-khai-giang/schedule-client"
+
 
 export const metadata: Metadata = {
   title: "Lịch khai giảng | RosyClass",
