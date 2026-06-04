@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma"
 import HomeClient from "./home-client"
 import { getSiteSettings } from "@/lib/get-site-settings"
 
+const dayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"]
+
 export default async function HomePage() {
   const courses = await prisma.course.findMany({
     where: {
@@ -13,7 +15,114 @@ export default async function HomePage() {
     }
   });
 
-  const settings = await getSiteSettings();
+  const upcomingClasses = await prisma.class.findMany({
+    where: {
+      status: "UPCOMING",
+    },
+    include: {
+      course: {
+        select: {
+          name: true,
+        },
+      },
+      teacher: {
+        select: {
+          fullName: true,
+        },
+      },
+      branch: {
+        select: {
+          name: true,
+        },
+      },
+      schedules: {
+        orderBy: [
+          {
+            dayOfWeek: "asc",
+          },
+          {
+            startTime: "asc",
+          },
+        ],
+        take: 3,
+      },
+      students: {
+        select: {
+          studentId: true,
+        },
+      },
+    },
+    orderBy: [
+      {
+        startDate: "asc",
+      },
+      {
+        createdAt: "asc",
+      },
+    ],
+    take: 3,
+  });
 
-  return <HomeClient courses={courses} settings={settings} />
+  const teachers = await prisma.teacher.findMany({
+    where: {
+      status: "ACTIVE",
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    take: 3,
+  });
+
+  const settings = await getSiteSettings();
+  const heroSlides = await prisma.banner.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: [
+      {
+        position: "asc",
+      },
+      {
+        createdAt: "asc",
+      },
+    ],
+  });
+
+  return (
+    <HomeClient
+      courses={courses}
+      settings={settings}
+      heroSlides={heroSlides.map((slide) => ({
+        id: slide.id,
+        title: slide.title,
+        subtitle: slide.subtitle,
+        image: slide.image,
+        buttonText: slide.buttonText,
+        buttonUrl: slide.buttonUrl,
+      }))}
+      upcomingClasses={upcomingClasses.map((classItem) => ({
+        id: classItem.id,
+        name: classItem.name,
+        courseName: classItem.course.name,
+        startDate: classItem.startDate?.toISOString() || null,
+        schedule:
+          classItem.schedules.length > 0
+            ? classItem.schedules
+                .map((schedule) => `${dayNames[schedule.dayOfWeek] || "Lịch học"} ${schedule.startTime}-${schedule.endTime}`)
+                .join(", ")
+            : "Đang cập nhật lịch học",
+        branchName: classItem.branch?.name || "Đang cập nhật cơ sở",
+        teacherName: classItem.teacher?.fullName || "Đang cập nhật giáo viên",
+        spotsLeft: Math.max(classItem.maxStudents - classItem.students.length, 0),
+      }))}
+      teachers={teachers.map((teacher) => ({
+        id: teacher.id,
+        fullName: teacher.fullName,
+        avatar: teacher.avatar,
+        bio: teacher.bio || "Giáo viên tận tâm, theo sát mục tiêu và tiến bộ của từng học viên.",
+        specialties: teacher.specialties || "Giao tiếp, phát âm",
+        certificates: teacher.certificates || "",
+      }))}
+    />
+  )
 }

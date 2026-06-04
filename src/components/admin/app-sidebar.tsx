@@ -16,6 +16,7 @@ import {
   FileText,
   Globe,
   Images,
+  LayoutTemplate,
 } from "lucide-react"
 
 
@@ -113,6 +114,16 @@ const data = {
           title: "Tài chính",
           url: "/admin/payments",
           icon: Wallet,
+        },
+      ]
+    },
+    {
+      label: "GIAO DIỆN",
+      items: [
+        {
+          title: "Hero trang chủ",
+          url: "/admin/cms/hero",
+          icon: LayoutTemplate,
         },
       ]
     },

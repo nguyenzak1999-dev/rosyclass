@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Globe, Phone, MapPin, Search, Share2, Building2, Save, LayoutTemplate } from "lucide-react"
+import { Globe, Phone, MapPin, Search, Share2, Building2, Save } from "lucide-react"
 import { ImageUploader } from "@/components/ui/image-uploader"
 
 export default function SiteSettingsClient({ settings }: { settings: SiteSettings }) {
@@ -149,62 +149,6 @@ export default function SiteSettingsClient({ settings }: { settings: SiteSetting
           <div className="space-y-2">
             <Label>TikTok (URL)</Label>
             <Input {...register("tiktok")} placeholder="https://tiktok.com/@rosyclass" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Hero Section */}
-      <Card className="gap-3">
-        <CardHeader className="gap-1.5">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <LayoutTemplate className="h-4 w-4" /> Nội dung Hero (Trang chủ)
-          </CardTitle>
-          <CardDescription>Tùy chỉnh nội dung hiển thị ở phần đầu trang chủ</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Huy hiệu (Badge)</Label>
-            <Input {...register("heroBadge")} placeholder="Trung tâm tiếng Anh số 1" />
-          </div>
-          <div className="space-y-2">
-            <Label>Tiêu đề chính</Label>
-            <Input {...register("heroTitle")} placeholder="Mở khóa tiềm năng." />
-          </div>
-          <div className="space-y-2">
-            <Label>Từ khóa nổi bật (Highlight)</Label>
-            <Input {...register("heroHighlight")} placeholder="Kiến tạo tương lai." />
-          </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Mô tả ngắn</Label>
-            <Textarea
-              {...register("heroDescription")}
-              placeholder="Đánh thức phản xạ ngôn ngữ với 100% giáo viên bản ngữ..."
-              className="min-h-[80px]"
-            />
-          </div>
-          
-          <div className="space-y-4 rounded-lg border p-3 sm:p-4 md:col-span-1">
-            <h4 className="font-medium text-sm">Nút bấm 1 (Chính)</h4>
-            <div className="space-y-2">
-              <Label>Text nút bấm</Label>
-              <Input {...register("heroButton1Text")} placeholder="Đăng ký Test miễn phí" />
-            </div>
-            <div className="space-y-2">
-              <Label>Link (URL)</Label>
-              <Input {...register("heroButton1Link")} placeholder="/kiem-tra-trinh-do" />
-            </div>
-          </div>
-          
-          <div className="space-y-4 rounded-lg border p-3 sm:p-4 md:col-span-1">
-            <h4 className="font-medium text-sm">Nút bấm 2 (Phụ)</h4>
-            <div className="space-y-2">
-              <Label>Text nút bấm</Label>
-              <Input {...register("heroButton2Text")} placeholder="Xem lịch khai giảng" />
-            </div>
-            <div className="space-y-2">
-              <Label>Link (URL)</Label>
-              <Input {...register("heroButton2Link")} placeholder="/khoa-hoc" />
-            </div>
           </div>
         </CardContent>
       </Card>

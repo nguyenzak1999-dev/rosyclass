@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Trash } from "lucide-react"
 import { deleteBanner } from "../actions"
 import { toast } from "sonner"
-import Image from "next/image"
 
 export const columns: ColumnDef<Banner>[] = [
   {
@@ -21,7 +20,7 @@ export const columns: ColumnDef<Banner>[] = [
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             src={banner.image} 
-            alt={banner.title || "Banner"} 
+            alt={banner.title || "Hero"} 
             className="object-cover w-full h-full"
           />
         </div>
@@ -63,10 +62,10 @@ export const columns: ColumnDef<Banner>[] = [
       const banner = row.original
 
       const handleDelete = async () => {
-        if (!confirm("Bạn có chắc chắn muốn xóa banner này?")) return
+        if (!confirm("Bạn có chắc chắn muốn xóa hero này?")) return
         const res = await deleteBanner(banner.id)
         if (res.success) {
-          toast.success("Đã xóa banner")
+          toast.success("Đã xóa hero")
         } else {
           toast.error(res.error)
         }

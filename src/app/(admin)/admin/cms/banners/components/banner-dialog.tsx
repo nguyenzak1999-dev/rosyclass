@@ -36,9 +36,12 @@ const bannerSchema = z.object({
   image: z.string().min(1, "Vui lòng nhập URL hình ảnh"),
   buttonText: z.string().optional().nullable(),
   buttonUrl: z.string().optional().nullable(),
-  position: z.coerce.number().default(0),
+  position: z.number().default(0),
   isActive: z.boolean().default(true),
 })
+
+type BannerFormInput = z.input<typeof bannerSchema>
+type BannerFormValues = z.output<typeof bannerSchema>
 
 interface BannerDialogProps {
   banner?: Banner
@@ -48,8 +51,8 @@ export function BannerDialog({ banner }: BannerDialogProps) {
   const [open, setOpen] = useState(false)
   const isEditing = !!banner
 
-  const form = useForm<z.infer<typeof bannerSchema>>({
-    resolver: zodResolver(bannerSchema) as any,
+  const form = useForm<BannerFormInput, unknown, BannerFormValues>({
+    resolver: zodResolver(bannerSchema),
     defaultValues: {
       title: banner?.title || "",
       subtitle: banner?.subtitle || "",
@@ -61,7 +64,7 @@ export function BannerDialog({ banner }: BannerDialogProps) {
     },
   })
 
-  async function onSubmit(values: z.infer<typeof bannerSchema>) {
+  async function onSubmit(values: BannerFormValues) {
     try {
       if (isEditing) {
         const res = await updateBanner(banner.id, values)
@@ -74,12 +77,10 @@ export function BannerDialog({ banner }: BannerDialogProps) {
       }
       setOpen(false)
       form.reset()
-    } catch (error: any) {
-      toast.error(error.message || "Có lỗi xảy ra")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra")
     }
   }
-
-  const imageUrl = form.watch("image")
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -96,13 +97,13 @@ export function BannerDialog({ banner }: BannerDialogProps) {
           <Pencil className="h-4 w-4" />
         ) : (
           <>
-            <Plus className="w-4 h-4 mr-2" /> Thêm Banner
+            <Plus className="w-4 h-4 mr-2" /> Thêm Hero
           </>
         )}
       </DialogTrigger>
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Chỉnh sửa Banner" : "Thêm Banner mới"}</DialogTitle>
+          <DialogTitle>{isEditing ? "Chỉnh sửa Hero" : "Thêm Hero mới"}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -115,11 +116,11 @@ export function BannerDialog({ banner }: BannerDialogProps) {
                 <FormItem>
                   <FormMessage />
                   <ImageUploader
-                    label="Hình ảnh Banner *"
+                    label="Ảnh nền Hero *"
                     required
                     value={field.value || ""}
                     onChange={field.onChange}
-                    folder="banners"
+                    folder="hero"
                     aspectRatio="16/9"
                   />
                 </FormItem>
@@ -134,7 +135,7 @@ export function BannerDialog({ banner }: BannerDialogProps) {
                   <FormItem>
                     <FormLabel>Tiêu đề</FormLabel>
                     <FormControl>
-                      <Input placeholder="VD: Khóa học mới..." {...field} value={field.value || ""} />
+                      <Input placeholder="VD: Giao tiếp tự tin" {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -146,9 +147,9 @@ export function BannerDialog({ banner }: BannerDialogProps) {
                 name="subtitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mô tả phụ</FormLabel>
+                    <FormLabel>Mô tả</FormLabel>
                     <FormControl>
-                      <Input placeholder="Dòng mô tả nhỏ..." {...field} value={field.value || ""} />
+                      <Input placeholder="Dòng mô tả ngắn trên Hero..." {...field} value={field.value || ""} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -194,7 +195,11 @@ export function BannerDialog({ banner }: BannerDialogProps) {
                   <FormItem>
                     <FormLabel>Vị trí (Thứ tự)</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(event) => field.onChange(Number(event.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -225,7 +230,7 @@ export function BannerDialog({ banner }: BannerDialogProps) {
                 Hủy
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Đang lưu..." : (isEditing ? "Lưu thay đổi" : "Tạo Banner")}
+                {form.formState.isSubmitting ? "Đang lưu..." : (isEditing ? "Lưu thay đổi" : "Tạo Hero")}
               </Button>
             </div>
           </form>

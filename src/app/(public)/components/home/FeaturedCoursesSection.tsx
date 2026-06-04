@@ -2,7 +2,16 @@ import { AnimatedButton } from "@/components/ui/animated-button"
 import Link from "next/link"
 import Image from "next/image"
 
-export function FeaturedCoursesSection({ featuredCourses }: { featuredCourses: any[] }) {
+type FeaturedCourse = {
+  id?: string
+  name: string
+  slug?: string
+  description?: string | null
+  thumbnail?: string | null
+  imageUrl?: string | null
+}
+
+export function FeaturedCoursesSection({ featuredCourses }: { featuredCourses: FeaturedCourse[] }) {
   return (
     <section className="reveal-section py-24 bg-[#fcf5eb]">
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6">
@@ -20,7 +29,7 @@ export function FeaturedCoursesSection({ featuredCourses }: { featuredCourses: a
             <Link href={`/khoa-hoc/${course.slug || ''}`} key={course.id || course.name} className="group block h-full">
               <div className="bg-white rounded-[32px] overflow-hidden shadow-[0_8px_24px_rgba(17,27,33,0.04)] hover:shadow-[0_24px_48px_rgba(17,27,33,0.12)] hover:-translate-y-2 transition-all duration-500 h-full flex flex-col">
                 <div className="aspect-[4/3] bg-[#f0f2f5] relative overflow-hidden">
-                  <Image src={course.imageUrl || "/hero_slider_2.png"} alt={course.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                  <Image src={course.thumbnail || course.imageUrl || "/hero_slider_2.png"} alt={course.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
                 </div>
                 <div className="p-8 md:p-10 flex flex-col flex-grow">
                   <h3 className="text-[24px] font-bold text-[#111b21] mb-4 leading-tight group-hover:text-[#008069] transition-colors">{course.name}</h3>

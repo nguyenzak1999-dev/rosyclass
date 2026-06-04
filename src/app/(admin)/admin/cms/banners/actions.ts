@@ -10,7 +10,7 @@ const bannerSchema = z.object({
   image: z.string().min(1, "Vui lòng nhập URL hình ảnh"),
   buttonText: z.string().optional().nullable(),
   buttonUrl: z.string().optional().nullable(),
-  position: z.coerce.number().default(0),
+  position: z.number().default(0),
   isActive: z.boolean().default(true),
 })
 
@@ -23,11 +23,12 @@ export async function createBanner(data: z.infer<typeof bannerSchema>) {
     })
     
     revalidatePath("/admin/cms/banners")
+    revalidatePath("/admin/cms/hero")
     revalidatePath("/")
     
     return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message || "Có lỗi xảy ra" }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Có lỗi xảy ra" }
   }
 }
 
@@ -41,11 +42,12 @@ export async function updateBanner(id: string, data: z.infer<typeof bannerSchema
     })
     
     revalidatePath("/admin/cms/banners")
+    revalidatePath("/admin/cms/hero")
     revalidatePath("/")
     
     return { success: true }
-  } catch (error: any) {
-    return { success: false, error: error.message || "Có lỗi xảy ra" }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Có lỗi xảy ra" }
   }
 }
 
@@ -56,10 +58,11 @@ export async function deleteBanner(id: string) {
     })
     
     revalidatePath("/admin/cms/banners")
+    revalidatePath("/admin/cms/hero")
     revalidatePath("/")
     
     return { success: true }
-  } catch (error: any) {
-    return { success: false, error: "Không thể xóa banner này" }
+  } catch {
+    return { success: false, error: "Không thể xóa hero này" }
   }
 }

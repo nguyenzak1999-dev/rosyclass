@@ -31,10 +31,21 @@ export interface SiteSettings {
   heroTitle?: string
   heroHighlight?: string
   heroDescription?: string
+  heroImageUrl?: string
   heroButton1Text?: string
   heroButton1Link?: string
   heroButton2Text?: string
   heroButton2Link?: string
+  heroFootnote?: string
+  heroChatGroupTitle?: string
+  heroChatGroupMeta?: string
+  heroChatJoinText?: string
+  heroChatIncomingMessage?: string
+  heroChatIncomingTime?: string
+  heroChatOutgoingAuthor?: string
+  heroChatOutgoingMessage?: string
+  heroChatOutgoingTime?: string
+  heroChatReactions?: string
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -60,13 +71,24 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   copyright: "© 2026 RosyClass English Center. All rights reserved.",
 
   heroBadge: "Trung tâm tiếng Anh số 1",
-  heroTitle: "Mở khóa tiềm năng. \n",
-  heroHighlight: "Kiến tạo tương lai.",
-  heroDescription: "Đánh thức phản xạ ngôn ngữ với 100% giáo viên bản ngữ và lộ trình học tập cá nhân hoá. Tự tin giao tiếp, chinh phục điểm số mơ ước ngay hôm nay.",
-  heroButton1Text: "Đăng ký Test miễn phí",
-  heroButton1Link: "/kiem-tra-trinh-do",
+  heroTitle: "Giao tiếp",
+  heroHighlight: "tự tin",
+  heroDescription: "Phương pháp học đơn giản, đáng tin cậy, phản xạ tự nhiên, dành cho mọi học viên.",
+  heroImageUrl: "/english-center-hero.png",
+  heroButton1Text: "Đăng ký học thử",
+  heroButton1Link: "/dang-ky",
   heroButton2Text: "Xem lịch khai giảng",
   heroButton2Link: "/khoa-hoc",
+  heroFootnote: "* Yêu cầu làm bài kiểm tra xếp lớp.",
+  heroChatGroupTitle: "Lớp học giao tiếp",
+  heroChatGroupMeta: "& 4 others",
+  heroChatJoinText: "Tham gia",
+  heroChatIncomingMessage: "Vẫn học lịch cũ đúng không bạn?",
+  heroChatIncomingTime: "11:53",
+  heroChatOutgoingAuthor: "Cô Ngọc",
+  heroChatOutgoingMessage: "Sẵn sàng nhé! Hẹn gặp lại mọi người ở lớp. ✨",
+  heroChatOutgoingTime: "11:59",
+  heroChatReactions: "👍 ❤️ 🤓",
 }
 
 // Slug dùng để lưu settings trong Page model

@@ -1,28 +1,41 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import { SiteSettings } from "@/lib/site-settings"
-import { ArrowRight, Download, ChevronRight, MessageCircle } from "lucide-react"
-import Image from "next/image"
+import { type Course } from "@prisma/client"
 
 import { useRef } from "react"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import ScrollTrigger from "gsap/ScrollTrigger"
 
-import { HeroSection } from "./components/home/HeroSection"
+import { HeroSection, type HeroSlide } from "./components/home/HeroSection"
 import { FeatureSections } from "./components/home/FeatureSections"
 import { StatisticsSection } from "./components/home/StatisticsSection"
 import { FeaturedCoursesSection } from "./components/home/FeaturedCoursesSection"
 import { TestimonialsSection } from "./components/home/TestimonialsSection"
 import { CtaSection } from "./components/home/CtaSection"
+import { LearningPathSection } from "./components/home/LearningPathSection"
+import { UpcomingClassesSection, type UpcomingClass } from "./components/home/UpcomingClassesSection"
+import { FeaturedTeachersSection, type FeaturedTeacher } from "./components/home/FeaturedTeachersSection"
+import { HomeFaqSection } from "./components/home/HomeFaqSection"
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP)
 }
 
-export default function HomeClient({ courses, settings }: { courses: any[], settings?: SiteSettings }) {
+export default function HomeClient({
+  courses,
+  settings,
+  heroSlides,
+  upcomingClasses,
+  teachers,
+}: {
+  courses: Course[]
+  settings?: SiteSettings
+  heroSlides: HeroSlide[]
+  upcomingClasses: UpcomingClass[]
+  teachers: FeaturedTeacher[]
+}) {
   const container = useRef<HTMLDivElement>(null);
   const featuredCourses = courses.slice(0, 3);
 
@@ -48,8 +61,8 @@ export default function HomeClient({ courses, settings }: { courses: any[], sett
     });
 
     // Reveal Sections on scroll
-    const sections = gsap.utils.toArray(".reveal-section");
-    sections.forEach((sec: any) => {
+    const sections = gsap.utils.toArray<HTMLElement>(".reveal-section");
+    sections.forEach((sec) => {
       gsap.from(sec, {
         scrollTrigger: {
           trigger: sec,
@@ -67,7 +80,7 @@ export default function HomeClient({ courses, settings }: { courses: any[], sett
     <div ref={container} className="flex flex-col w-full font-sans pb-10 bg-background relative overflow-hidden">
 
       {/* 1. HERO SECTION */}
-      <HeroSection />
+      <HeroSection settings={settings} slides={heroSlides} />
 
       {/* 2. FEATURE SECTIONS */}
       <FeatureSections />
@@ -75,13 +88,25 @@ export default function HomeClient({ courses, settings }: { courses: any[], sett
       {/* 3. THỐNG KÊ (STATISTICS) */}
       <StatisticsSection />
 
-      {/* 4. KHÓA HỌC NỔI BẬT */}
+      {/* 4. LỘ TRÌNH HỌC */}
+      <LearningPathSection />
+
+      {/* 5. KHÓA HỌC NỔI BẬT */}
       <FeaturedCoursesSection featuredCourses={featuredCourses} />
 
-      {/* 5. CẢM NHẬN HỌC VIÊN (WhatsApp Chat Style) */}
+      {/* 6. LỚP SẮP KHAI GIẢNG */}
+      <UpcomingClassesSection classes={upcomingClasses} />
+
+      {/* 7. GIÁO VIÊN NỔI BẬT */}
+      <FeaturedTeachersSection teachers={teachers} />
+
+      {/* 8. CẢM NHẬN HỌC VIÊN (WhatsApp Chat Style) */}
       <TestimonialsSection />
 
-      {/* 6. FINAL CTA (Transform your business equivalent) */}
+      {/* 9. FAQ */}
+      <HomeFaqSection />
+
+      {/* 10. FINAL CTA (Transform your business equivalent) */}
       <CtaSection />
 
     </div>
