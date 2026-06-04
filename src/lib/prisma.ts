@@ -9,6 +9,7 @@ if (dbUrl.includes("pooler.supabase.com") && !dbUrl.includes("pgbouncer=true")) 
 
 export const prisma =
   globalForPrisma.prisma || new PrismaClient({
+    // @ts-ignore
     datasources: {
       db: {
         url: dbUrl
