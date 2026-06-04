@@ -5,13 +5,7 @@ import { vi } from "date-fns/locale"
 import { Calendar, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 
-export async function generateStaticParams() {
-  const posts = await prisma.blogPost.findMany({
-    where: { status: "PUBLISHED" },
-    select: { slug: true }
-  })
-  return posts.map((p) => ({ slug: p.slug }))
-}
+
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
