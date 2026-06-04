@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
 import { 
@@ -34,6 +33,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ADMIN_COLORS, getPrimaryForeground, resolveAdminPrimaryColor } from "@/lib/theme-appearance"
 
 const TABS = [
   { id: "profile", label: "Hồ sơ cá nhân", icon: User },
@@ -41,14 +41,6 @@ const TABS = [
   { id: "notifications", label: "Thông báo", icon: Bell },
   { id: "security", label: "Bảo mật", icon: Shield },
   { id: "language", label: "Ngôn ngữ & Vùng", icon: Globe },
-]
-
-const COLORS = [
-  { name: "Zinc (Mặc định)", value: "oklch(0.205 0 0)", isDark: "oklch(0.985 0 0)" },
-  { name: "Rose", value: "oklch(0.511 0.262 27.681)", isDark: "oklch(0.672 0.222 23.363)" },
-  { name: "Blue", value: "oklch(0.546 0.245 262.881)", isDark: "oklch(0.669 0.178 259.043)" },
-  { name: "Green", value: "oklch(0.528 0.198 141.488)", isDark: "oklch(0.627 0.194 149.214)" },
-  { name: "Orange", value: "oklch(0.646 0.222 41.116)", isDark: "oklch(0.724 0.213 42.41)" },
 ]
 
 const RADII = [
@@ -71,32 +63,32 @@ export default function PreferencesClient() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Appearance state
-  const [primaryColor, setPrimaryColor] = useState(COLORS[0].value)
+  const [primaryColor, setPrimaryColor] = useState(ADMIN_COLORS[0].value)
   const [radius, setRadius] = useState(RADII[2].value)
   const [fontFamily, setFontFamily] = useState(FONTS[0].value)
 
   useEffect(() => {
-    // Tải cấu hình từ localStorage nếu có
-    const savedColor = localStorage.getItem("app-primary-color")
-    const savedRadius = localStorage.getItem("app-radius")
-    const savedFont = localStorage.getItem("app-font")
-    
-    if (savedColor) setPrimaryColor(savedColor)
-    if (savedRadius) setRadius(savedRadius)
-    if (savedFont) setFontFamily(savedFont)
+    void Promise.resolve().then(() => {
+      const savedColor = localStorage.getItem("app-primary-color")
+      const savedRadius = localStorage.getItem("app-radius")
+      const savedFont = localStorage.getItem("app-font")
+
+      if (savedColor) setPrimaryColor(savedColor)
+      if (savedRadius) setRadius(savedRadius)
+      if (savedFont) setFontFamily(savedFont)
+    })
   }, [])
 
   useEffect(() => {
     // Áp dụng cấu hình lên document root
     const root = document.documentElement
     
-    // Nếu đang ở dark mode, dùng mã màu cho dark mode
     const isDark = theme === "dark"
-    const colorObj = COLORS.find(c => c.value === primaryColor || c.isDark === primaryColor)
-    
-    if (colorObj) {
-      const activeColor = isDark ? colorObj.isDark : colorObj.value
+    const activeColor = resolveAdminPrimaryColor(primaryColor, isDark)
+
+    if (activeColor) {
       root.style.setProperty("--primary", activeColor)
+      root.style.setProperty("--primary-foreground", getPrimaryForeground(activeColor))
       localStorage.setItem("app-primary-color", activeColor)
     }
 
@@ -269,7 +261,7 @@ export default function PreferencesClient() {
               <div className="space-y-4 pt-4">
                 <Label className="text-base">Màu chủ đạo (Primary Color)</Label>
                 <div className="flex flex-wrap gap-4 pt-2">
-                  {COLORS.map((c) => {
+                  {ADMIN_COLORS.map((c) => {
                     const isActiveColor = primaryColor === c.value || primaryColor === c.isDark
                     return (
                       <button

@@ -1,19 +1,37 @@
 "use client"
 
 import { useEffect } from "react"
+import { getPrimaryForeground, resolveAdminPrimaryColor } from "@/lib/theme-appearance"
 
 export function StyleProvider() {
   useEffect(() => {
-    // Tải cấu hình giao diện từ localStorage
-    const savedColor = localStorage.getItem("app-primary-color")
-    const savedRadius = localStorage.getItem("app-radius")
-    const savedFont = localStorage.getItem("app-font")
-    
     const root = document.documentElement
-    
-    if (savedColor) root.style.setProperty("--primary", savedColor)
-    if (savedRadius) root.style.setProperty("--radius", savedRadius)
-    if (savedFont) root.style.setProperty("font-family", savedFont)
+
+    const applySavedStyles = () => {
+      const savedColor = localStorage.getItem("app-primary-color")
+      const savedRadius = localStorage.getItem("app-radius")
+      const savedFont = localStorage.getItem("app-font")
+      const primaryColor = resolveAdminPrimaryColor(savedColor, root.classList.contains("dark"))
+
+      if (primaryColor) {
+        root.style.setProperty("--primary", primaryColor)
+        root.style.setProperty("--primary-foreground", getPrimaryForeground(primaryColor))
+      }
+
+      if (savedRadius) root.style.setProperty("--radius", savedRadius)
+      if (savedFont) root.style.setProperty("font-family", savedFont)
+    }
+
+    applySavedStyles()
+
+    const observer = new MutationObserver(applySavedStyles)
+
+    observer.observe(root, {
+      attributeFilter: ["class"],
+      attributes: true,
+    })
+
+    return () => observer.disconnect()
   }, [])
 
   return null

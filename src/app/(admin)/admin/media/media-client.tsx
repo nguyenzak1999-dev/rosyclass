@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -33,7 +33,6 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
 
 interface MediaFile {
   id: string
@@ -74,13 +73,16 @@ function formatDate(date: string) {
   })
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback
+}
+
 export function MediaClient() {
-  const router = useRouter()
   const [files, setFiles] = useState<MediaFile[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [search, setSearch] = useState("")
   const [folder, setFolder] = useState("all")
@@ -118,10 +120,9 @@ export function MediaClient() {
     }
   }, [])
 
-  // Load on mount
-  useState(() => {
-    loadFiles()
-  })
+  useEffect(() => {
+    void Promise.resolve().then(() => loadFiles())
+  }, [loadFiles])
 
   const handleSearch = (value: string) => {
     setSearch(value)
@@ -149,8 +150,8 @@ export function MediaClient() {
       if (!res.ok || !data.success) throw new Error(data.error)
       toast.success(`Đã tải lên: ${file.name}`)
       loadFiles({ search, folder, page: 1 })
-    } catch (err: any) {
-      toast.error(err.message || "Tải lên thất bại")
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Tải lên thất bại"))
     } finally {
       setUploading(false)
     }
@@ -182,8 +183,8 @@ export function MediaClient() {
       toast.success("Đã xóa ảnh")
       if (selectedFile?.id === file.id) setSelectedFile(null)
       loadFiles({ search, folder, page })
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Xóa ảnh thất bại"))
     }
   }
 
@@ -243,7 +244,7 @@ export function MediaClient() {
                   className={cn(
                     "w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors",
                     folder === f.value
-                      ? "bg-primary text-primary-foreground font-medium"
+                      ? "bg-muted text-foreground font-medium"
                       : "hover:bg-muted text-muted-foreground hover:text-foreground"
                   )}
                 >
