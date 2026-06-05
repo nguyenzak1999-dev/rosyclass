@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Globe, Phone, MapPin, Search, Share2, Building2, Save } from "lucide-react"
+import { Globe, Phone, MapPin, Search, Share2, Building2, Save, LayoutTemplate } from "lucide-react"
 import { ImageUploader } from "@/components/ui/image-uploader"
 
 export default function SiteSettingsClient({ settings }: { settings: SiteSettings }) {
@@ -185,6 +185,8 @@ export default function SiteSettingsClient({ settings }: { settings: SiteSetting
           />
         </CardContent>
       </Card>
+
+
 
       <div className="sticky bottom-0 -mx-4 flex border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:static sm:mx-0 sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:pb-10 sm:backdrop-blur-none">
         <Button type="submit" disabled={isSubmitting} size="lg" className="w-full gap-2 sm:w-auto sm:px-8">

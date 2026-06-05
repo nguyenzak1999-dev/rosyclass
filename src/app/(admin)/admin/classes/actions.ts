@@ -37,3 +37,62 @@ export async function deleteClass(id: string) {
     return { success: false, error: "Không thể xóa lớp học này" }
   }
 }
+
+export async function addStudentToClass(classId: string, studentId: string) {
+  try {
+    // Check if already in class
+    const existing = await prisma.classStudent.findUnique({
+      where: {
+        classId_studentId: { classId, studentId }
+      }
+    })
+    
+    if (existing) {
+      return { success: false, error: "Học viên này đã ở trong lớp" }
+    }
+
+    // Check class capacity
+    const targetClass = await prisma.class.findUnique({
+      where: { id: classId },
+      include: {
+        _count: {
+          select: { students: { where: { status: 'ACTIVE' } } }
+        }
+      }
+    })
+
+    if (!targetClass) {
+      return { success: false, error: "Không tìm thấy lớp học" }
+    }
+
+    if (targetClass._count.students >= targetClass.maxStudents) {
+      return { success: false, error: "Lớp đã đủ sĩ số tối đa, không thể xếp thêm học viên!" }
+    }
+
+    await prisma.classStudent.create({
+      data: { classId, studentId }
+    })
+    
+    revalidatePath(`/admin/classes/${classId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Add student to class error:", error)
+    return { success: false, error: "Có lỗi xảy ra khi thêm học viên" }
+  }
+}
+
+export async function removeStudentFromClass(classId: string, studentId: string) {
+  try {
+    await prisma.classStudent.delete({
+      where: {
+        classId_studentId: { classId, studentId }
+      }
+    })
+    
+    revalidatePath(`/admin/classes/${classId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Remove student from class error:", error)
+    return { success: false, error: "Có lỗi xảy ra khi xóa học viên khỏi lớp" }
+  }
+}

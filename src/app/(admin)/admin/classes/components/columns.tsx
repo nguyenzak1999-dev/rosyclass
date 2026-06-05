@@ -9,6 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuGroup,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -94,15 +95,22 @@ export const getColumns = (courses: any[]): ColumnDef<ClassData>[] => [
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(classData.id)}
-              >
-                Sao chép ID
-              </DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => window.location.href = `/admin/classes/${classData.id}`}>
+                  Xem chi tiết lớp học
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigator.clipboard.writeText(classData.id)}
+                >
+                  Sao chép ID
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Lịch học</DropdownMenuItem>
-              <DropdownMenuItem>Điểm danh</DropdownMenuItem>
+              <DropdownMenuGroup>
+                <DropdownMenuItem>Lịch học</DropdownMenuItem>
+                <DropdownMenuItem>Điểm danh</DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

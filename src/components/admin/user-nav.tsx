@@ -14,12 +14,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { User, Settings, LogOut } from "lucide-react"
 
-export function UserNav() {
+export function UserNav({ userEmail }: { userEmail?: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" className="relative h-8 w-8 rounded-full" />}>
         <Avatar className="h-8 w-8">
-          <AvatarImage src="https://i.pravatar.cc/150?u=a04258114e29026702d" alt="@admin" />
+          <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${userEmail || 'Admin'}`} alt="@admin" />
           <AvatarFallback>AD</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
@@ -28,7 +28,7 @@ export function UserNav() {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">Admin RosyClass</p>
             <p className="text-xs leading-none text-muted-foreground">
-              admin@rosyclass.edu.vn
+              {userEmail || "Chưa đăng nhập"}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -46,9 +46,9 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           className="text-red-600 cursor-pointer" 
-          onClick={() => {
-            // Fake logout, redirect to homepage
-            window.location.href = "/"
+          onClick={async () => {
+            const { logout } = await import("@/app/(admin)/admin/actions")
+            await logout()
           }}
         >
           <LogOut className="mr-2 h-4 w-4" />

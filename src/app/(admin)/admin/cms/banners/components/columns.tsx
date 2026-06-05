@@ -58,8 +58,9 @@ export const columns: ColumnDef<Banner>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const banner = row.original
+      const totalBanners = table.getCoreRowModel().rows.length
 
       const handleDelete = async () => {
         if (!confirm("Bạn có chắc chắn muốn xóa hero này?")) return
@@ -73,7 +74,7 @@ export const columns: ColumnDef<Banner>[] = [
 
       return (
         <div className="flex items-center justify-end gap-2">
-          <BannerDialog banner={banner} />
+          <BannerDialog banner={banner} totalBanners={totalBanners} />
           <Button variant="ghost" size="icon" onClick={handleDelete} title="Xóa" className="text-red-500 hover:text-red-600 hover:bg-red-50">
             <Trash className="w-4 h-4" />
           </Button>

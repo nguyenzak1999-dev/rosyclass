@@ -12,11 +12,18 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserNav } from "@/components/admin/user-nav"
 
-export default function AdminLayout({
+import { createClient } from "@/utils/supabase/server"
+import { cookies } from "next/headers"
+
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const cookieStore = await cookies()
+  const supabase = createClient(cookieStore)
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -39,7 +46,7 @@ export default function AdminLayout({
           </Breadcrumb>
           <div className="ml-auto flex items-center gap-4">
             <ThemeToggle />
-            <UserNav />
+            <UserNav userEmail={user?.email} />
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

@@ -50,14 +50,14 @@ export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteNam
           <div className="hidden lg:flex flex-1 px-8">
             <nav className="flex items-center justify-between w-full max-w-[700px] mx-auto">
               {navLinks.map((link) => {
-                const isActive = pathname === link.href
+                const isActive = pathname === link.href || pathname?.startsWith(link.href + "/")
                 return (
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`text-[15px] font-normal tracking-tight transition-colors flex items-center gap-1 ${isActive
-                      ? "text-[#111b21]"
-                      : "text-[#111b21] hover:text-[#25d366]"
+                    className={`text-[15px] tracking-tight transition-colors flex items-center gap-1 ${isActive
+                      ? "text-[#25d366] font-medium"
+                      : "text-[#111b21] font-normal hover:text-[#25d366]"
                       }`}
                   >
                     {link.name}
@@ -136,7 +136,7 @@ export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteNam
                       key={link.name}
                       href={link.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className={`rounded-2xl px-4 py-3 text-[15px] font-medium tracking-tight transition-colors ${isActive ? "bg-[#111b21] text-[#ffffff]" : "text-[#111b21] hover:bg-[#f0f4f9]"
+                      className={`rounded-2xl px-4 py-3 text-[15px] font-medium tracking-tight transition-colors ${isActive ? "bg-[#25d366]/10 text-[#25d366]" : "text-[#111b21] hover:bg-[#f0f4f9]"
                         }`}
                     >
                       {link.name}

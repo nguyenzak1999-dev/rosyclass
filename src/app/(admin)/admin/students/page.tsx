@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { DataTable } from "@/components/ui/data-table"
-import { columns } from "./components/columns"
-import { StudentDialog } from "./components/student-dialog"
+import { StudentsClient } from "./components/students-client"
 
 export default async function StudentsPage() {
   const students = await prisma.student.findMany({
@@ -18,6 +16,11 @@ export default async function StudentsPage() {
     orderBy: {
       createdAt: 'desc'
     }
+  })
+
+  const parents = await prisma.parent.findMany({
+    select: { id: true, fullName: true, phone: true },
+    orderBy: { fullName: 'asc' }
   })
 
   // Format data for table
@@ -40,19 +43,5 @@ export default async function StudentsPage() {
     }
   })
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Quản lý Học viên</h1>
-        <StudentDialog />
-      </div>
-
-      <DataTable 
-        columns={columns as any} 
-        data={formattedStudents} 
-        searchKey="fullName" 
-        searchPlaceholder="Tìm kiếm học viên theo tên, số điện thoại..." 
-      />
-    </div>
-  )
+  return <StudentsClient formattedStudents={formattedStudents} parents={parents} />
 }

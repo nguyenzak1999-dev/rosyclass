@@ -121,15 +121,15 @@ const data = {
       label: "GIAO DIỆN",
       items: [
         {
-          title: "Hero trang chủ",
-          url: "/admin/cms/hero",
+          title: "Cài đặt Website",
+          url: "/admin/settings/site",
+          icon: Globe,
+        },
+        {
+          title: "Giao diện trang chủ",
+          url: "/admin/cms/home",
           icon: LayoutTemplate,
         },
-      ]
-    },
-    {
-      label: "HỆ THỐNG",
-      items: [
         {
           title: "Website CMS",
           url: "/admin/cms/pages",
@@ -145,11 +145,11 @@ const data = {
           url: "/admin/media",
           icon: Images,
         },
-        {
-          title: "Cài đặt Website",
-          url: "/admin/settings/site",
-          icon: Globe,
-        },
+      ]
+    },
+    {
+      label: "HỆ THỐNG",
+      items: [
         {
           title: "Chi nhánh",
           url: "/admin/settings/branches",

@@ -83,16 +83,16 @@ export default function HomeClient({
       <HeroSection settings={settings} slides={heroSlides} />
 
       {/* 2. FEATURE SECTIONS */}
-      <FeatureSections />
+      <FeatureSections settings={settings} />
 
       {/* 3. THỐNG KÊ (STATISTICS) */}
-      <StatisticsSection />
+      <StatisticsSection settings={settings} />
 
       {/* 4. LỘ TRÌNH HỌC */}
-      <LearningPathSection />
+      <LearningPathSection settings={settings} />
 
       {/* 5. KHÓA HỌC NỔI BẬT */}
-      <FeaturedCoursesSection featuredCourses={featuredCourses} />
+      <FeaturedCoursesSection featuredCourses={featuredCourses} settings={settings} />
 
       {/* 6. LỚP SẮP KHAI GIẢNG */}
       <UpcomingClassesSection classes={upcomingClasses} />
@@ -101,13 +101,13 @@ export default function HomeClient({
       <FeaturedTeachersSection teachers={teachers} />
 
       {/* 8. CẢM NHẬN HỌC VIÊN (WhatsApp Chat Style) */}
-      <TestimonialsSection />
+      <TestimonialsSection settings={settings} />
 
       {/* 9. FAQ */}
-      <HomeFaqSection />
+      <HomeFaqSection settings={settings} />
 
       {/* 10. FINAL CTA (Transform your business equivalent) */}
-      <CtaSection />
+      <CtaSection settings={settings} />
 
     </div>
   )

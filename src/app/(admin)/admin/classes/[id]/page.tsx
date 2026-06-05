@@ -1,0 +1,54 @@
+import { prisma } from "@/lib/prisma"
+import { notFound } from "next/navigation"
+import ClassDetailClient from "./class-detail-client"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
+
+export default async function ClassDetailPage({ params }: { params: { id: string } }) {
+  const classData = await prisma.class.findUnique({
+    where: { id: params.id },
+    include: {
+      course: true,
+      teacher: true,
+      branch: true,
+      room: true,
+      students: {
+        include: {
+          student: true
+        }
+      },
+      schedules: true,
+    }
+  })
+
+  if (!classData) {
+    return notFound()
+  }
+
+  // Lấy tất cả học viên đang ACTIVE để có thể add vào lớp
+  const allStudents = await prisma.student.findMany({
+    where: { status: "ACTIVE" },
+    select: { id: true, fullName: true, phone: true, email: true }
+  })
+
+  return (
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center gap-4">
+        <Link href="/admin/classes">
+          <Button variant="outline" size="icon">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">Lớp học: {classData.name}</h2>
+          <p className="text-muted-foreground text-sm">
+            Khóa học: {classData.course.name} | Trạng thái: {classData.status}
+          </p>
+        </div>
+      </div>
+      
+      <ClassDetailClient classData={classData as any} allStudents={allStudents} />
+    </div>
+  )
+}

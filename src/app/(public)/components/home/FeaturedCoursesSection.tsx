@@ -1,6 +1,7 @@
 import { AnimatedButton } from "@/components/ui/animated-button"
 import Link from "next/link"
 import Image from "next/image"
+import { SiteSettings } from "@/lib/site-settings"
 
 type FeaturedCourse = {
   id?: string
@@ -11,16 +12,22 @@ type FeaturedCourse = {
   imageUrl?: string | null
 }
 
-export function FeaturedCoursesSection({ featuredCourses }: { featuredCourses: FeaturedCourse[] }) {
+export function FeaturedCoursesSection({ 
+  featuredCourses,
+  settings
+}: { 
+  featuredCourses: FeaturedCourse[]
+  settings?: SiteSettings 
+}) {
   return (
     <section className="reveal-section py-24 bg-[#fcf5eb]">
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6">
         <div className="text-center mb-20 space-y-6">
           <h2 className="text-[32px] md:text-[48px] font-medium text-[#1c1e21] tracking-tight">
-            Khóa học nổi bật
+            {settings?.featuredCoursesTitle || "Khóa học nổi bật"}
           </h2>
           <p className="text-[18px] md:text-[20px] text-[#54656f] max-w-[640px] mx-auto leading-relaxed">
-            Khám phá các lộ trình học được thiết kế riêng biệt để giúp bạn đạt được mục tiêu ngôn ngữ của mình một cách tự nhiên nhất.
+            {settings?.featuredCoursesSubtitle || "Khám phá các lộ trình học được thiết kế riêng biệt để giúp bạn đạt được mục tiêu ngôn ngữ của mình một cách tự nhiên nhất."}
           </p>
         </div>
 

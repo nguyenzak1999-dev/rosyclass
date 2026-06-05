@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import {
   Form,
@@ -45,9 +46,10 @@ type BannerFormValues = z.output<typeof bannerSchema>
 
 interface BannerDialogProps {
   banner?: Banner
+  totalBanners?: number
 }
 
-export function BannerDialog({ banner }: BannerDialogProps) {
+export function BannerDialog({ banner, totalBanners }: BannerDialogProps) {
   const [open, setOpen] = useState(false)
   const isEditing = !!banner
 
@@ -101,9 +103,14 @@ export function BannerDialog({ banner }: BannerDialogProps) {
           </>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-6xl h-[95vh] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? "Chỉnh sửa Hero" : "Thêm Hero mới"}</DialogTitle>
+          {totalBanners !== undefined && (
+            <DialogDescription>
+              Số lượng hero đang có: <span className="font-medium text-foreground">{totalBanners}</span>
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         <Form {...form}>

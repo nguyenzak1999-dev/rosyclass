@@ -40,7 +40,7 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
   DROPPED: { label: "Đã nghỉ", variant: "destructive" },
 }
 
-export const columns: ColumnDef<StudentData>[] = [
+export const getColumns = (parents: any[]): ColumnDef<StudentData>[] => [
   {
     accessorKey: "fullName",
     header: ({ column }) => {
@@ -120,6 +120,7 @@ export const columns: ColumnDef<StudentData>[] = [
         <div className="flex items-center justify-end">
           <StudentDialog 
             student={dialogStudent}
+            parents={parents}
             trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
           />
           <DropdownMenu>

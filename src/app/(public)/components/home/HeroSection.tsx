@@ -74,7 +74,7 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
   return (
     <div className="w-full bg-[#fcf5eb]">
       <section className="pt-[32px] md:pt-[40px] pb-10 px-4 md:px-12 mx-auto w-full">
-        <div className="relative w-full rounded-[25px] overflow-hidden min-h-[600px] md:min-h-[700px] bg-[#111b21] flex items-center shadow-lg">
+        <div className="relative w-full rounded-[25px] overflow-hidden min-h-[85vh] md:min-h-[calc(100vh-120px)] bg-[#111b21] flex items-center shadow-lg">
 
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
