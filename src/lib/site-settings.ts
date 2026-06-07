@@ -11,6 +11,7 @@ export interface SiteSettings {
   phone: string
   email: string
   workingHours: string
+  googleMapEmbedUrl?: string
 
   // Mạng xã hội
   facebook: string
@@ -101,6 +102,98 @@ export interface SiteSettings {
   ctaDescription?: string
   ctaButtonText?: string
   ctaButtonLink?: string
+
+  // Lead form notifications
+  leadNotificationSettings?: LeadNotificationSettings
+}
+
+export type LeadFormKey = "contact" | "registration" | "placementTest" | "classSchedule"
+
+export interface LeadFormNotificationSettings {
+  enabled: boolean
+  label: string
+  emailEnabled: boolean
+  telegramEnabled: boolean
+  customerEmailSubject: string
+  customerEmailHtml: string
+}
+
+export interface LeadNotificationSettings {
+  emailEnabled: boolean
+  telegramEnabled: boolean
+  emailFrom: string
+  replyToEmail: string
+  telegramChatId: string
+  telegramMessageTemplate: string
+  forms: Record<LeadFormKey, LeadFormNotificationSettings>
+}
+
+export const DEFAULT_LEAD_NOTIFICATION_SETTINGS: LeadNotificationSettings = {
+  emailEnabled: false,
+  telegramEnabled: false,
+  emailFrom: "RosyClass <contact@rosyclass.edu.vn>",
+  replyToEmail: "contact@rosyclass.edu.vn",
+  telegramChatId: "",
+  telegramMessageTemplate: [
+    "🔔 Lead mới từ {{formLabel}}",
+    "",
+    "Họ tên: {{fullName}}",
+    "SĐT: {{phone}}",
+    "Email: {{email}}",
+    "Khóa/lớp quan tâm: {{courseInterest}}",
+    "",
+    "{{notes}}",
+  ].join("\n"),
+  forms: {
+    contact: {
+      enabled: true,
+      label: "Form Liên hệ",
+      emailEnabled: true,
+      telegramEnabled: true,
+      customerEmailSubject: "RosyClass đã nhận thông tin tư vấn của bạn",
+      customerEmailHtml: [
+        "<p>Chào {{fullName}},</p>",
+        "<p>RosyClass đã nhận thông tin đăng ký tư vấn của bạn. Đội ngũ tư vấn sẽ liên hệ lại trong thời gian sớm nhất.</p>",
+        "<p>Cảm ơn bạn đã quan tâm đến RosyClass.</p>",
+      ].join("\n"),
+    },
+    registration: {
+      enabled: true,
+      label: "Form Đăng ký học",
+      emailEnabled: true,
+      telegramEnabled: true,
+      customerEmailSubject: "RosyClass đã nhận đăng ký học của bạn",
+      customerEmailHtml: [
+        "<p>Chào {{fullName}},</p>",
+        "<p>RosyClass đã nhận thông tin đăng ký học của bạn. Tư vấn viên sẽ liên hệ để xác nhận khóa học và lịch phù hợp.</p>",
+        "<p>Hẹn gặp bạn tại RosyClass.</p>",
+      ].join("\n"),
+    },
+    placementTest: {
+      enabled: true,
+      label: "Form Kiểm tra trình độ",
+      emailEnabled: true,
+      telegramEnabled: true,
+      customerEmailSubject: "RosyClass đã nhận thông tin kiểm tra trình độ",
+      customerEmailHtml: [
+        "<p>Chào {{fullName}},</p>",
+        "<p>RosyClass đã nhận thông tin kiểm tra trình độ của bạn. Kết quả và lộ trình phù hợp sẽ được tư vấn sau khi hoàn tất bài test.</p>",
+        "<p>Cảm ơn bạn.</p>",
+      ].join("\n"),
+    },
+    classSchedule: {
+      enabled: true,
+      label: "Form Đăng ký lớp khai giảng",
+      emailEnabled: true,
+      telegramEnabled: true,
+      customerEmailSubject: "RosyClass đã nhận đăng ký lớp {{courseInterest}}",
+      customerEmailHtml: [
+        "<p>Chào {{fullName}},</p>",
+        "<p>RosyClass đã nhận đăng ký lớp <strong>{{courseInterest}}</strong> của bạn. Tư vấn viên sẽ liên hệ xác nhận chỗ học và lịch khai giảng.</p>",
+        "<p>Cảm ơn bạn.</p>",
+      ].join("\n"),
+    },
+  },
 }
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -113,6 +206,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   phone: "1900 1234",
   email: "contact@rosyclass.edu.vn",
   workingHours: "Thứ 2 – Chủ Nhật: 7:00 – 21:00",
+  googleMapEmbedUrl: "",
 
   facebook: "",
   youtube: "",
@@ -258,7 +352,9 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   ctaTitle: "Phát triển tương lai",
   ctaDescription: "RosyClass giúp bạn mở ra cánh cửa toàn cầu để mang lại những cơ hội tuyệt vời. Phát triển tiếng Anh, tăng cơ hội nghề nghiệp, và xây dựng mối quan hệ.",
   ctaButtonText: "Đăng ký ngay",
-  ctaButtonLink: "/dang-ky"
+  ctaButtonLink: "/dang-ky",
+
+  leadNotificationSettings: DEFAULT_LEAD_NOTIFICATION_SETTINGS,
 }
 
 // Slug dùng để lưu settings trong Page model

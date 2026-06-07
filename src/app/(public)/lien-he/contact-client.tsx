@@ -221,28 +221,28 @@ export function ContactClient({ settings }: { settings: any }) {
         </div>
       </section>
 
-      {/* Map Section */}
-      <section className="max-w-[1200px] mx-auto px-4 sm:px-8 mt-8">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="rounded-[24px] overflow-hidden shadow-sm h-[400px] md:h-[500px] border border-[#e9edef] bg-[#f0f2f5] relative"
-        >
-          {/* Mock iframe - In production replace with real Google Maps embed link */}
-          <iframe 
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.9265586616093!2d105.81665487600762!3d21.03562448061483!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab0d127a01e7%3A0xab069cd4eaa76ff2!2zMjg1IMSQ4buZaSBD4bqlbiwgVsK0bmcgV2nhdUIsIEJhIMSQw6xuaCwgSMOgIE7hu5lpLCBWaWV0bmFt!5e0!3m2!1sen!2s!4v1700000000000!5m2!1sen!2s" 
-            width="100%" 
-            height="100%" 
-            style={{ border: 0 }} 
-            allowFullScreen={false} 
-            loading="lazy" 
-            referrerPolicy="no-referrer-when-downgrade"
-            className="absolute inset-0 transition-all duration-700"
-          ></iframe>
-        </motion.div>
-      </section>
+      {settings.googleMapEmbedUrl && (
+        <section className="max-w-[1200px] mx-auto px-4 sm:px-8 mt-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="rounded-[24px] overflow-hidden shadow-sm h-[400px] md:h-[500px] border border-[#e9edef] bg-[#f0f2f5] relative"
+          >
+            <iframe
+              src={settings.googleMapEmbedUrl}
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen={false}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="absolute inset-0 transition-all duration-700"
+            />
+          </motion.div>
+        </section>
+      )}
     </div>
   )
 }

@@ -70,8 +70,8 @@ export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteNam
           {/* Right: Action Buttons */}
           <div className="flex items-center space-x-4 shrink-0">
             <nav className="hidden md:flex items-center space-x-4">
-              <AnimatedButton href="/dang-nhap" variant="outline" size="sm">
-                Đăng nhập
+              <AnimatedButton href="/dang-ky" variant="outline" size="sm">
+                Đăng ký
                 <svg width="6" height="10" viewBox="0 0 10 18" fill="none"><path d="M0.879395 13.0463L6.41356 7.5L0.879395 1.95375L2.58314 0.25L9.83315 7.5L2.58314 14.75L0.879395 13.0463Z" fill="currentColor"></path></svg>
               </AnimatedButton>
               <AnimatedButton href="/kiem-tra-trinh-do" variant="primary" size="sm">

@@ -8,7 +8,7 @@ interface Stat {
   label: string
 }
 
-export default function AboutClient({ stats }: { stats: Stat[] }) {
+export default function AboutClient({ stats, imageUrl }: { stats: Stat[]; imageUrl: string }) {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -99,12 +99,18 @@ export default function AboutClient({ stats }: { stats: Stat[] }) {
               className="relative"
             >
               <div className="absolute inset-0 bg-[#d9fdd3] rounded-[40px] transform -rotate-6 scale-105 opacity-60"></div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
-                src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=1000&q=80" 
-                alt="RosyClass Team" 
-                className="relative z-10 w-full h-[600px] object-cover rounded-[40px] shadow-2xl"
-              />
+              {imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imageUrl}
+                  alt="RosyClass Team"
+                  className="relative z-10 w-full h-[600px] object-cover rounded-[40px] shadow-2xl"
+                />
+              ) : (
+                <div className="relative z-10 flex h-[600px] w-full items-center justify-center rounded-[40px] bg-white px-8 text-center text-[#54656f] shadow-2xl">
+                  Chưa có ảnh giới thiệu trong CMS.
+                </div>
+              )}
               
               <div className="absolute -bottom-8 -right-8 md:-bottom-12 md:-right-12 bg-white p-6 rounded-3xl shadow-xl border border-[#e9edef] z-20 max-w-[280px]">
                 <div className="flex items-center gap-4">

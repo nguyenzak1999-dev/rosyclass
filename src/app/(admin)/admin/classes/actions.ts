@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { classSchema, type ClassFormValues } from "@/lib/schemas/class"
 import { revalidatePath } from "next/cache"
 
 export async function upsertClass(data: ClassFormValues) {
   try {
+    await requirePermission(PERMISSIONS.classesWrite)
     const parsedData = classSchema.parse(data)
     
     if (parsedData.id) {
@@ -29,6 +31,7 @@ export async function upsertClass(data: ClassFormValues) {
 
 export async function deleteClass(id: string) {
   try {
+    await requirePermission(PERMISSIONS.classesWrite)
     await prisma.class.delete({ where: { id } })
     revalidatePath("/admin/classes")
     return { success: true }
@@ -40,6 +43,7 @@ export async function deleteClass(id: string) {
 
 export async function addStudentToClass(classId: string, studentId: string) {
   try {
+    await requirePermission(PERMISSIONS.classesWrite)
     // Check if already in class
     const existing = await prisma.classStudent.findUnique({
       where: {
@@ -83,6 +87,7 @@ export async function addStudentToClass(classId: string, studentId: string) {
 
 export async function removeStudentFromClass(classId: string, studentId: string) {
   try {
+    await requirePermission(PERMISSIONS.classesWrite)
     await prisma.classStudent.delete({
       where: {
         classId_studentId: { classId, studentId }

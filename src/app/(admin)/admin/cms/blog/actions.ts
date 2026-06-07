@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { blogPostSchema, type BlogPostFormValues } from "@/lib/schemas/blog-post"
 import { revalidatePath } from "next/cache"
 
 export async function upsertBlogPost(data: BlogPostFormValues) {
   try {
+    await requirePermission(PERMISSIONS.cmsWrite)
     const parsed = blogPostSchema.parse(data)
 
     const payload = {
@@ -43,6 +45,7 @@ export async function upsertBlogPost(data: BlogPostFormValues) {
 
 export async function deleteBlogPost(id: string) {
   try {
+    await requirePermission(PERMISSIONS.cmsWrite)
     await prisma.blogPost.delete({ where: { id } })
     revalidatePath("/admin/cms/blog")
     revalidatePath("/goc-hoc-tap")

@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { parentSchema, type ParentFormValues } from "@/lib/schemas/parent"
 import { revalidatePath } from "next/cache"
 
 export async function upsertParent(data: ParentFormValues) {
   try {
+    await requirePermission(PERMISSIONS.parentsWrite)
     const parsedData = parentSchema.parse(data)
     
     const { studentIds, ...restData } = parsedData
@@ -45,6 +47,7 @@ export async function upsertParent(data: ParentFormValues) {
 
 export async function deleteParent(id: string) {
   try {
+    await requirePermission(PERMISSIONS.parentsWrite)
     await prisma.parent.delete({ where: { id } })
     revalidatePath("/admin/parents")
     return { success: true }

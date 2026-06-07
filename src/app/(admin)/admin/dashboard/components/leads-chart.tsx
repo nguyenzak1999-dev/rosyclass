@@ -9,15 +9,6 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-const data = [
-  { month: "T1", leads: 45 },
-  { month: "T2", leads: 52 },
-  { month: "T3", leads: 38 },
-  { month: "T4", leads: 65 },
-  { month: "T5", leads: 48 },
-  { month: "T6", leads: 70 },
-]
-
 const chartConfig = {
   leads: {
     label: "Khách hàng mới",
@@ -25,7 +16,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function LeadsChart() {
+export function LeadsChart({ data }: { data: { month: string; leads: number }[] }) {
   return (
     <ChartContainer config={chartConfig} className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

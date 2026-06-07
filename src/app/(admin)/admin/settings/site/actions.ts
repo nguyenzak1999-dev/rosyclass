@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { SITE_SETTINGS_SLUG, type SiteSettings } from "@/lib/site-settings"
 import { revalidatePath } from "next/cache"
 
 export async function saveSiteSettings(data: SiteSettings) {
   try {
+    await requirePermission(PERMISSIONS.settingsWrite)
     const content = JSON.stringify(data)
 
     const existing = await prisma.page.findUnique({

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { v2 as cloudinary } from "cloudinary"
+import { getCurrentAdminUser, hasPermission, PERMISSIONS } from "@/lib/auth/permissions"
 import { prisma } from "@/lib/prisma"
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Có lỗi xảy ra"
+}
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -10,6 +15,11 @@ cloudinary.config({
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getCurrentAdminUser()
+    if (!hasPermission(user, PERMISSIONS.mediaWrite)) {
+      return NextResponse.json({ error: "Không có quyền tải file" }, { status: 403 })
+    }
+
     const formData = await req.formData()
     const file = formData.get("file") as File | null
     const folder = (formData.get("folder") as string) || "general"
@@ -57,14 +67,19 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ success: true, media })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[UPLOAD_ERROR]", error)
-    return NextResponse.json({ error: error.message || "Có lỗi xảy ra khi tải lên" }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(error) || "Có lỗi xảy ra khi tải lên" }, { status: 500 })
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
+    const user = await getCurrentAdminUser()
+    if (!hasPermission(user, PERMISSIONS.mediaWrite)) {
+      return NextResponse.json({ error: "Không có quyền xóa file" }, { status: 403 })
+    }
+
     const { searchParams } = new URL(req.url)
     const id = searchParams.get("id")
 
@@ -84,8 +99,8 @@ export async function DELETE(req: NextRequest) {
     await prisma.mediaFile.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[DELETE_ERROR]", error)
-    return NextResponse.json({ error: error.message || "Có lỗi xảy ra khi xóa file" }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(error) || "Có lỗi xảy ra khi xóa file" }, { status: 500 })
   }
 }

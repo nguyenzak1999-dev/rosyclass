@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { studentSchema, type StudentFormValues } from "@/lib/schemas/student"
 import { revalidatePath } from "next/cache"
 
 export async function upsertStudent(data: StudentFormValues) {
   try {
+    await requirePermission(PERMISSIONS.studentsWrite)
     const parsedData = studentSchema.parse(data)
     
     if (parsedData.id) {
@@ -60,6 +62,7 @@ export async function upsertStudent(data: StudentFormValues) {
 
 export async function deleteStudent(id: string) {
   try {
+    await requirePermission(PERMISSIONS.studentsWrite)
     await prisma.student.delete({
       where: { id }
     })

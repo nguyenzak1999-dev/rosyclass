@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { paymentSchema, type PaymentFormValues } from "@/lib/schemas/payment"
 import { revalidatePath } from "next/cache"
 
 export async function upsertPayment(data: PaymentFormValues) {
   try {
+    await requirePermission(PERMISSIONS.paymentsWrite)
     const parsedData = paymentSchema.parse(data)
     
     // We need a dummy user for createdById since auth is not fully set up in this context
@@ -52,6 +54,7 @@ export async function upsertPayment(data: PaymentFormValues) {
 
 export async function deletePayment(id: string) {
   try {
+    await requirePermission(PERMISSIONS.paymentsWrite)
     await prisma.payment.delete({ where: { id } })
     revalidatePath("/admin/payments")
     return { success: true }

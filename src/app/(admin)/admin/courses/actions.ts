@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { courseSchema, type CourseFormValues } from "@/lib/schemas/course"
 import { revalidatePath } from "next/cache"
 
 export async function upsertCourse(data: CourseFormValues) {
   try {
+    await requirePermission(PERMISSIONS.coursesWrite)
     const parsedData = courseSchema.parse(data)
     
     if (parsedData.id) {
@@ -15,13 +17,17 @@ export async function upsertCourse(data: CourseFormValues) {
         data: {
           name: parsedData.name,
           slug: parsedData.slug,
-          level: parsedData.level as any,
+          level: parsedData.level,
           description: parsedData.description,
+          targetAudience: parsedData.targetAudience,
+          learningOutcomes: parsedData.learningOutcomes,
           tuitionFee: parsedData.tuitionFee,
+          salePrice: parsedData.salePrice,
+          thumbnail: parsedData.thumbnail,
           totalSessions: parsedData.totalSessions,
           sessionDurationMinutes: parsedData.sessionDurationMinutes,
           isPublished: parsedData.isPublished,
-          status: parsedData.status as any,
+          status: parsedData.status,
         }
       })
     } else {
@@ -30,18 +36,24 @@ export async function upsertCourse(data: CourseFormValues) {
         data: {
           name: parsedData.name,
           slug: parsedData.slug,
-          level: parsedData.level as any,
+          level: parsedData.level,
           description: parsedData.description,
+          targetAudience: parsedData.targetAudience,
+          learningOutcomes: parsedData.learningOutcomes,
           tuitionFee: parsedData.tuitionFee,
+          salePrice: parsedData.salePrice,
+          thumbnail: parsedData.thumbnail,
           totalSessions: parsedData.totalSessions,
           sessionDurationMinutes: parsedData.sessionDurationMinutes,
           isPublished: parsedData.isPublished,
-          status: parsedData.status as any,
+          status: parsedData.status,
         }
       })
     }
 
     revalidatePath("/admin/courses")
+    revalidatePath("/khoa-hoc")
+    revalidatePath(`/khoa-hoc/${parsedData.slug}`)
     return { success: true }
   } catch (error: unknown) {
     console.error("Course upsert error:", error)
@@ -54,6 +66,7 @@ export async function upsertCourse(data: CourseFormValues) {
 
 export async function deleteCourse(id: string) {
   try {
+    await requirePermission(PERMISSIONS.coursesWrite)
     await prisma.course.delete({
       where: { id }
     })
@@ -64,4 +77,3 @@ export async function deleteCourse(id: string) {
     return { success: false, error: "Không thể xóa khóa học này" }
   }
 }
-

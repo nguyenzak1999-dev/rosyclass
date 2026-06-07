@@ -25,6 +25,7 @@ import { upsertTeacher } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { ImageUploader } from "@/components/ui/image-uploader"
+import { Switch } from "@/components/ui/switch"
 
 interface TeacherDialogProps {
   teacher?: TeacherFormValues
@@ -43,6 +44,7 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
       phone: "",
       roleCode: "TEACHER",
       status: "ACTIVE",
+      showOnHomepage: false,
     }
   })
 
@@ -60,6 +62,7 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
           phone: "",
           roleCode: "TEACHER",
           status: "ACTIVE",
+          showOnHomepage: false,
         })
       }
     }
@@ -107,8 +110,10 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="TEACHER">Giáo viên</SelectItem>
-                  <SelectItem value="STAFF">Nhân viên</SelectItem>
+                  <SelectItem value="CONSULTANT">Tư vấn viên</SelectItem>
+                  <SelectItem value="ACCOUNTANT">Kế toán</SelectItem>
                   <SelectItem value="ADMIN">Quản trị viên</SelectItem>
+                  <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -121,7 +126,6 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
                 <SelectContent>
                   <SelectItem value="ACTIVE">Hoạt động</SelectItem>
                   <SelectItem value="INACTIVE">Tạm ngưng</SelectItem>
-                  <SelectItem value="BANNED">Đình chỉ</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -147,6 +151,21 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
                 folder="teachers"
                 aspectRatio="1/1"
               />
+              <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
+                <div>
+                  <Label htmlFor="showOnHomepage" className="text-sm font-medium cursor-pointer">
+                    Hiển thị trên trang chủ
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Giáo viên sẽ xuất hiện trong phần &ldquo;Giáo viên nổi bật&rdquo;
+                  </p>
+                </div>
+                <Switch
+                  id="showOnHomepage"
+                  checked={watch("showOnHomepage") ?? false}
+                  onCheckedChange={(checked) => setValue("showOnHomepage", checked)}
+                />
+              </div>
             </>
           )}
 

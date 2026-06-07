@@ -29,11 +29,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ADMIN_COLORS, getPrimaryForeground, resolveAdminPrimaryColor } from "@/lib/theme-appearance"
+import type { AdminUser } from "@/lib/auth/permission-definitions"
 
 const TABS = [
   { id: "profile", label: "Hồ sơ cá nhân", icon: User },
@@ -57,7 +58,17 @@ const FONTS = [
   { name: "Mono", value: "var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" },
 ]
 
-export default function PreferencesClient() {
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(-2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+}
+
+export default function PreferencesClient({ user }: { user: AdminUser }) {
   const { theme, setTheme } = useTheme()
   const [activeTab, setActiveTab] = useState("appearance")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -100,7 +111,6 @@ export default function PreferencesClient() {
 
   }, [primaryColor, radius, fontFamily, theme])
 
-  // Fake save function
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     setIsSubmitting(true)
@@ -161,8 +171,7 @@ export default function PreferencesClient() {
               <div className="flex items-center gap-6">
                 <div className="relative group cursor-pointer">
                   <Avatar className="w-24 h-24 border-4 border-background shadow-sm">
-                    <AvatarImage src="https://i.pravatar.cc/150?u=a04258114e29026702d" />
-                    <AvatarFallback>AD</AvatarFallback>
+                    <AvatarFallback>{getInitials(user.fullName) || "AD"}</AvatarFallback>
                   </Avatar>
                   <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <Camera className="w-6 h-6 text-white" />
@@ -170,8 +179,8 @@ export default function PreferencesClient() {
                 </div>
                 <div className="space-y-1">
                   <h4 className="font-medium">Ảnh đại diện</h4>
-                  <p className="text-sm text-muted-foreground">JPG, GIF hoặc PNG. Tối đa 2MB.</p>
-                  <Button variant="outline" size="sm" className="mt-2">Đổi ảnh</Button>
+                  <p className="text-sm text-muted-foreground">Ảnh đại diện lấy từ hồ sơ tài khoản trong hệ thống.</p>
+                  <Badge variant="outline" className="mt-2">{user.roleName}</Badge>
                 </div>
               </div>
               
@@ -179,26 +188,21 @@ export default function PreferencesClient() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">Họ và đệm</Label>
-                    <Input id="firstName" defaultValue="Nguyễn" />
+                    <Input id="firstName" defaultValue={user.fullName.split(" ").slice(0, -1).join(" ")} readOnly />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Tên</Label>
-                    <Input id="lastName" defaultValue="Văn A" />
+                    <Input id="lastName" defaultValue={user.fullName.split(" ").slice(-1).join(" ")} readOnly />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email liên hệ</Label>
-                  <Input id="email" type="email" defaultValue="admin@rosyclass.edu.vn" />
+                  <Input id="email" type="email" defaultValue={user.email} readOnly />
                   <p className="text-xs text-muted-foreground">Email này sẽ dùng để nhận thông báo từ hệ thống.</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bio">Tiểu sử</Label>
-                  <Textarea 
-                    id="bio" 
-                    placeholder="Giới thiệu ngắn về bạn..." 
-                    defaultValue="Quản trị viên cấp cao tại RosyClass."
-                    className="min-h-[100px]"
-                  />
+                  <Textarea id="bio" defaultValue={`Vai trò: ${user.roleName}`} className="min-h-[100px]" readOnly />
                 </div>
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={isSubmitting}>

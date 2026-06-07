@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
+import { getCurrentAdminUser, hasPermission, PERMISSIONS } from "@/lib/auth/permissions"
 import { prisma } from "@/lib/prisma"
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Có lỗi xảy ra"
+}
 
 export async function GET(req: NextRequest) {
   try {
+    const user = await getCurrentAdminUser()
+    if (!hasPermission(user, PERMISSIONS.mediaRead)) {
+      return NextResponse.json({ error: "Không có quyền xem media" }, { status: 403 })
+    }
+
     const { searchParams } = new URL(req.url)
     const folder = searchParams.get("folder") || undefined
     const search = searchParams.get("search") || undefined
@@ -10,7 +21,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "24")
     const skip = (page - 1) * limit
 
-    const where: any = {}
+    const where: Prisma.MediaFileWhereInput = {}
     if (folder) where.folder = folder
     if (search) {
       where.name = { contains: search, mode: "insensitive" }
@@ -33,7 +44,7 @@ export async function GET(req: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
     })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }

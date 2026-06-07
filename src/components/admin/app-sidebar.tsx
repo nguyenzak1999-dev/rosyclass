@@ -17,6 +17,10 @@ import {
   Globe,
   Images,
   LayoutTemplate,
+  MessageCircleQuestion,
+  Star,
+  ClipboardCheck,
+  Bell,
 } from "lucide-react"
 
 
@@ -34,6 +38,7 @@ import {
 } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { canAccessAny, type AdminUser, type PermissionCode, PERMISSIONS } from "@/lib/auth/permission-definitions"
 
 const data = {
   navGroups: [
@@ -44,11 +49,13 @@ const data = {
           title: "Dashboard",
           url: "/admin/dashboard",
           icon: LayoutDashboard,
+          permissions: [PERMISSIONS.dashboardRead],
         },
         {
           title: "Báo cáo",
           url: "/admin/reports",
           icon: PieChart,
+          permissions: [PERMISSIONS.reportsRead],
         },
       ]
     },
@@ -59,16 +66,19 @@ const data = {
           title: "Leads CRM",
           url: "/admin/leads",
           icon: UserCheck,
+          permissions: [PERMISSIONS.leadsRead],
         },
         {
           title: "Học viên",
           url: "/admin/students",
           icon: Users,
+          permissions: [PERMISSIONS.studentsRead],
         },
         {
           title: "Phụ huynh",
           url: "/admin/parents",
           icon: Users,
+          permissions: [PERMISSIONS.parentsRead],
         },
       ]
     },
@@ -79,21 +89,25 @@ const data = {
           title: "Khóa học",
           url: "/admin/courses",
           icon: BookOpen,
+          permissions: [PERMISSIONS.coursesRead],
         },
         {
           title: "Lớp học",
           url: "/admin/classes",
           icon: GraduationCap,
+          permissions: [PERMISSIONS.classesRead],
         },
         {
           title: "Lịch học",
           url: "/admin/schedules",
           icon: CalendarDays,
+          permissions: [PERMISSIONS.schedulesRead],
         },
         {
           title: "Điểm danh",
           url: "/admin/attendance",
           icon: CalendarCheck,
+          permissions: [PERMISSIONS.attendanceRead],
         },
       ]
     },
@@ -104,6 +118,7 @@ const data = {
           title: "Giáo viên",
           url: "/admin/teachers",
           icon: Users,
+          permissions: [PERMISSIONS.teachersRead],
         },
       ]
     },
@@ -114,6 +129,7 @@ const data = {
           title: "Tài chính",
           url: "/admin/payments",
           icon: Wallet,
+          permissions: [PERMISSIONS.paymentsRead],
         },
       ]
     },
@@ -124,26 +140,61 @@ const data = {
           title: "Cài đặt Website",
           url: "/admin/settings/site",
           icon: Globe,
+          permissions: [PERMISSIONS.settingsRead],
         },
         {
           title: "Giao diện trang chủ",
           url: "/admin/cms/home",
           icon: LayoutTemplate,
+          permissions: [PERMISSIONS.cmsRead],
+        },
+        {
+          title: "Hero/Banner",
+          url: "/admin/cms/banners",
+          icon: Images,
+          permissions: [PERMISSIONS.cmsRead],
         },
         {
           title: "Website CMS",
           url: "/admin/cms/pages",
           icon: MonitorPlay,
+          permissions: [PERMISSIONS.cmsRead],
+        },
+        {
+          title: "FAQ",
+          url: "/admin/cms/faqs",
+          icon: MessageCircleQuestion,
+          permissions: [PERMISSIONS.cmsRead],
+        },
+        {
+          title: "Cảm nhận học viên",
+          url: "/admin/cms/testimonials",
+          icon: Star,
+          permissions: [PERMISSIONS.cmsRead],
+        },
+        {
+          title: "Câu hỏi placement test",
+          url: "/admin/cms/placement-questions",
+          icon: ClipboardCheck,
+          permissions: [PERMISSIONS.cmsRead],
+        },
+        {
+          title: "Thông báo form",
+          url: "/admin/cms/notifications",
+          icon: Bell,
+          permissions: [PERMISSIONS.cmsRead],
         },
         {
           title: "Góc học tập (Blog)",
           url: "/admin/cms/blog",
           icon: FileText,
+          permissions: [PERMISSIONS.cmsRead],
         },
         {
           title: "Thư viện Media",
           url: "/admin/media",
           icon: Images,
+          permissions: [PERMISSIONS.mediaRead],
         },
       ]
     },
@@ -154,19 +205,32 @@ const data = {
           title: "Chi nhánh",
           url: "/admin/settings/branches",
           icon: Settings,
+          permissions: [PERMISSIONS.settingsRead],
         },
         {
           title: "Tài khoản & Tùy chọn",
           url: "/admin/settings/preferences",
           icon: UserCheck,
+          permissions: [PERMISSIONS.settingsRead],
         },
       ]
     }
   ]
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  user,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  user: AdminUser
+}) {
   const pathname = usePathname()
+  const navGroups = data.navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canAccessAny(user, item.permissions as PermissionCode[])),
+    }))
+    .filter((group) => group.items.length > 0)
 
   return (
     <Sidebar {...props}>
@@ -179,7 +243,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {data.navGroups.map((group) => (
+        {navGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>

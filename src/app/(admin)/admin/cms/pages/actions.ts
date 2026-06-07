@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { pageSchema, type PageFormValues } from "@/lib/schemas/page"
 import { revalidatePath } from "next/cache"
 
 export async function upsertPage(data: PageFormValues) {
   try {
+    await requirePermission(PERMISSIONS.cmsWrite)
     const parsedData = pageSchema.parse(data)
     
     if (parsedData.id) {
@@ -32,6 +34,7 @@ export async function upsertPage(data: PageFormValues) {
 
 export async function deletePage(id: string) {
   try {
+    await requirePermission(PERMISSIONS.cmsWrite)
     await prisma.page.delete({ where: { id } })
     revalidatePath("/admin/cms/pages")
     return { success: true }

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -41,10 +42,13 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
     defaultValues: course || {
       name: "",
       slug: "",
-      level: "BEGINNER",
+      level: "STARTER",
       description: "",
       thumbnail: "",
       tuitionFee: 0,
+      salePrice: null,
+      targetAudience: "",
+      learningOutcomes: "",
       totalSessions: 10,
       sessionDurationMinutes: 90,
       isPublished: true,
@@ -65,8 +69,12 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
         reset({
           name: "",
           slug: "",
-          level: "BEGINNER",
+          level: "STARTER",
           description: "",
+          thumbnail: "",
+          salePrice: null,
+          targetAudience: "",
+          learningOutcomes: "",
           tuitionFee: 0,
           totalSessions: 10,
           sessionDurationMinutes: 90,
@@ -91,7 +99,7 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={(trigger as React.ReactElement) || <Button>+ Thêm khóa học</Button>} />
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[720px]">
         <DialogHeader>
           <DialogTitle>{course ? "Sửa khóa học" : "Thêm khóa học mới"}</DialogTitle>
         </DialogHeader>
@@ -117,12 +125,18 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
                   <SelectValue placeholder="Chọn cấp độ" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="BEGINNER">Beginner</SelectItem>
-                  <SelectItem value="ELEMENTARY">Elementary</SelectItem>
-                  <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
-                  <SelectItem value="UPPER_INTERMEDIATE">Upper Intermediate</SelectItem>
-                  <SelectItem value="ADVANCED">Advanced</SelectItem>
-                  <SelectItem value="MASTERY">Mastery</SelectItem>
+                  <SelectItem value="KIDS">Kids</SelectItem>
+                  <SelectItem value="STARTER">Starter</SelectItem>
+                  <SelectItem value="A1">A1</SelectItem>
+                  <SelectItem value="A2">A2</SelectItem>
+                  <SelectItem value="B1">B1</SelectItem>
+                  <SelectItem value="B2">B2</SelectItem>
+                  <SelectItem value="IELTS_FOUNDATION">IELTS Foundation</SelectItem>
+                  <SelectItem value="IELTS_5_5">IELTS 5.5+</SelectItem>
+                  <SelectItem value="IELTS_6_5">IELTS 6.5+</SelectItem>
+                  <SelectItem value="TOEIC">TOEIC</SelectItem>
+                  <SelectItem value="COMMUNICATION">Giao tiếp</SelectItem>
+                  <SelectItem value="ONE_ON_ONE">1 kèm 1</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -131,6 +145,27 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
               <Input id="tuitionFee" type="number" {...register("tuitionFee")} />
               {errors.tuitionFee && <p className="text-sm text-destructive">{errors.tuitionFee.message}</p>}
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="salePrice">Giá ưu đãi (nếu có)</Label>
+              <Input id="salePrice" type="number" {...register("salePrice")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="targetAudience">Đối tượng học viên</Label>
+              <Input id="targetAudience" {...register("targetAudience")} placeholder="Học sinh cấp 2, người đi làm..." />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Mô tả khóa học</Label>
+            <Textarea id="description" {...register("description")} className="min-h-[90px]" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="learningOutcomes">Kết quả đầu ra</Label>
+            <Textarea id="learningOutcomes" {...register("learningOutcomes")} className="min-h-[90px]" />
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -155,7 +190,8 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
               <SelectContent>
                 <SelectItem value="ACTIVE">Hoạt động (Đang mở)</SelectItem>
                 <SelectItem value="INACTIVE">Khóa</SelectItem>
-                <SelectItem value="ARCHIVED">Lưu trữ</SelectItem>
+                <SelectItem value="DRAFT">Bản nháp</SelectItem>
+                <SelectItem value="PUBLISHED">Xuất bản</SelectItem>
               </SelectContent>
             </Select>
           </div>

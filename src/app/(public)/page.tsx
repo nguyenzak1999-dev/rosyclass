@@ -10,9 +10,20 @@ export default async function HomePage() {
       status: "PUBLISHED",
       isPublished: true
     },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      thumbnail: true,
+      level: true,
+      targetAudience: true,
+      learningOutcomes: true,
+    },
     orderBy: {
       createdAt: "asc"
-    }
+    },
+    take: 3,
   });
 
   const upcomingClasses = await prisma.class.findMany({
@@ -63,9 +74,11 @@ export default async function HomePage() {
     take: 3,
   });
 
+  // Lấy 3 giáo viên ACTIVE đầu tiên cho trang chủ
   const teachers = await prisma.teacher.findMany({
     where: {
       status: "ACTIVE",
+      showOnHomepage: true,
     },
     orderBy: {
       createdAt: "asc",
@@ -86,6 +99,27 @@ export default async function HomePage() {
         createdAt: "asc",
       },
     ],
+  });
+  const testimonials = await prisma.testimonial.findMany({
+    where: {
+      isPublished: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 5,
+  });
+  const faqs = await prisma.faq.findMany({
+    where: {
+      status: {
+        in: ["ACTIVE", "PUBLISHED"],
+      },
+    },
+    orderBy: [
+      { position: "asc" },
+      { createdAt: "asc" },
+    ],
+    take: 4,
   });
 
   return (
@@ -119,9 +153,20 @@ export default async function HomePage() {
         id: teacher.id,
         fullName: teacher.fullName,
         avatar: teacher.avatar,
-        bio: teacher.bio || "Giáo viên tận tâm, theo sát mục tiêu và tiến bộ của từng học viên.",
-        specialties: teacher.specialties || "Giao tiếp, phát âm",
+        bio: teacher.bio || "",
+        specialties: teacher.specialties || "",
         certificates: teacher.certificates || "",
+      }))}
+      testimonials={testimonials.map((testimonial) => ({
+        id: testimonial.id,
+        avatar: testimonial.avatar,
+        name: testimonial.authorName,
+        title: testimonial.authorTitle,
+        content: testimonial.content,
+      }))}
+      faqs={faqs.map((faq) => ({
+        question: faq.question,
+        answer: faq.answer,
       }))}
     />
   )

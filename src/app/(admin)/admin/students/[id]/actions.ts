@@ -1,10 +1,12 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { revalidatePath } from "next/cache"
 
 export async function addStudentToClass(studentId: string, classId: string) {
   try {
+    await requirePermission(PERMISSIONS.studentsWrite)
     // Check if class is full
     const cls = await prisma.class.findUnique({
       where: { id: classId },
@@ -47,6 +49,7 @@ export async function addStudentToClass(studentId: string, classId: string) {
 
 export async function removeStudentFromClass(studentId: string, classId: string) {
   try {
+    await requirePermission(PERMISSIONS.studentsWrite)
     await prisma.classStudent.update({
       where: { classId_studentId: { classId, studentId } },
       data: { status: 'DROPPED' }
@@ -68,6 +71,7 @@ export async function createPayment(data: {
   note?: string
 }) {
   try {
+    const user = await requirePermission(PERMISSIONS.paymentsWrite)
     await prisma.payment.create({
       data: {
         studentId: data.studentId,
@@ -80,7 +84,7 @@ export async function createPayment(data: {
         paymentDate: data.paidAmount > 0 ? new Date() : null,
         status: data.paidAmount === 0 ? 'UNPAID' : data.paidAmount >= data.totalAmount ? 'PAID' : 'PARTIAL',
         note: data.note,
-        createdById: "system", // TODO: use real user
+        createdById: user.id,
       }
     })
     revalidatePath(`/admin/students/${data.studentId}`)

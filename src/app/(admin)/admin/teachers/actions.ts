@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { teacherSchema, type TeacherFormValues } from "@/lib/schemas/teacher"
 import { revalidatePath } from "next/cache"
 
 export async function upsertTeacher(data: TeacherFormValues) {
   try {
+    await requirePermission(PERMISSIONS.teachersWrite)
     const parsedData = teacherSchema.parse(data)
     
     // Find role
@@ -25,7 +27,7 @@ export async function upsertTeacher(data: TeacherFormValues) {
           fullName: parsedData.fullName,
           email: parsedData.email,
           phone: parsedData.phone,
-          status: parsedData.status as any,
+          status: parsedData.status,
           roleId: role.id,
           avatar: parsedData.avatar
         }
@@ -41,7 +43,9 @@ export async function upsertTeacher(data: TeacherFormValues) {
             avatar: parsedData.avatar,
             bio: parsedData.bio,
             specialties: parsedData.specialties,
-            certificates: parsedData.certificates
+            certificates: parsedData.certificates,
+            status: parsedData.status,
+            showOnHomepage: parsedData.showOnHomepage ?? false,
           },
           create: {
             userId: user.id,
@@ -51,7 +55,9 @@ export async function upsertTeacher(data: TeacherFormValues) {
             avatar: parsedData.avatar,
             bio: parsedData.bio,
             specialties: parsedData.specialties,
-            certificates: parsedData.certificates
+            certificates: parsedData.certificates,
+            status: parsedData.status,
+            showOnHomepage: parsedData.showOnHomepage ?? false,
           }
         })
       }
@@ -62,7 +68,7 @@ export async function upsertTeacher(data: TeacherFormValues) {
           fullName: parsedData.fullName,
           email: parsedData.email,
           phone: parsedData.phone,
-          status: parsedData.status as any,
+          status: parsedData.status,
           roleId: role.id,
           avatar: parsedData.avatar,
           passwordHash: "dummy_hash_for_now"
@@ -79,7 +85,9 @@ export async function upsertTeacher(data: TeacherFormValues) {
             avatar: parsedData.avatar,
             bio: parsedData.bio,
             specialties: parsedData.specialties,
-            certificates: parsedData.certificates
+            certificates: parsedData.certificates,
+            status: parsedData.status,
+            showOnHomepage: parsedData.showOnHomepage ?? false,
           }
         })
       }

@@ -200,16 +200,17 @@ model Student {
 }
 
 model Teacher {
-  id           String        @id @default(uuid())
-  fullName     String
-  phone        String
-  email        String?
-  avatar       String?
-  bio          String?       @db.Text
-  specialties  String? // JSON or comma separated
-  certificates String? // JSON or comma separated
-  hourlyRate   Float         @default(0)
-  status       TeacherStatus @default(ACTIVE)
+  id              String        @id @default(uuid())
+  fullName        String
+  phone           String
+  email           String?
+  avatar          String?
+  bio             String?       @db.Text
+  specialties     String? // JSON or comma separated
+  certificates    String? // JSON or comma separated
+  hourlyRate      Float         @default(0)
+  status          TeacherStatus @default(ACTIVE)
+  showOnHomepage  Boolean       @default(false)
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
@@ -418,6 +419,20 @@ model PlacementTest {
   updatedAt DateTime @updatedAt
 }
 
+model PlacementQuestion {
+  id            String       @id @default(uuid())
+  type          String
+  question      String       @db.Text
+  options       String       @db.Text // JSON array of answer choices
+  correctIndex  Int
+  order         Int          @default(0)
+  level         CourseLevel?
+  isPublished   Boolean      @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // ------------------------------------------------------
 // CMS & LOGS
 // ------------------------------------------------------
@@ -430,6 +445,18 @@ model Page {
   seoTitle       String?
   seoDescription String?
   status         EntityStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Faq {
+  id          String       @id @default(uuid())
+  question    String       @db.Text
+  answer      String       @db.Text
+  category    String?
+  position    Int          @default(0)
+  status      EntityStatus @default(ACTIVE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

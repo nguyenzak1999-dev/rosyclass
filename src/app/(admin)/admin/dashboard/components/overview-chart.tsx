@@ -9,57 +9,6 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-const data = [
-  {
-    name: "T1",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T2",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T3",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T4",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T5",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T6",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T7",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T8",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T9",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T10",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T11",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-  {
-    name: "T12",
-    total: Math.floor(Math.random() * 50000000) + 10000000,
-  },
-]
-
 const chartConfig = {
   total: {
     label: "Doanh thu",
@@ -67,7 +16,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function OverviewChart() {
+export function OverviewChart({ data }: { data: { name: string; total: number }[] }) {
   return (
     <ChartContainer config={chartConfig} className="h-[350px] w-full">
       <ResponsiveContainer width="100%" height="100%">

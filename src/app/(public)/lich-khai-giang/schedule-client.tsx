@@ -1,17 +1,13 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { Calendar, MapPin, User, Clock, X, CheckCircle2 } from "lucide-react"
-import gsap from "gsap"
-import { useGSAP } from "@gsap/react"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { toast } from "sonner"
 import { submitClassRegistration } from "./actions"
 
-gsap.registerPlugin(ScrollTrigger, useGSAP)
-
 type ClassData = {
   id: string
+  courseId: string
   name: string
   level: string
   startDate: string
@@ -49,10 +45,11 @@ function RegisterModal({ cls, onClose }: RegisterModalProps) {
     const result = await submitClassRegistration({
       fullName: formData.fullName,
       phone: formData.phone,
-      email: formData.email || undefined,
-      className: cls.name,
-      classId: cls.id,
-    })
+        email: formData.email || undefined,
+        className: cls.name,
+        classId: cls.id,
+        courseId: cls.courseId,
+      })
 
     setIsSubmitting(false)
 
@@ -172,7 +169,6 @@ function RegisterModal({ cls, onClose }: RegisterModalProps) {
 export function ScheduleClient({ initialClasses }: { initialClasses: ClassData[] }) {
   const [activeLevel, setActiveLevel] = useState("all")
   const [registeringClass, setRegisteringClass] = useState<ClassData | null>(null)
-  const container = useRef<HTMLDivElement>(null)
 
   const filteredClasses = initialClasses.filter(c =>
     activeLevel === "all" ? true : c.level === activeLevel
@@ -180,45 +176,10 @@ export function ScheduleClient({ initialClasses }: { initialClasses: ClassData[]
 
   // Format date: YYYY-MM-DD to DD/MM/YYYY
   const formatDate = (dateString: string) => {
+    if (!dateString) return "Chưa cập nhật"
     const [year, month, day] = dateString.split("-")
     return `${day}/${month}/${year}`
   }
-
-  useGSAP(() => {
-    // Hero Header animation
-    const tl = gsap.timeline();
-    tl.from(".hero-badge", { opacity: 0, scale: 0.5, rotation: -10, duration: 0.6, ease: "back.out(2)" })
-      .from(".hero-title", { opacity: 0, y: 50, duration: 0.8, ease: "elastic.out(1, 0.75)" }, "-=0.4")
-      .from(".hero-desc", { opacity: 0, y: 20, duration: 0.6, ease: "power3.out" }, "-=0.6");
-
-    // Filters animation
-    gsap.from(".filter-btn", {
-      opacity: 0,
-      scale: 0.8,
-      y: 30,
-      stagger: 0.1,
-      duration: 0.6,
-      ease: "back.out(1.7)",
-      scrollTrigger: {
-        trigger: ".filters-container",
-        start: "top 90%",
-      },
-      clearProps: "all"
-    });
-  }, { scope: container });
-
-  useGSAP(() => {
-    // Classes Grid animation when filters change
-    gsap.from(".class-card", {
-      opacity: 0,
-      y: 40,
-      scale: 0.9,
-      stagger: 0.1,
-      duration: 0.6,
-      ease: "back.out(1.5)",
-      clearProps: "all"
-    });
-  }, { scope: container, dependencies: [activeLevel] });
 
   return (
     <>
@@ -230,7 +191,7 @@ export function ScheduleClient({ initialClasses }: { initialClasses: ClassData[]
         />
       )}
 
-      <div ref={container} className="flex flex-col w-full min-h-screen pb-20">
+      <div className="flex flex-col w-full min-h-screen pb-20">
         {/* Hero Header */}
         <section className="pt-24 pb-16 bg-[#fcf5eb] overflow-hidden">
           <div className="max-w-[1200px] px-4 sm:px-8 mx-auto relative z-10 text-center">

@@ -11,15 +11,6 @@ import {
   ChartLegendContent
 } from "@/components/ui/chart"
 
-const data = [
-  { month: "Tháng 1", newStudents: 40, totalStudents: 120 },
-  { month: "Tháng 2", newStudents: 30, totalStudents: 140 },
-  { month: "Tháng 3", newStudents: 45, totalStudents: 175 },
-  { month: "Tháng 4", newStudents: 50, totalStudents: 215 },
-  { month: "Tháng 5", newStudents: 35, totalStudents: 240 },
-  { month: "Tháng 6", newStudents: 60, totalStudents: 290 },
-]
-
 const chartConfig = {
   totalStudents: {
     label: "Tổng học viên",
@@ -31,7 +22,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function StudentGrowthChart() {
+export function StudentGrowthChart({
+  data,
+}: {
+  data: { month: string; newStudents: number; totalStudents: number }[]
+}) {
   return (
     <ChartContainer config={chartConfig} className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

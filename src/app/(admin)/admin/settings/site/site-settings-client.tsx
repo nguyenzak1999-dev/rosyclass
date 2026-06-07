@@ -119,6 +119,10 @@ export default function SiteSettingsClient({ settings }: { settings: SiteSetting
             <Input {...register("workingHours")} placeholder="Thứ 2 – Chủ Nhật: 7:00 – 21:00" />
           </div>
           <div className="space-y-2 sm:col-span-2">
+            <Label>Google Maps Embed URL</Label>
+            <Input {...register("googleMapEmbedUrl")} placeholder="https://www.google.com/maps/embed?pb=..." />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
             <Label>Bản quyền (Copyright)</Label>
             <Input {...register("copyright")} placeholder="© 2026 RosyClass English Center. All rights reserved." />
           </div>

@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/admin/app-sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -11,22 +12,26 @@ import {
 } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserNav } from "@/components/admin/user-nav"
+import { requireAdminUser } from "@/lib/auth/permissions"
 
-import { createClient } from "@/utils/supabase/server"
-import { cookies } from "next/headers"
+export const metadata: Metadata = {
+  title: "Admin",
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await requireAdminUser()
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar user={user} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 bg-background">
           <SidebarTrigger className="-ml-1" />
@@ -46,7 +51,7 @@ export default async function AdminLayout({
           </Breadcrumb>
           <div className="ml-auto flex items-center gap-4">
             <ThemeToggle />
-            <UserNav userEmail={user?.email} />
+            <UserNav userEmail={user.email} />
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

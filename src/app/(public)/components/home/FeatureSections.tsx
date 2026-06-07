@@ -12,7 +12,7 @@ export function FeatureSections({ settings }: { settings?: SiteSettings }) {
         return (
           <section key={index} className={`reveal-section max-w-[1200px] mx-auto px-4 flex flex-col ${isReverse ? 'md:flex-row-reverse' : 'md:flex-row'} items-center justify-between gap-12 md:gap-20`}>
             <div className="w-full md:w-[45%] aspect-[4/3] rounded-[32px] overflow-hidden relative border-0">
-              <Image src={feature.image || "/hero_slider_2.png"} alt={feature.title} fill className="object-cover" />
+              <Image src={feature.image || "/hero_slider_2.png"} alt={feature.title} fill sizes="(max-width: 768px) 100vw, 45vw" className="object-cover" />
             </div>
             <div className="w-full md:w-[45%] space-y-6">
               <h2 className="text-[32px] md:text-[48px] font-medium text-[#1c1e21] leading-[1.1] tracking-tight">

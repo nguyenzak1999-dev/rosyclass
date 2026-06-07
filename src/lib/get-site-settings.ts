@@ -1,5 +1,36 @@
 import { prisma } from "@/lib/prisma"
-import { DEFAULT_SITE_SETTINGS, SITE_SETTINGS_SLUG, type SiteSettings } from "./site-settings"
+import {
+  DEFAULT_LEAD_NOTIFICATION_SETTINGS,
+  DEFAULT_SITE_SETTINGS,
+  SITE_SETTINGS_SLUG,
+  type LeadNotificationSettings,
+  type SiteSettings,
+} from "./site-settings"
+
+function mergeLeadNotificationSettings(settings?: Partial<LeadNotificationSettings>): LeadNotificationSettings {
+  return {
+    ...DEFAULT_LEAD_NOTIFICATION_SETTINGS,
+    ...settings,
+    forms: {
+      contact: {
+        ...DEFAULT_LEAD_NOTIFICATION_SETTINGS.forms.contact,
+        ...settings?.forms?.contact,
+      },
+      registration: {
+        ...DEFAULT_LEAD_NOTIFICATION_SETTINGS.forms.registration,
+        ...settings?.forms?.registration,
+      },
+      placementTest: {
+        ...DEFAULT_LEAD_NOTIFICATION_SETTINGS.forms.placementTest,
+        ...settings?.forms?.placementTest,
+      },
+      classSchedule: {
+        ...DEFAULT_LEAD_NOTIFICATION_SETTINGS.forms.classSchedule,
+        ...settings?.forms?.classSchedule,
+      },
+    },
+  }
+}
 
 export async function getSiteSettings(): Promise<SiteSettings> {
   try {
@@ -16,11 +47,18 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 
     if (page && page.content) {
       const parsed = JSON.parse(page.content);
-      return { ...DEFAULT_SITE_SETTINGS, ...parsed };
+      return {
+        ...DEFAULT_SITE_SETTINGS,
+        ...parsed,
+        leadNotificationSettings: mergeLeadNotificationSettings(parsed.leadNotificationSettings),
+      };
     }
   } catch (error) {
     console.error("Lỗi lấy cấu hình web:", error);
   }
 
-  return DEFAULT_SITE_SETTINGS
+  return {
+    ...DEFAULT_SITE_SETTINGS,
+    leadNotificationSettings: mergeLeadNotificationSettings(DEFAULT_SITE_SETTINGS.leadNotificationSettings),
+  }
 }

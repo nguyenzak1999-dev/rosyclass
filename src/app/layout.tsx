@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { getSiteSettings } from "@/lib/get-site-settings"
 import { StyleProvider } from "@/components/style-provider"
+import { absoluteUrl, getSiteUrl, JsonLd } from "@/lib/seo"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -13,13 +14,46 @@ export const dynamic = "force-dynamic"
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings()
+  const siteUrl = getSiteUrl()
+  const title = s.seoTitle || s.siteName
+  const description = s.seoDescription
+  const ogImage = absoluteUrl(s.ogImage || s.heroImageUrl || "/english-center-hero.png")
 
   return {
+    metadataBase: new URL(siteUrl),
     title: {
-      default: s.seoTitle || s.siteName,
+      default: title,
       template: `%s | ${s.siteName}`,
     },
-    description: s.seoDescription,
+    description,
+    applicationName: s.siteName,
+    authors: [{ name: s.siteName, url: siteUrl }],
+    creator: s.siteName,
+    publisher: s.siteName,
+    category: "education",
+    keywords: [
+      "RosyClass",
+      "trung tâm tiếng Anh",
+      "học tiếng Anh",
+      "tiếng Anh giao tiếp",
+      "IELTS",
+      "tiếng Anh trẻ em",
+      "kiểm tra trình độ tiếng Anh",
+    ],
+    alternates: {
+      canonical: siteUrl,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     icons: {
       icon: s.faviconUrl || "/favicon.ico",
       apple: s.faviconUrl || "/apple-touch-icon.png",
@@ -27,18 +61,17 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: "website",
       locale: "vi_VN",
+      url: siteUrl,
       siteName: s.siteName,
-      title: s.seoTitle || s.siteName,
-      description: s.seoDescription,
-      images: s.ogImage
-        ? [{ url: s.ogImage, width: 1200, height: 630, alt: s.siteName }]
-        : [],
+      title,
+      description,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: "summary_large_image",
-      title: s.seoTitle || s.siteName,
-      description: s.seoDescription,
-      images: s.ogImage ? [s.ogImage] : [],
+      title,
+      description,
+      images: [ogImage],
     },
   }
 }
@@ -48,9 +81,34 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const siteUrl = getSiteUrl()
+
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen bg-background antialiased`}>
+        <JsonLd
+          data={[
+            {
+              "@context": "https://schema.org",
+              "@type": "EducationalOrganization",
+              "@id": `${siteUrl}/#organization`,
+              name: "RosyClass",
+              url: siteUrl,
+              logo: absoluteUrl("/english-center-hero.png"),
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "@id": `${siteUrl}/#website`,
+              url: siteUrl,
+              name: "RosyClass",
+              inLanguage: "vi-VN",
+              publisher: {
+                "@id": `${siteUrl}/#organization`,
+              },
+            },
+          ]}
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

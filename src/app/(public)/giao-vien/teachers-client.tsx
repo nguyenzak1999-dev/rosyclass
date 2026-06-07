@@ -2,6 +2,7 @@
 
 import { useRef } from "react"
 import { Users, Star, Award, Heart } from "lucide-react"
+import Link from "next/link"
 import gsap from "gsap"
 import { useGSAP } from "@gsap/react"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
@@ -64,11 +65,18 @@ export default function TeachersClient({ teachers }: { teachers: any[] }) {
                 >
                   <div className="aspect-[4/5] relative overflow-hidden bg-[#f0f2f5]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                      src={teacher.avatar || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80"} 
-                      alt={teacher.fullName}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
+                    {teacher.avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={teacher.avatar}
+                        alt={teacher.fullName}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-[#f0f2f5] px-5 text-center text-[#54656f]">
+                        Chưa có ảnh giáo viên trong CMS
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#111b21]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
                       <p className="text-white text-[13px] font-medium"><Heart className="w-4 h-4 inline mr-1 text-[#25d366] fill-current" /> Yêu thương học viên</p>
                     </div>
@@ -89,6 +97,9 @@ export default function TeachersClient({ teachers }: { teachers: any[] }) {
                         </div>
                       )}
                     </div>
+                    <Link href={`/giao-vien/${teacher.id}`} className="mt-5 inline-flex text-[14px] font-medium text-[#111b21] hover:text-[#25d366]">
+                      Xem hồ sơ
+                    </Link>
                   </div>
                 </div>
               )

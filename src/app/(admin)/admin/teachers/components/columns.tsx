@@ -30,6 +30,7 @@ export type StaffData = {
     specialties?: string | null
     certificates?: string | null
     avatar?: string | null
+    showOnHomepage?: boolean | null
   } | null
   avatar?: string | null
   createdAt: Date
@@ -107,6 +108,7 @@ export const columns: ColumnDef<StaffData>[] = [
               specialties: user.teacherProfile?.specialties || "",
               certificates: user.teacherProfile?.certificates || "",
               avatar: user.teacherProfile?.avatar || user.avatar || "",
+              showOnHomepage: user.teacherProfile?.showOnHomepage ?? false,
             }} 
             trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
           />

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { BookOpen, CheckCircle, ArrowRight } from "lucide-react"
+import { BookOpen, CheckCircle } from "lucide-react"
 import Link from "next/link"
 
 const styleMap = [
@@ -83,10 +83,10 @@ export default function CoursesClient({ courses }: { courses: any[] }) {
                       ))}
                     </div>
                     
-                    <Link href="/kiem-tra-trinh-do" className="mt-auto">
+                    <Link href={`/khoa-hoc/${course.slug}`} className="mt-auto">
                       <Button className="group relative overflow-hidden w-full bg-[#25d366] text-[#111b21] hover:text-white rounded-[50px] px-[24px] py-[10px] h-auto font-medium text-[15px] flex items-center justify-center shadow-sm border-0 transition-colors duration-300">
                         <div className="absolute inset-0 bg-[#111b21] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0" />
-                        <span className="relative z-10">Đăng ký học thử</span>
+                        <span className="relative z-10">Xem chi tiết</span>
                       </Button>
                     </Link>
                   </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Legend } from "recharts"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from "recharts"
 
 import {
   ChartConfig,
@@ -10,15 +10,6 @@ import {
   ChartLegend,
   ChartLegendContent
 } from "@/components/ui/chart"
-
-const data = [
-  { month: "Tháng 1", kids: 120, teens: 80, ielts: 150, communication: 90 },
-  { month: "Tháng 2", kids: 130, teens: 85, ielts: 160, communication: 100 },
-  { month: "Tháng 3", kids: 140, teens: 95, ielts: 145, communication: 110 },
-  { month: "Tháng 4", kids: 155, teens: 110, ielts: 180, communication: 120 },
-  { month: "Tháng 5", kids: 160, teens: 125, ielts: 190, communication: 115 },
-  { month: "Tháng 6", kids: 180, teens: 140, ielts: 210, communication: 130 },
-]
 
 const chartConfig = {
   kids: {
@@ -39,7 +30,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function CourseRevenueChart() {
+export function CourseRevenueChart({
+  data,
+}: {
+  data: { month: string; kids: number; teens: number; ielts: number; communication: number }[]
+}) {
   return (
     <ChartContainer config={chartConfig} className="h-[350px] w-full">
       <ResponsiveContainer width="100%" height="100%">

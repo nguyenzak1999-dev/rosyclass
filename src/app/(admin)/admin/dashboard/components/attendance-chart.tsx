@@ -9,16 +9,6 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-const data = [
-  { day: "Thứ 2", rate: 92 },
-  { day: "Thứ 3", rate: 95 },
-  { day: "Thứ 4", rate: 88 },
-  { day: "Thứ 5", rate: 94 },
-  { day: "Thứ 6", rate: 98 },
-  { day: "Thứ 7", rate: 85 },
-  { day: "CN", rate: 90 },
-]
-
 const chartConfig = {
   rate: {
     label: "Tỷ lệ đi học (%)",
@@ -26,7 +16,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function AttendanceChart() {
+export function AttendanceChart({ data }: { data: { day: string; rate: number }[] }) {
   return (
     <ChartContainer config={chartConfig} className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

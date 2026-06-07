@@ -604,9 +604,10 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
   showIcon?: boolean
 }) {
-  // Random width between 50 to 90%.
+  const id = React.useId()
   const [width] = React.useState(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
+    const value = Array.from(id).reduce((sum, char) => sum + char.charCodeAt(0), 0)
+    return `${50 + (value % 40)}%`
   })
 
   return (

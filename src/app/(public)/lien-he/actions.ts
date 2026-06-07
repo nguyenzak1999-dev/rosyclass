@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { notifyLeadSubmitted } from "@/lib/lead-notifications"
 
 export async function submitContactForm(data: {
   fullName: string
@@ -17,7 +18,7 @@ export async function submitContactForm(data: {
       .filter(Boolean)
       .join("\n")
 
-    await prisma.lead.create({
+    const lead = await prisma.lead.create({
       data: {
         fullName: data.fullName,
         phone: data.phone,
@@ -28,8 +29,18 @@ export async function submitContactForm(data: {
       },
     })
 
+    await notifyLeadSubmitted({
+      formKey: "contact",
+      fullName: lead.fullName,
+      phone: lead.phone,
+      email: lead.email,
+      courseInterest: data.courseInterest,
+      notes,
+      leadId: lead.id,
+    })
+
     return { success: true }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Contact form submission error:", error)
     return { success: false, error: "Có lỗi xảy ra, vui lòng thử lại." }
   }

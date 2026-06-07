@@ -1,9 +1,9 @@
 "use client"
 
-import { AnimatedButton } from "@/components/ui/animated-button"
 import { type SiteSettings } from "@/lib/site-settings"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { useMemo, useState } from "react"
 
 export interface HeroSlide {
   id: string
@@ -51,6 +51,7 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
     [heroDescription, heroHighlight, heroImageUrl, heroTitle, settings?.heroButton1Link, settings?.heroButton1Text, slides]
   )
   const [currentIndex, setCurrentIndex] = useState(0)
+  const slideCount = heroSlides.length
   const currentSlide = heroSlides[currentIndex] || heroSlides[0]
   const slideTitle = currentSlide?.title?.trim() || `${heroTitle}\n${heroHighlight}`
   const slideDescription = currentSlide?.subtitle?.trim() || heroDescription
@@ -59,34 +60,35 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
   const primaryLink = currentSlide?.buttonUrl?.trim() || settings?.heroButton1Link?.trim() || "/dang-ky"
   const titleLines = slideTitle.split("\n")
 
-  const goToNext = () => setCurrentIndex((index) => (index + 1) % heroSlides.length)
-  const goToPrev = () => setCurrentIndex((index) => (index - 1 + heroSlides.length) % heroSlides.length)
-
-  useEffect(() => {
-    if (heroSlides.length <= 1) return
-
-    const timer = window.setInterval(() => {
-      setCurrentIndex((index) => (index + 1) % heroSlides.length)
-    }, 5000)
-    return () => window.clearInterval(timer)
-  }, [heroSlides.length])
+  const goToNext = () => setCurrentIndex((index) => (index + 1) % slideCount)
+  const goToPrev = () => setCurrentIndex((index) => (index - 1 + slideCount) % slideCount)
 
   return (
     <div className="w-full bg-[#fcf5eb]">
       <section className="pt-[32px] md:pt-[40px] pb-10 px-4 md:px-12 mx-auto w-full">
-        <div className="relative w-full rounded-[25px] overflow-hidden min-h-[85vh] md:min-h-[calc(100vh-120px)] bg-[#111b21] flex items-center shadow-lg">
+        <div
+          className="relative w-full rounded-[25px] overflow-hidden min-h-[600px] md:min-h-[700px] bg-[#111b21] flex items-center shadow-lg"
+        >
 
           {/* Background Image */}
-          <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 z-0 bg-[#111b21]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img key={slideImage} src={slideImage} alt={slideTitle.replace(/\s+/g, " ")} className="h-full w-full object-cover" />
+            <img
+              src={slideImage}
+              alt={slideTitle.replace(/\s+/g, " ")}
+              className="h-full w-full object-cover"
+              decoding="async"
+              fetchPriority="high"
+              loading="eager"
+            />
             {/* Gradient overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
+            <div className="absolute inset-0 bg-black/30"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-transparent"></div>
           </div>
 
           <div className="relative z-10 w-full max-w-[1200px] mx-auto h-full flex flex-col md:flex-row items-center justify-between px-8 md:px-12 lg:px-4 py-12 md:py-20">
             <div className="w-full md:w-[50%] space-y-6 relative z-20">
-              <h1 className="hero-element text-[50px] md:text-[80px] font-medium text-white leading-[1.1] tracking-tight">
+              <h1 className="text-[50px] md:text-[80px] font-medium text-white leading-[1.1] tracking-tight">
                 {titleLines.map((line, index) => (
                   <span key={`${line}-${index}`}>
                     {line}
@@ -94,17 +96,23 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
                   </span>
                 ))}
               </h1>
-              <p className="hero-element text-[18px] md:text-[22px] font-normal text-white/90 leading-[1.4] max-w-[480px]">
+              <p className="text-[18px] md:text-[22px] font-normal text-white/90 leading-[1.4] max-w-[480px]">
                 {slideDescription}
               </p>
-              <div className="hero-element pt-4 flex flex-col items-start gap-3">
-                <AnimatedButton href={primaryLink} variant="primary" size="sm">
+              <div className="pt-4 flex flex-col items-start gap-3">
+                <Link
+                  href={primaryLink}
+                  className="inline-flex items-center justify-center rounded-[50px] bg-[#25d366] px-[24px] py-[10px] text-[15px] font-medium whitespace-nowrap text-[#111b21] shadow-sm"
+                >
                   {primaryText}
-                </AnimatedButton>
+                </Link>
                 {secondaryText ? (
-                  <AnimatedButton href={secondaryLink} variant="outline" size="sm" className="border-white/80 text-white">
+                  <Link
+                    href={secondaryLink}
+                    className="inline-flex items-center justify-center rounded-[50px] border-[1.5px] border-white/80 bg-transparent px-[24px] py-[10px] text-[15px] font-medium whitespace-nowrap text-white"
+                  >
                     {secondaryText}
-                  </AnimatedButton>
+                  </Link>
                 ) : null}
                 {footnote ? <p className="text-[12px] text-white/70">{footnote}</p> : null}
               </div>
@@ -114,7 +122,7 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
             <div className="w-[50%] absolute right-0 top-0 bottom-0 pointer-events-none hidden lg:block z-10">
 
               {/* WhatsApp Group Bubble */}
-              <div className="chat-bubble absolute" style={{ top: '15%', right: '15%', zIndex: 0 }}>
+              <div className="absolute" style={{ top: '15%', right: '15%', zIndex: 0 }}>
                 <div className="bg-white rounded-[24px] p-3 pr-4 flex items-center justify-between shadow-xl border border-gray-100 text-[#111b21] min-w-[320px] w-max">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-[#e9edef] rounded-full flex items-center justify-center shrink-0 text-[#54656f]">
@@ -140,7 +148,7 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
               </div>
 
               {/* Incoming Chat Bubble */}
-              <div className="chat-bubble absolute" style={{ top: '35%', right: '35%', zIndex: 0 }}>
+              <div className="absolute" style={{ top: '35%', right: '35%', zIndex: 0 }}>
                 <div className="bg-[#d9fdd3] rounded-[16px] rounded-tr-[4px] py-2 px-3 shadow-lg text-[#111b21] w-max max-w-[280px]">
                   <p className="text-[15px] leading-snug">{chatIncomingMessage}</p>
                   <div className="flex justify-end items-center gap-1 mt-0.5">
@@ -151,7 +159,7 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
               </div>
 
               {/* Outgoing Chat Bubble with attached Reactions */}
-              <div className="chat-bubble absolute" style={{ top: '55%', right: '15%', zIndex: 0 }}>
+              <div className="absolute" style={{ top: '55%', right: '15%', zIndex: 0 }}>
                 <div className="relative bg-white rounded-[16px] rounded-tl-[4px] py-2 px-3 shadow-lg text-[#111b21] w-max max-w-[280px]">
                   <p className="font-normal text-[#027eb5] text-[13px] mb-0.5">{chatOutgoingAuthor}</p>
                   <p className="text-[15px] leading-snug">{chatOutgoingMessage}</p>
@@ -178,7 +186,7 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
               <button
                 type="button"
                 onClick={goToPrev}
-                className="absolute left-4 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur transition hover:bg-black/40 md:flex"
+                className="absolute left-4 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur md:flex"
                 aria-label="Slide trước"
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -186,7 +194,7 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
               <button
                 type="button"
                 onClick={goToNext}
-                className="absolute right-4 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur transition hover:bg-black/40 md:flex"
+                className="absolute right-4 top-1/2 z-30 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white backdrop-blur md:flex"
                 aria-label="Slide sau"
               >
                 <ChevronRight className="h-5 w-5" />
@@ -197,8 +205,8 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
                     type="button"
                     key={slide.id}
                     onClick={() => setCurrentIndex(index)}
-                    className={`h-2.5 rounded-full transition-all ${
-                      index === currentIndex ? "w-8 bg-white" : "w-2.5 bg-white/50 hover:bg-white/80"
+                    className={`h-2.5 rounded-full ${
+                      index === currentIndex ? "w-8 bg-white" : "w-2.5 bg-white/50"
                     }`}
                     aria-label={`Chuyển tới slide ${index + 1}`}
                   />

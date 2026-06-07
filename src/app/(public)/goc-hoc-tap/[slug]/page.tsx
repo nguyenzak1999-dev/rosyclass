@@ -1,23 +1,71 @@
 import { prisma } from "@/lib/prisma"
+import { absoluteUrl, createPageMetadata, JsonLd, trimSeoText } from "@/lib/seo"
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { format } from "date-fns"
 import { vi } from "date-fns/locale"
 import { Calendar, ChevronLeft } from "lucide-react"
 import Link from "next/link"
+import { cache } from "react"
 
+const getPublishedPost = cache(async (slug: string) => {
+  return prisma.blogPost.findUnique({
+    where: { slug, status: "PUBLISHED" },
+  })
+})
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const post = await getPublishedPost(slug)
+
+  if (!post) {
+    return {
+      title: "Không tìm thấy bài viết",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    }
+  }
+
+  return createPageMetadata({
+    title: post.seoTitle || post.title,
+    description: post.seoDescription || post.excerpt || trimSeoText(post.content, 155),
+    path: `/goc-hoc-tap/${post.slug}`,
+    image: post.thumbnail,
+    type: "article",
+    publishedTime: (post.publishedAt || post.createdAt).toISOString(),
+    modifiedTime: post.updatedAt.toISOString(),
+  })
+}
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
-  const post = await prisma.blogPost.findUnique({
-    where: { slug, status: "PUBLISHED" }
-  })
+  const post = await getPublishedPost(slug)
 
   if (!post) notFound()
 
   return (
     <div className="flex flex-col w-full min-h-screen pb-20">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: post.title,
+          description: post.excerpt || trimSeoText(post.content, 155),
+          image: post.thumbnail ? [absoluteUrl(post.thumbnail)] : undefined,
+          datePublished: (post.publishedAt || post.createdAt).toISOString(),
+          dateModified: post.updatedAt.toISOString(),
+          inLanguage: "vi-VN",
+          mainEntityOfPage: absoluteUrl(`/goc-hoc-tap/${post.slug}`),
+          publisher: {
+            "@type": "EducationalOrganization",
+            name: "RosyClass",
+            url: absoluteUrl("/"),
+          },
+        }}
+      />
       {/* Hero */}
       <section className="pt-24 pb-16 bg-sunset-gradient">
         <div className="max-w-[800px] px-4 sm:px-8 mx-auto text-center">

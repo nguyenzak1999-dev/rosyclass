@@ -1,12 +1,22 @@
+"use client"
+
 import Link from "next/link"
+import { useState } from "react"
+import { ChevronDown } from "lucide-react"
 import { SiteSettings } from "@/lib/site-settings"
 
-export function HomeFaqSection({ settings }: { settings?: SiteSettings }) {
+export type HomeFaqItem = {
+  question: string
+  answer: string
+}
+
+export function HomeFaqSection({ settings, faqs }: { settings?: SiteSettings; faqs: HomeFaqItem[] }) {
   const badge = settings?.faqBadge || "Câu hỏi thường gặp"
   const title = settings?.faqTitle || "Những điều phụ huynh và học viên thường hỏi trước khi bắt đầu."
   const buttonText = settings?.faqButtonText || "Xem thêm câu hỏi"
   const buttonLink = settings?.faqButtonLink || "/hoi-dap"
-  const faqs = settings?.faqs || []
+
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
 
   if (faqs.length === 0) return null;
 
@@ -30,15 +40,39 @@ export function HomeFaqSection({ settings }: { settings?: SiteSettings }) {
           )}
         </div>
 
-        <div className="divide-y divide-[#e9edef] rounded-[24px] border border-[#e9edef] bg-[#fcf5eb]">
-          {faqs.map((faq, index) => (
-            <article key={index} className="p-6 md:p-7">
-              <h3 className="text-[20px] font-semibold leading-snug text-[#111b21]">
-                {faq.question}
-              </h3>
-              <p className="mt-3 text-[16px] leading-relaxed text-[#54656f]">{faq.answer}</p>
-            </article>
-          ))}
+        <div className="divide-y divide-[#e9edef] rounded-[24px] border border-[#e9edef] bg-[#fcf5eb] overflow-hidden">
+          {faqs.map((faq, index) => {
+            const isOpen = openIndex === index
+            return (
+              <article key={index}>
+                <button
+                  className="flex w-full items-center justify-between p-6 text-left md:p-7"
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  aria-expanded={isOpen}
+                >
+                  <h3 className="text-[18px] font-semibold leading-snug text-[#111b21] pr-4">
+                    {faq.question}
+                  </h3>
+                  <ChevronDown
+                    className={`h-5 w-5 shrink-0 text-[#54656f] transition-transform duration-300 ${
+                      isOpen ? "rotate-180 text-[#008069]" : ""
+                    }`}
+                  />
+                </button>
+                <div
+                  className={`grid transition-all duration-300 ease-in-out ${
+                    isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <p className="px-6 pb-6 text-[16px] leading-relaxed text-[#54656f] md:px-7 md:pb-7">
+                      {faq.answer}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            )
+          })}
         </div>
       </div>
     </section>

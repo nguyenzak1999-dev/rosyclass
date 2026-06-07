@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
@@ -16,6 +17,7 @@ const bannerSchema = z.object({
 
 export async function createBanner(data: z.infer<typeof bannerSchema>) {
   try {
+    await requirePermission(PERMISSIONS.cmsWrite)
     const validatedData = bannerSchema.parse(data)
     
     await prisma.banner.create({
@@ -34,6 +36,7 @@ export async function createBanner(data: z.infer<typeof bannerSchema>) {
 
 export async function updateBanner(id: string, data: z.infer<typeof bannerSchema>) {
   try {
+    await requirePermission(PERMISSIONS.cmsWrite)
     const validatedData = bannerSchema.parse(data)
     
     await prisma.banner.update({
@@ -53,6 +56,7 @@ export async function updateBanner(id: string, data: z.infer<typeof bannerSchema
 
 export async function deleteBanner(id: string) {
   try {
+    await requirePermission(PERMISSIONS.cmsWrite)
     await prisma.banner.delete({
       where: { id }
     })

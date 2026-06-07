@@ -56,12 +56,18 @@ export default function BlogClient({ posts }: { posts: any[] }) {
                   className="group flex flex-col md:flex-row gap-6 bg-white rounded-[24px] p-6 border border-[#e9edef] shadow-sm hover:shadow-md transition-all duration-300"
                 >
                   <div className="md:w-2/5 aspect-[4/3] md:aspect-auto md:h-full relative overflow-hidden rounded-[16px] bg-[#f0f2f5]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img 
-                      src={post.thumbnail || "https://images.unsplash.com/photo-1546410531-bea518040081?auto=format&fit=crop&w=800&q=80"} 
-                      alt={post.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
+                    {post.thumbnail ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.thumbnail}
+                        alt={post.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center px-4 text-center text-sm text-[#54656f]">
+                        Chưa có ảnh bài viết trong CMS
+                      </div>
+                    )}
                     <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-[#111b21] text-[12px] font-medium px-3 py-1 rounded-full shadow-sm">
                       Tin tức
                     </div>

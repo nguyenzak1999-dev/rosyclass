@@ -1,5 +1,8 @@
+import { requireAdminUser } from "@/lib/auth/permissions"
 import PreferencesClient from "./preferences-client"
 
-export default function PreferencesPage() {
-  return <PreferencesClient />
+export default async function PreferencesPage() {
+  const user = await requireAdminUser()
+
+  return <PreferencesClient user={user} />
 }

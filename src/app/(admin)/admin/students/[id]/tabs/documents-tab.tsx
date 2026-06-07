@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Upload, Download, User, ClipboardList, Receipt, FileCheck, BookOpen, File } from "lucide-react"
+import { FileText, Upload, User, ClipboardList, Receipt, FileCheck, BookOpen, File } from "lucide-react"
 
 const documentTypes = [
   { id: "avatar", label: "Ảnh đại diện", icon: User, accept: "image/*" },
@@ -15,18 +15,6 @@ const documentTypes = [
 ]
 
 export function DocumentsTab({ student }: { student: any }) {
-  const handleUpload = (docType: string) => {
-    // In production: trigger file input and upload to Supabase Storage
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = documentTypes.find(d => d.id === docType)?.accept || "*"
-    input.onchange = () => {
-      // TODO: upload file
-      alert("Tính năng tải lên đang được phát triển. Kết nối Supabase Storage để kích hoạt.")
-    }
-    input.click()
-  }
-
   return (
     <div className="space-y-4">
       <div>
@@ -49,7 +37,7 @@ export function DocumentsTab({ student }: { student: any }) {
                   </div>
                 </div>
               </div>
-              <Button size="sm" variant="outline" onClick={() => handleUpload(id)}>
+              <Button size="sm" variant="outline" disabled title="Chưa cấu hình lưu trữ tài liệu">
                 <Upload className="h-4 w-4" />
               </Button>
             </CardContent>
@@ -62,7 +50,7 @@ export function DocumentsTab({ student }: { student: any }) {
           <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm font-medium">Kéo & thả tài liệu vào đây</p>
           <p className="text-xs text-muted-foreground mt-1">Hỗ trợ PDF, Word, Excel, hình ảnh (tối đa 10MB mỗi file)</p>
-          <Button size="sm" className="mt-4" variant="outline" onClick={() => handleUpload("other")}>
+          <Button size="sm" className="mt-4" variant="outline" disabled>
             <Upload className="mr-2 h-4 w-4" /> Chọn tài liệu từ máy
           </Button>
         </CardContent>

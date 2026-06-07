@@ -1,11 +1,13 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { leadSchema, type LeadFormValues } from "@/lib/schemas/lead"
 import { revalidatePath } from "next/cache"
 
 export async function upsertLead(data: LeadFormValues) {
   try {
+    await requirePermission(PERMISSIONS.leadsWrite)
     const parsedData = leadSchema.parse(data)
     
     if (parsedData.id) {
@@ -29,6 +31,7 @@ export async function upsertLead(data: LeadFormValues) {
 
 export async function deleteLead(id: string) {
   try {
+    await requirePermission(PERMISSIONS.leadsWrite)
     await prisma.lead.delete({ where: { id } })
     revalidatePath("/admin/leads")
     return { success: true }

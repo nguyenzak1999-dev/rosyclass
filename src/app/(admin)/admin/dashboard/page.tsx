@@ -10,9 +10,59 @@ import { StudentGrowthChart } from "./components/student-growth-chart"
 import { TeacherHoursChart } from "./components/teacher-hours-chart"
 import { Users, BookOpen, DollarSign, BarChart2 } from "lucide-react"
 
+const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"]
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function monthStart(date: Date, offset = 0) {
+  return new Date(date.getFullYear(), date.getMonth() + offset, 1)
+}
+
+function buildMonthSeries(now: Date, count: number) {
+  return Array.from({ length: count }, (_, index) => {
+    const date = monthStart(now, index - count + 1)
+    return {
+      key: `${date.getFullYear()}-${date.getMonth()}`,
+      label: `T${date.getMonth() + 1}`,
+      longLabel: `Tháng ${date.getMonth() + 1}`,
+      start: date,
+      end: monthStart(date, 1),
+    }
+  })
+}
+
+function getCourseGroup(level?: string | null) {
+  if (!level) return "communication"
+  if (level === "KIDS" || level === "STARTER") return "kids"
+  if (level === "A1" || level === "A2" || level === "B1" || level === "B2") return "teens"
+  if (level.startsWith("IELTS")) return "ielts"
+  return "communication"
+}
+
+function getCourseGroupLabel(level?: string | null) {
+  const group = getCourseGroup(level)
+  if (group === "kids") return "Trẻ em"
+  if (group === "teens") return "Thiếu niên"
+  if (group === "ielts") return "IELTS"
+  return "Giao tiếp/khác"
+}
+
 export default async function DashboardPage() {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const monthSeries = buildMonthSeries(now, 12)
+  const sixMonthSeries = buildMonthSeries(now, 6)
+  const twelveMonthsAgo = monthSeries[0].start
+  const sevenDays = Array.from({ length: 7 }, (_, index) => {
+    const date = startOfDay(new Date(now.getTime() - (6 - index) * 24 * 60 * 60 * 1000))
+    return {
+      date,
+      label: dayNames[date.getDay()],
+      key: date.toISOString().slice(0, 10),
+    }
+  })
 
   const [
     totalStudents,
@@ -20,6 +70,12 @@ export default async function DashboardPage() {
     monthlyRevenue,
     weeklyAttendance,
     totalAttendance,
+    payments,
+    recentPayments,
+    students,
+    leads,
+    classStudents,
+    sessions,
   ] = await Promise.all([
     prisma.student.count({ where: { status: "ACTIVE" } }),
     prisma.class.count({ where: { status: "ACTIVE" } }),
@@ -46,7 +102,90 @@ export default async function DashboardPage() {
           }
         }
       }
-    })
+    }),
+    prisma.payment.findMany({
+      where: {
+        createdAt: {
+          gte: twelveMonthsAgo,
+        },
+      },
+      include: {
+        course: {
+          select: {
+            level: true,
+          },
+        },
+      },
+    }),
+    prisma.payment.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 5,
+      include: {
+        student: {
+          select: {
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+    }),
+    prisma.student.findMany({
+      where: {
+        createdAt: {
+          lte: now,
+        },
+      },
+      select: {
+        createdAt: true,
+        status: true,
+      },
+    }),
+    prisma.lead.findMany({
+      where: {
+        createdAt: {
+          gte: sixMonthSeries[0].start,
+        },
+      },
+      select: {
+        createdAt: true,
+      },
+    }),
+    prisma.classStudent.findMany({
+      include: {
+        class: {
+          include: {
+            course: {
+              select: {
+                level: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.classSession.findMany({
+      where: {
+        sessionDate: {
+          gte: twelveMonthsAgo,
+        },
+        status: {
+          in: ["SCHEDULED", "COMPLETED"],
+        },
+      },
+      include: {
+        class: {
+          include: {
+            course: {
+              select: {
+                level: true,
+              },
+            },
+          },
+        },
+      },
+    }),
   ])
 
   const presentCount = weeklyAttendance.find(a => a.status === "PRESENT")?._count ?? 0
@@ -56,6 +195,101 @@ export default async function DashboardPage() {
   const revenueFormatted = revenueAmount >= 1_000_000
     ? `${(revenueAmount / 1_000_000).toFixed(1)}M đ`
     : `${revenueAmount.toLocaleString('vi-VN')} đ`
+
+  const overviewData = monthSeries.map((month) => ({
+    name: month.label,
+    total: payments
+      .filter((payment) => {
+        const date = payment.paymentDate || payment.createdAt
+        return date >= month.start && date < month.end
+      })
+      .reduce((sum, payment) => sum + payment.paidAmount, 0),
+  }))
+
+  const courseRevenueData = sixMonthSeries.map((month) => {
+    const base = {
+      month: month.longLabel,
+      kids: 0,
+      teens: 0,
+      ielts: 0,
+      communication: 0,
+    }
+
+    payments.forEach((payment) => {
+      const date = payment.paymentDate || payment.createdAt
+      if (date < month.start || date >= month.end) return
+      const group = getCourseGroup(payment.course?.level)
+      base[group] += payment.paidAmount / 1_000_000
+    })
+
+    return base
+  })
+
+  const studentGrowthData = sixMonthSeries.map((month) => ({
+    month: month.longLabel,
+    newStudents: students.filter((student) => student.createdAt >= month.start && student.createdAt < month.end).length,
+    totalStudents: students.filter((student) => student.createdAt < month.end).length,
+  }))
+
+  const leadsData = sixMonthSeries.map((month) => ({
+    month: month.label,
+    leads: leads.filter((lead) => lead.createdAt >= month.start && lead.createdAt < month.end).length,
+  }))
+
+  const weeklyAttendanceRows = await prisma.attendance.findMany({
+    where: {
+      session: {
+        sessionDate: {
+          gte: sevenDays[0].date,
+        },
+      },
+    },
+    include: {
+      session: {
+        select: {
+          sessionDate: true,
+        },
+      },
+    },
+  })
+
+  const realAttendanceData = sevenDays.map((day) => {
+    const dayRows = weeklyAttendanceRows.filter(
+      (attendance) => startOfDay(attendance.session.sessionDate).toISOString().slice(0, 10) === day.key
+    )
+    const present = dayRows.filter((attendance) => attendance.status === "PRESENT" || attendance.status === "LATE").length
+    return {
+      day: day.label,
+      rate: dayRows.length > 0 ? Math.round((present / dayRows.length) * 100) : 0,
+    }
+  })
+
+  const demographicsMap = new Map<string, number>()
+  classStudents.forEach((item) => {
+    const label = getCourseGroupLabel(item.class.course.level)
+    demographicsMap.set(label, (demographicsMap.get(label) || 0) + 1)
+  })
+  const studentDemographicsData = Array.from(demographicsMap.entries()).map(([name, value]) => ({ name, value }))
+
+  const teacherHoursMap = new Map<string, number>()
+  sessions.forEach((session) => {
+    const label = getCourseGroupLabel(session.class.course.level)
+    const [startHour = 0, startMinute = 0] = session.startTime.split(":").map(Number)
+    const [endHour = startHour, endMinute = startMinute] = session.endTime.split(":").map(Number)
+    const minutes = Math.max((endHour * 60 + endMinute) - (startHour * 60 + startMinute), 0)
+    teacherHoursMap.set(label, (teacherHoursMap.get(label) || 0) + minutes / 60)
+  })
+  const teacherHoursData = Array.from(teacherHoursMap.entries()).map(([subject, hours]) => ({
+    subject,
+    hours: Number(hours.toFixed(1)),
+  }))
+
+  const recentSalesData = recentPayments.map((payment) => ({
+    id: payment.id,
+    studentName: payment.student.fullName,
+    studentEmail: payment.student.email,
+    amount: payment.paidAmount,
+  }))
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,7 +347,7 @@ export default async function DashboardPage() {
             <CardDescription>Cơ cấu doanh thu các tháng gần đây</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <CourseRevenueChart />
+            <CourseRevenueChart data={courseRevenueData} />
           </CardContent>
         </Card>
         <Card className="col-span-3">
@@ -122,7 +356,7 @@ export default async function DashboardPage() {
             <CardDescription>Tăng trưởng học viên mới và tổng số</CardDescription>
           </CardHeader>
           <CardContent>
-            <StudentGrowthChart />
+            <StudentGrowthChart data={studentGrowthData} />
           </CardContent>
         </Card>
       </div>
@@ -134,7 +368,7 @@ export default async function DashboardPage() {
             <CardTitle>Tổng quan doanh thu (chung)</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <OverviewChart />
+            <OverviewChart data={overviewData} />
           </CardContent>
         </Card>
         <Card className="col-span-4">
@@ -143,7 +377,7 @@ export default async function DashboardPage() {
             <CardDescription>Các khoản thanh toán mới nhất.</CardDescription>
           </CardHeader>
           <CardContent>
-            <RecentSales />
+            <RecentSales data={recentSalesData} />
           </CardContent>
         </Card>
       </div>
@@ -153,10 +387,10 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Phân bổ giờ dạy</CardTitle>
-            <CardDescription>Giáo viên VN vs Nước Ngoài</CardDescription>
+            <CardDescription>Theo chương trình học trong 12 tháng gần nhất</CardDescription>
           </CardHeader>
           <CardContent>
-            <TeacherHoursChart />
+            <TeacherHoursChart data={teacherHoursData} />
           </CardContent>
         </Card>
         <Card>
@@ -165,7 +399,7 @@ export default async function DashboardPage() {
             <CardDescription>Biến động trong tuần này</CardDescription>
           </CardHeader>
           <CardContent>
-            <AttendanceChart />
+            <AttendanceChart data={realAttendanceData} />
           </CardContent>
         </Card>
         <Card>
@@ -174,7 +408,7 @@ export default async function DashboardPage() {
             <CardDescription>Theo các chương trình học</CardDescription>
           </CardHeader>
           <CardContent>
-            <StudentDemographicsChart />
+            <StudentDemographicsChart data={studentDemographicsData} />
           </CardContent>
         </Card>
       </div>
@@ -187,7 +421,7 @@ export default async function DashboardPage() {
             <CardDescription>Số lượng leads thu thập 6 tháng gần nhất</CardDescription>
           </CardHeader>
           <CardContent>
-            <LeadsChart />
+            <LeadsChart data={leadsData} />
           </CardContent>
         </Card>
       </div>
