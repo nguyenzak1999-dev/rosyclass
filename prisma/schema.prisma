@@ -34,6 +34,8 @@ model User {
   notifications            Notification[]
   activityLogs             ActivityLog[]
   teachingAssistantClasses Class[]        @relation("ClassTeachingAssistant")
+  scoresCreated            Score[]        @relation("ScoreCreatedBy")
+  classNotesAuthored       ClassNote[]    @relation("ClassNoteAuthor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -194,23 +196,24 @@ model Student {
   attendances    Attendance[]
   payments       Payment[]
   placementTests PlacementTest[]
+  scores         Score[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Teacher {
-  id              String        @id @default(uuid())
-  fullName        String
-  phone           String
-  email           String?
-  avatar          String?
-  bio             String?       @db.Text
-  specialties     String? // JSON or comma separated
-  certificates    String? // JSON or comma separated
-  hourlyRate      Float         @default(0)
-  status          TeacherStatus @default(ACTIVE)
-  showOnHomepage  Boolean       @default(false)
+  id             String        @id @default(uuid())
+  fullName       String
+  phone          String
+  email          String?
+  avatar         String?
+  bio            String?       @db.Text
+  specialties    String? // JSON or comma separated
+  certificates   String? // JSON or comma separated
+  hourlyRate     Float         @default(0)
+  status         TeacherStatus @default(ACTIVE)
+  showOnHomepage Boolean       @default(false)
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
@@ -243,9 +246,10 @@ model Course {
   isPublished            Boolean      @default(false)
   status                 EntityStatus @default(ACTIVE)
 
-  classes  Class[]
-  leads    Lead[]
-  payments Payment[]
+  classes        Class[]
+  leads          Lead[]
+  payments       Payment[]
+  placementTests PlacementTest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -275,10 +279,13 @@ model Class {
   roomId String?
   room   Room?   @relation(fields: [roomId], references: [id])
 
-  students  ClassStudent[]
-  schedules ClassSchedule[]
-  sessions  ClassSession[]
-  payments  Payment[]
+  students       ClassStudent[]
+  schedules      ClassSchedule[]
+  sessions       ClassSession[]
+  payments       Payment[]
+  scores         Score[]
+  classNotes     ClassNote[]
+  placementTests PlacementTest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -330,7 +337,7 @@ model ClassSession {
   class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
 
   scheduleId String?
-  schedule   ClassSchedule? @relation(fields: [scheduleId], references: [id])
+  schedule   ClassSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
 
   roomId String?
   room   Room?   @relation(fields: [roomId], references: [id])
@@ -339,9 +346,15 @@ model ClassSession {
   teacher   Teacher? @relation(fields: [teacherId], references: [id])
 
   attendances Attendance[]
+  scores      Score[]
+  classNotes  ClassNote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([classId, sessionDate, startTime])
+  @@index([sessionDate])
+  @@index([classId, sessionDate])
 }
 
 model Attendance {
@@ -410,27 +423,75 @@ model PlacementTest {
   student   Student? @relation(fields: [studentId], references: [id])
 
   suggestedCourseId String?
-  // Could relate to Course model if needed
+  suggestedCourse   Course? @relation(fields: [suggestedCourseId], references: [id])
 
   suggestedClassId String?
-  // Could relate to Class model if needed
+  suggestedClass   Class?  @relation(fields: [suggestedClassId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model PlacementQuestion {
-  id            String       @id @default(uuid())
-  type          String
-  question      String       @db.Text
-  options       String       @db.Text // JSON array of answer choices
-  correctIndex  Int
-  order         Int          @default(0)
-  level         CourseLevel?
-  isPublished   Boolean      @default(false)
+  id           String       @id @default(uuid())
+  type         String
+  question     String       @db.Text
+  options      String       @db.Text // JSON array of answer choices
+  correctIndex Int
+  order        Int          @default(0)
+  level        CourseLevel?
+  isPublished  Boolean      @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ------------------------------------------------------
+// SCORES & CLASS NOTES
+// ------------------------------------------------------
+
+model Score {
+  id       String    @id @default(uuid())
+  type     ScoreType
+  value    Float
+  maxValue Float     @default(10)
+  note     String?   @db.Text
+  date     DateTime  @default(now())
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  sessionId String?
+  session   ClassSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  createdById String?
+  createdBy   User?   @relation("ScoreCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId, date])
+  @@index([studentId, classId])
+}
+
+model ClassNote {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  sessionId String?
+  session   ClassSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation("ClassNoteAuthor", fields: [authorId], references: [id])
+
+  @@index([classId, createdAt])
 }
 
 // ------------------------------------------------------
@@ -451,12 +512,12 @@ model Page {
 }
 
 model Faq {
-  id          String       @id @default(uuid())
-  question    String       @db.Text
-  answer      String       @db.Text
-  category    String?
-  position    Int          @default(0)
-  status      EntityStatus @default(ACTIVE)
+  id       String       @id @default(uuid())
+  question String       @db.Text
+  answer   String       @db.Text
+  category String?
+  position Int          @default(0)
+  status   EntityStatus @default(ACTIVE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -493,16 +554,16 @@ model Banner {
 }
 
 model MediaFile {
-  id        String  @id @default(uuid())
-  url       String  // Cloudinary secure_url
-  publicId  String  @unique // Cloudinary public_id (for deletion)
-  name      String  // Original file name
-  alt       String? // Alt text
-  folder    String  @default("general") // Cloudinary folder / category
-  format    String? // jpg, png, webp...
-  width     Int?
-  height    Int?
-  bytes     Int?    // file size in bytes
+  id       String  @id @default(uuid())
+  url      String // Cloudinary secure_url
+  publicId String  @unique // Cloudinary public_id (for deletion)
+  name     String // Original file name
+  alt      String? // Alt text
+  folder   String  @default("general") // Cloudinary folder / category
+  format   String? // jpg, png, webp...
+  width    Int?
+  height   Int?
+  bytes    Int? // file size in bytes
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -637,6 +698,17 @@ enum PaymentMethod {
   CASH
   BANK_TRANSFER
   CARD
+  OTHER
+}
+
+enum ScoreType {
+  QUIZ
+  MIDTERM
+  FINAL
+  SPEAKING
+  WRITING
+  LISTENING
+  READING
   OTHER
 }
 
