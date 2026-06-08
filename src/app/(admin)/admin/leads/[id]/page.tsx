@@ -11,10 +11,12 @@ import LeadDetailClient from "./lead-detail-client"
 export default async function LeadDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
+
   const lead = await prisma.lead.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       interestedCourse: { select: { id: true, name: true, level: true } },
       assignedTo: { select: { id: true, fullName: true, email: true } },
