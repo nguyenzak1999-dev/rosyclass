@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { classSchema, type ClassFormValues } from "@/lib/schemas/class"
 import { notifyAdmins } from "@/app/(admin)/admin/notifications/actions"
+import { createPaymentForStudent } from "@/app/(admin)/admin/payments/actions"
 import {
   cancelSessionSchema,
   generateSessionsSchema,
@@ -55,7 +56,7 @@ export async function deleteClass(id: string) {
 
 export async function addStudentToClass(classId: string, studentId: string) {
   try {
-    await requirePermission(PERMISSIONS.classesWrite)
+    const user = await requirePermission(PERMISSIONS.classesWrite)
     // Check if already in class
     const existing = await prisma.classStudent.findUnique({
       where: {
@@ -89,6 +90,9 @@ export async function addStudentToClass(classId: string, studentId: string) {
       data: { classId, studentId }
     })
 
+    // Tự động tạo payment cho HV (nếu course có học phí > 0)
+    const payment = await createPaymentForStudent(studentId, classId, 14, user.id)
+
     // Notify admins
     const [cls, student] = await Promise.all([
       prisma.class.findUnique({ where: { id: classId }, select: { name: true } }),
@@ -97,12 +101,15 @@ export async function addStudentToClass(classId: string, studentId: string) {
     if (cls && student) {
       notifyAdmins(
         "Xếp học viên vào lớp",
-        `${student.fullName} vừa được xếp vào lớp ${cls.name}`,
+        payment
+          ? `${student.fullName} vừa được xếp vào lớp ${cls.name} (đã tạo payment ${payment.totalAmount.toLocaleString("vi-VN")}đ)`
+          : `${student.fullName} vừa được xếp vào lớp ${cls.name}`,
         `/admin/classes/${classId}`
       )
     }
 
     revalidatePath(`/admin/classes/${classId}`)
+    revalidatePath("/admin/payments")
     return { success: true }
   } catch (error) {
     console.error("Add student to class error:", error)

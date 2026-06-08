@@ -40,6 +40,13 @@ export default async function LeadDetailPage({
     orderBy: { fullName: "asc" },
   })
 
+  // Lấy courses ACTIVE cho combobox Suggested Course
+  const courses = await prisma.course.findMany({
+    where: { status: "ACTIVE" },
+    select: { id: true, name: true, level: true },
+    orderBy: { name: "asc" },
+  })
+
   // Build activity timeline (notes + status changes)
   type TimelineItem = {
     id: string
@@ -124,6 +131,7 @@ export default async function LeadDetailPage({
         lead={JSON.parse(JSON.stringify(lead))}
         timeline={JSON.parse(JSON.stringify(timeline))}
         parents={parents}
+        courses={JSON.parse(JSON.stringify(courses))}
       />
     </div>
   )

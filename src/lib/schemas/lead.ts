@@ -90,3 +90,22 @@ export const convertLeadToStudentSchema = z.object({
 })
 
 export type ConvertLeadToStudentFormValues = z.infer<typeof convertLeadToStudentSchema>
+
+/**
+ * Schema cho nhập kết quả placement test (cho admin).
+ */
+export const recordTestResultSchema = z.object({
+  placementTestId: z.string().min(1, "Thiếu ID placement test"),
+  // Scores
+  listeningScore: z.coerce.number().min(0).max(10).optional().nullable(),
+  readingScore: z.coerce.number().min(0).max(10).optional().nullable(),
+  writingScore: z.coerce.number().min(0).max(10).optional().nullable(),
+  speakingScore: z.coerce.number().min(0).max(10).optional().nullable(),
+  totalScore: z.coerce.number().min(0).max(10).optional().nullable(),
+  // Result
+  levelResult: z.string().max(20).optional().nullable(),
+  suggestedCourseId: z.string().optional().nullable(),
+  teacherComment: z.string().max(1000).optional().nullable(),
+})
+
+export type RecordTestResultFormValues = z.infer<typeof recordTestResultSchema>

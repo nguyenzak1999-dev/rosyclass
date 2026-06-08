@@ -22,6 +22,7 @@ import {
 import Link from "next/link"
 import { LeadNotesTab } from "./components/lead-notes-tab"
 import { LeadTimelineTab } from "./components/lead-timeline-tab"
+import { LeadPlacementTestsTab } from "./components/lead-placement-tests-tab"
 import { LeadActionsDialog } from "./components/lead-actions-dialog"
 import { deleteLead } from "@/app/(admin)/admin/leads/actions"
 import { toast } from "sonner"
@@ -59,6 +60,8 @@ interface Lead {
     speakingScore: number | null
     totalScore: number | null
     levelResult: string | null
+    suggestedCourseId: string | null
+    teacherComment: string | null
   }>
 }
 
@@ -75,12 +78,14 @@ interface LeadDetailClientProps {
   lead: Lead
   timeline: TimelineItem[]
   parents: { id: string; fullName: string; phone: string }[]
+  courses?: { id: string; name: string; level: string }[]
 }
 
 export default function LeadDetailClient({
   lead,
   timeline,
   parents,
+  courses = [],
 }: LeadDetailClientProps) {
   const router = useRouter()
   const [actionDialog, setActionDialog] = useState<"book" | "convert" | null>(null)
@@ -240,48 +245,11 @@ export default function LeadDetailClient({
             </TabsContent>
 
             <TabsContent value="tests">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Lịch sử Placement Test</CardTitle>
-                  <CardDescription>
-                    Tất cả các lần test đã book và kết quả
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {lead.placementTests.length === 0 ? (
-                    <div className="h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg text-muted-foreground gap-2">
-                      <GraduationCap className="w-8 h-8 opacity-50" />
-                      <p>Chưa có placement test nào.</p>
-                      <p className="text-xs">Click "Đặt lịch Placement Test" ở trên.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {lead.placementTests.map((test) => (
-                        <div
-                          key={test.id}
-                          className="p-3 border rounded-lg flex items-center justify-between"
-                        >
-                          <div>
-                            <p className="font-medium">
-                              {format(new Date(test.testDate), "dd/MM/yyyy", { locale: vi })}
-                            </p>
-                            {test.totalScore !== null && (
-                              <p className="text-sm text-muted-foreground">
-                                Tổng điểm: {test.totalScore} · Level: {test.levelResult || "—"}
-                              </p>
-                            )}
-                          </div>
-                          {test.totalScore !== null ? (
-                            <Badge variant="default">Đã test</Badge>
-                          ) : (
-                            <Badge variant="outline">Chưa có điểm</Badge>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <LeadPlacementTestsTab
+                leadId={lead.id}
+                tests={lead.placementTests}
+                courses={courses}
+              />
             </TabsContent>
 
             <TabsContent value="timeline">

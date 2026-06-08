@@ -2,6 +2,7 @@
 
 import { type SiteSettings } from "@/lib/site-settings"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { useMemo, useState } from "react"
 
@@ -72,14 +73,14 @@ export function HeroSection({ settings, slides = [] }: { settings?: SiteSettings
 
           {/* Background Image */}
           <div className="absolute inset-0 z-0 bg-[#111b21]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={slideImage}
               alt={slideTitle.replace(/\s+/g, " ")}
-              className="h-full w-full object-cover"
-              decoding="async"
+              fill
+              priority
               fetchPriority="high"
-              loading="eager"
+              sizes="100vw"
+              className="object-cover"
             />
             {/* Gradient overlay to ensure text readability */}
             <div className="absolute inset-0 bg-black/30"></div>

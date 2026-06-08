@@ -8,11 +8,13 @@ import {
   bookPlacementTestSchema,
   updateLeadStatusSchema,
   convertLeadToStudentSchema,
+  recordTestResultSchema,
   type LeadFormValues,
   type AddLeadNoteFormValues,
   type BookPlacementTestFormValues,
   type UpdateLeadStatusFormValues,
   type ConvertLeadToStudentFormValues,
+  type RecordTestResultFormValues,
 } from "@/lib/schemas/lead"
 import { notifyAdmins } from "@/app/(admin)/admin/notifications/actions"
 import { revalidatePath } from "next/cache"
@@ -247,5 +249,115 @@ export async function convertLeadToStudent(data: ConvertLeadToStudentFormValues)
   } catch (error) {
     console.error("Convert lead to student error:", error)
     return { success: false, error: getErrorMessage(error, "Không thể chuyển đổi lead") }
+  }
+}
+
+/**
+ * Nhập kết quả placement test (sau khi HV làm test).
+ * - Tự động update Lead.status = TESTED + Lead.currentLevel = levelResult
+ * - Ghi log vào LeadNote
+ * - Notify admin
+ */
+export async function recordTestResult(data: RecordTestResultFormValues) {
+  try {
+    await requirePermission(PERMISSIONS.leadsWrite)
+    const parsed = recordTestResultSchema.parse(data)
+
+    const test = await prisma.placementTest.findUnique({
+      where: { id: parsed.placementTestId },
+      include: { lead: { select: { id: true, fullName: true } } },
+    })
+    if (!test) {
+      return { success: false, error: "Không tìm thấy placement test" }
+    }
+    if (!test.leadId) {
+      return { success: false, error: "Placement test không liên kết với lead" }
+    }
+
+    // Lấy admin email từ session
+    const { getCurrentAdminUser } = await import("@/lib/auth/permissions")
+    const admin = await getCurrentAdminUser()
+    const currentUser = admin
+      ? await prisma.user.findUnique({
+          where: { email: admin.email },
+          select: { id: true },
+        })
+      : null
+
+    const scoreLine =
+      parsed.totalScore !== null
+        ? `Tổng điểm: ${parsed.totalScore}/10`
+        : "Chưa có điểm tổng"
+    const levelLine = parsed.levelResult ? `Level gợi ý: ${parsed.levelResult}` : ""
+    const noteContent = `[Placement Test] ${scoreLine}${levelLine ? ` · ${levelLine}` : ""}${
+      parsed.teacherComment ? `\nGV nhận xét: ${parsed.teacherComment}` : ""
+    }`
+
+    await prisma.$transaction(async (tx) => {
+      // Update test scores
+      await tx.placementTest.update({
+        where: { id: parsed.placementTestId },
+        data: {
+          listeningScore: parsed.listeningScore ?? null,
+          readingScore: parsed.readingScore ?? null,
+          writingScore: parsed.writingScore ?? null,
+          speakingScore: parsed.speakingScore ?? null,
+          totalScore: parsed.totalScore ?? null,
+          levelResult: parsed.levelResult ?? null,
+          suggestedCourseId: parsed.suggestedCourseId ?? null,
+          teacherComment: parsed.teacherComment ?? null,
+        },
+      })
+
+      // Update lead status + currentLevel
+      await tx.lead.update({
+        where: { id: test.leadId! },
+        data: {
+          status: "TESTED",
+          ...(parsed.levelResult && { currentLevel: parsed.levelResult }),
+        },
+      })
+
+      // Ghi log
+      if (currentUser) {
+        await tx.leadNote.create({
+          data: {
+            leadId: test.leadId!,
+            content: noteContent,
+            createdById: currentUser.id,
+          },
+        })
+      }
+    })
+
+    notifyAdmins(
+      "Kết quả placement test",
+      `${test.lead?.fullName || "Lead"} đã có kết quả placement test: ${parsed.totalScore ?? "?"}/10${
+        parsed.levelResult ? ` → ${parsed.levelResult}` : ""
+      }`,
+      `/admin/leads/${test.leadId}`
+    )
+
+    revalidatePath(`/admin/leads/${test.leadId}`)
+    revalidatePath("/admin/leads")
+    return { success: true }
+  } catch (error) {
+    console.error("Record test result error:", error)
+    return { success: false, error: getErrorMessage(error, "Không thể lưu kết quả test") }
+  }
+}
+
+/**
+ * Xoá 1 placement test record.
+ */
+export async function deletePlacementTest(placementTestId: string, leadId: string) {
+  try {
+    await requirePermission(PERMISSIONS.leadsWrite)
+    await prisma.placementTest.delete({ where: { id: placementTestId } })
+    revalidatePath(`/admin/leads/${leadId}`)
+    return { success: true }
+  } catch (error) {
+    console.error("Delete placement test error:", error)
+    return { success: false, error: getErrorMessage(error, "Không thể xoá placement test") }
   }
 }
