@@ -1,12 +1,12 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Banner } from "@prisma/client"
+import type { Banner } from "@prisma/client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { BannerDialog } from "./banner-dialog"
-import { Trash2, MoreHorizontal, Copy } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -88,15 +88,14 @@ export const columns: ColumnDef<Banner>[] = [
   },
   {
     id: "actions",
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const banner = row.original
-      const totalBanners = table.getCoreRowModel().rows.length
-      return <ActionsCell banner={banner} totalBanners={totalBanners} />
+      return <ActionsCell banner={banner} />
     },
   },
 ]
 
-function ActionsCell({ banner, totalBanners }: { banner: Banner; totalBanners: number }) {
+function ActionsCell({ banner }: { banner: Banner }) {
   const router = useRouter()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -116,7 +115,14 @@ function ActionsCell({ banner, totalBanners }: { banner: Banner; totalBanners: n
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <BannerDialog banner={banner} totalBanners={totalBanners} />
+      <Button
+        variant="ghost"
+        size="icon"
+        title="Sửa"
+        render={<Link href={`/admin/cms/banners/${banner.id}/edit`} />}
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
       <Button
         variant="ghost"
         size="icon"
