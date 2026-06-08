@@ -7,6 +7,7 @@ import { useState } from "react"
 import { saveSiteSettings } from "../../settings/site/actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
@@ -17,7 +18,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Save, LayoutTemplate, Images, Settings, BookOpen, Route, Plus, Trash2 } from "lucide-react"
 
 import { DataTable } from "@/components/ui/data-table"
-import { BannerDialog } from "../banners/components/banner-dialog"
 import { columns } from "../banners/components/columns"
 import { ImageUploader } from "@/components/ui/image-uploader"
 
@@ -116,7 +116,10 @@ export default function HomeCmsClient({ banners, settings }: { banners: Banner[]
         <TabsContent value="hero-slides" className="space-y-4">
           <div className="flex flex-col gap-4">
             <div className="flex justify-end">
-              <BannerDialog totalBanners={banners.length} />
+              <Button render={<Link href="/admin/cms/banners/new" />}>
+                <Plus className="h-4 w-4" />
+                Thêm Hero
+              </Button>
             </div>
             <DataTable
               columns={columns}
