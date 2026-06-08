@@ -1,14 +1,12 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/providers/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
 import { getSiteSettings } from "@/lib/get-site-settings"
 import { StyleProvider } from "@/components/style-provider"
+import { FontResourceHints } from "@/components/font-resource-hints"
 import { absoluteUrl, getSiteUrl, JsonLd } from "@/lib/seo"
-
-const inter = Inter({ subsets: ["latin"] })
 
 export const dynamic = "force-dynamic"
 
@@ -85,7 +83,8 @@ export default function RootLayout({
 
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen bg-background antialiased`}>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        <FontResourceHints />
         <JsonLd
           data={[
             {

@@ -56,7 +56,8 @@ export const columns: ColumnDef<AttendanceSessionData>[] = [
     },
   },
   {
-    accessorKey: "class",
+    id: "class.name",
+    accessorFn: (row) => row.class.name,
     header: "Lớp / Khóa",
     cell: ({ row }) => {
       const cls = row.original.class

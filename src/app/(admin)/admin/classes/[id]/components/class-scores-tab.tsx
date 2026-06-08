@@ -196,7 +196,8 @@ export function ClassScoresTab({
       },
     },
     {
-      id: "student",
+      id: "student.fullName",
+      accessorFn: (row: ScoreRecord) => row.student.fullName,
       header: "Học viên",
       cell: ({ row }: any) => (
         <span className="font-medium">{row.original.student.fullName}</span>

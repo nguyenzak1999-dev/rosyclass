@@ -38,60 +38,60 @@ export function PaymentsClient({
   filterSlot,
 }: PaymentsClientProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Quản lý Tài chính (Học phí)</h1>
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Quản lý Tài chính (Học phí)</h1>
           <p className="text-sm text-muted-foreground">
             Tổng {stats.total} phiếu · Đã thu {formatVND(stats.paidAmount)} · Còn nợ {formatVND(stats.remainingAmount)}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <ExportExcelButton data={payments} />
           <PaymentDialog students={students} />
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-4 sm:pt-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Tổng giá trị</p>
-                <p className="text-lg font-bold mt-1">{formatVND(stats.totalAmount)}</p>
+                <p className="mt-1 truncate text-base font-bold sm:text-lg">{formatVND(stats.totalAmount)}</p>
               </div>
-              <Wallet className="w-8 h-8 text-blue-500 opacity-80" />
+              <Wallet className="h-7 w-7 shrink-0 text-blue-500 opacity-80 sm:h-8 sm:w-8" />
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-4 sm:pt-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Đã thu</p>
-                <p className="text-lg font-bold mt-1 text-green-700">{formatVND(stats.paidAmount)}</p>
+                <p className="mt-1 truncate text-base font-bold text-green-700 sm:text-lg">{formatVND(stats.paidAmount)}</p>
               </div>
-              <CheckCircle2 className="w-8 h-8 text-green-500 opacity-80" />
+              <CheckCircle2 className="h-7 w-7 shrink-0 text-green-500 opacity-80 sm:h-8 sm:w-8" />
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-4 sm:pt-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Còn nợ</p>
-                <p className="text-lg font-bold mt-1 text-red-700">{formatVND(stats.remainingAmount)}</p>
+                <p className="mt-1 truncate text-base font-bold text-red-700 sm:text-lg">{formatVND(stats.remainingAmount)}</p>
               </div>
-              <AlertCircle className="w-8 h-8 text-red-500 opacity-80" />
+              <AlertCircle className="h-7 w-7 shrink-0 text-red-500 opacity-80 sm:h-8 sm:w-8" />
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="p-4 sm:pt-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Phiếu</p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
                   <Badge className="bg-red-100 text-red-700" variant="outline">
                     {stats.unpaidCount} chưa
                   </Badge>
@@ -103,7 +103,7 @@ export function PaymentsClient({
                   </Badge>
                 </div>
               </div>
-              <TrendingUp className="w-8 h-8 text-muted-foreground opacity-80" />
+              <TrendingUp className="h-7 w-7 shrink-0 text-muted-foreground opacity-80 sm:h-8 sm:w-8" />
             </div>
           </CardContent>
         </Card>

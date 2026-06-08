@@ -2,7 +2,20 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { CheckCircle2, User, Phone, Mail, BookOpen, ChevronRight, ChevronLeft, Sparkles } from "lucide-react"
+import {
+  BookOpen,
+  ChartNoAxesColumnIncreasing,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Gift,
+  GraduationCap,
+  Mail,
+  Phone,
+  Sparkles,
+  Target,
+  User,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { submitRegistrationForm } from "./actions"
@@ -42,6 +55,29 @@ const GOAL_OPTIONS = [
   "Hỗ trợ công việc",
   "Phát triển bản thân",
   "Học cho trẻ em",
+]
+
+const BENEFITS = [
+  {
+    Icon: Target,
+    title: "Lộ trình cá nhân hóa",
+    desc: "Kiểm tra trình độ miễn phí và thiết kế chương trình riêng cho bạn.",
+  },
+  {
+    Icon: GraduationCap,
+    title: "Giáo viên bản ngữ & chuyên nghiệp",
+    desc: "100% giáo viên có chứng chỉ quốc tế, giàu kinh nghiệm giảng dạy.",
+  },
+  {
+    Icon: ChartNoAxesColumnIncreasing,
+    title: "Theo dõi tiến độ minh bạch",
+    desc: "Phụ huynh và học viên dễ dàng nắm kết quả qua hệ thống trực tuyến.",
+  },
+  {
+    Icon: Gift,
+    title: "Học thử miễn phí",
+    desc: "Trải nghiệm 1 buổi học thử hoàn toàn không mất phí.",
+  },
 ]
 
 const inputCls =
@@ -139,12 +175,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
             >
               <h2 className="text-[28px] font-medium text-[#111b21] tracking-tight">Tại sao chọn RosyClass?</h2>
 
-              {[
-                { icon: "🎯", title: "Lộ trình cá nhân hóa", desc: "Kiểm tra trình độ miễn phí và thiết kế chương trình riêng cho bạn." },
-                { icon: "👩‍🏫", title: "Giáo viên bản ngữ & chuyên nghiệp", desc: "100% giáo viên có chứng chỉ quốc tế, giàu kinh nghiệm giảng dạy." },
-                { icon: "📊", title: "Theo dõi tiến độ minh bạch", desc: "Phụ huynh và học viên dễ dàng nắm kết quả qua hệ thống trực tuyến." },
-                { icon: "🎁", title: "Học thử miễn phí", desc: "Trải nghiệm 1 buổi học thử hoàn toàn không mất phí." },
-              ].map((item, i) => (
+              {BENEFITS.map((item, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, y: 10 }}
@@ -152,7 +183,9 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                   transition={{ duration: 0.4, delay: 0.3 + i * 0.1 }}
                   className="flex gap-4 p-5 bg-white rounded-[24px] border border-[#e9edef] shadow-sm hover:border-[#25d366]/40 transition-colors"
                 >
-                  <span className="text-2xl shrink-0">{item.icon}</span>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#e8f8ee] text-[#25d366]">
+                    <item.Icon className="h-5 w-5" />
+                  </span>
                   <div>
                     <p className="font-medium text-[#111b21] mb-1">{item.title}</p>
                     <p className="text-[14px] text-[#54656f]">{item.desc}</p>

@@ -10,7 +10,6 @@ export function StyleProvider() {
     const applySavedStyles = () => {
       const savedColor = localStorage.getItem("app-primary-color")
       const savedRadius = localStorage.getItem("app-radius")
-      const savedFont = localStorage.getItem("app-font")
       const primaryColor = resolveAdminPrimaryColor(savedColor, root.classList.contains("dark"))
 
       if (primaryColor) {
@@ -19,7 +18,6 @@ export function StyleProvider() {
       }
 
       if (savedRadius) root.style.setProperty("--radius", savedRadius)
-      if (savedFont) root.style.setProperty("font-family", savedFont)
     }
 
     applySavedStyles()

@@ -14,10 +14,10 @@ export function StudentsClient({ formattedStudents, parents }: StudentsClientPro
   const columns = getColumns(parents)
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Quản lý Học viên</h1>
-        <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Quản lý Học viên</h1>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <ExportExcelButton data={formattedStudents} />
           <StudentDialog parents={parents} />
         </div>

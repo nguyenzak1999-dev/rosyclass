@@ -53,9 +53,7 @@ const RADII = [
 ]
 
 const FONTS = [
-  { name: "Sans (Mặc định)", value: "var(--font-sans), ui-sans-serif, system-ui, sans-serif" },
-  { name: "Serif", value: "ui-serif, Georgia, Cambria, Times New Roman, Times, serif" },
-  { name: "Mono", value: "var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" },
+  { name: "Google Sans (Mặc định)", value: "var(--font-sans)" },
 ]
 
 function getInitials(name: string) {
@@ -86,7 +84,9 @@ export default function PreferencesClient({ user }: { user: AdminUser }) {
 
       if (savedColor) setPrimaryColor(savedColor)
       if (savedRadius) setRadius(savedRadius)
-      if (savedFont) setFontFamily(savedFont)
+      if (savedFont && FONTS.some((font) => font.value === savedFont)) {
+        setFontFamily(savedFont)
+      }
     })
   }, [])
 

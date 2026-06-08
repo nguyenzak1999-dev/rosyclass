@@ -46,14 +46,14 @@ export function ClassFilters({
   const hasFilters = currentStatus || currentCourseId || currentBranchId || currentTeacherId
 
   return (
-    <div className="flex flex-wrap items-end gap-3 p-4 border rounded-lg bg-muted/30">
+    <div className="grid gap-3 rounded-lg border bg-muted/30 p-3 sm:flex sm:flex-wrap sm:items-end sm:p-4">
       <div className="space-y-1.5">
         <label className="text-xs text-muted-foreground font-medium">Trạng thái</label>
         <Select
           value={currentStatus || "all"}
           onValueChange={(v) => updateParam("status", v)}
         >
-          <SelectTrigger className="w-[160px] bg-background">
+          <SelectTrigger className="w-full bg-background sm:w-[160px]">
             <SelectValue placeholder="Tất cả" />
           </SelectTrigger>
           <SelectContent>
@@ -73,7 +73,7 @@ export function ClassFilters({
           value={currentCourseId || "all"}
           onValueChange={(v) => updateParam("courseId", v)}
         >
-          <SelectTrigger className="w-[200px] bg-background">
+          <SelectTrigger className="w-full bg-background sm:w-[200px]">
             <SelectValue placeholder="Tất cả" />
           </SelectTrigger>
           <SelectContent>
@@ -93,7 +93,7 @@ export function ClassFilters({
           value={currentBranchId || "all"}
           onValueChange={(v) => updateParam("branchId", v)}
         >
-          <SelectTrigger className="w-[180px] bg-background">
+          <SelectTrigger className="w-full bg-background sm:w-[180px]">
             <SelectValue placeholder="Tất cả" />
           </SelectTrigger>
           <SelectContent>
@@ -113,7 +113,7 @@ export function ClassFilters({
           value={currentTeacherId || "all"}
           onValueChange={(v) => updateParam("teacherId", v)}
         >
-          <SelectTrigger className="w-[200px] bg-background">
+          <SelectTrigger className="w-full bg-background sm:w-[200px]">
             <SelectValue placeholder="Tất cả" />
           </SelectTrigger>
           <SelectContent>
@@ -132,7 +132,7 @@ export function ClassFilters({
           variant="ghost"
           size="sm"
           onClick={() => router.push("/admin/classes")}
-          className="text-muted-foreground"
+          className="w-full text-muted-foreground sm:w-auto"
         >
           <X className="w-4 h-4 mr-1" /> Xoá bộ lọc
         </Button>

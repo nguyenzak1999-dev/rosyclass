@@ -1,17 +1,15 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { ArrowUpDown, MoreHorizontal, ExternalLink, Copy, Trash2 } from "lucide-react"
+import { ArrowUpDown, ExternalLink, Pencil, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { BlogPostDialog } from "./blog-post-dialog"
 import { deleteBlogPost } from "../actions"
 
 export type BlogPostData = {
@@ -100,10 +98,14 @@ function ActionsCell({ post }: { post: BlogPostData }) {
 
   return (
     <div className="flex items-center justify-end">
-      <BlogPostDialog
-        initialData={post}
-        trigger={<Button variant="ghost" size="sm">Sửa</Button>}
-      />
+      <Button
+        variant="ghost"
+        size="sm"
+        render={<Link href={`/admin/cms/blog/${post.id}/edit`} />}
+      >
+        <Pencil className="h-4 w-4" />
+        Sửa
+      </Button>
       <Button
         variant="ghost"
         size="icon"

@@ -164,8 +164,8 @@ export function ContactClient({ settings }: { settings: any }) {
                     <div className="space-y-2">
                       <label htmlFor="course" className="block text-[15px] font-medium text-[#111b21]">Chương trình quan tâm</label>
                       <div className="relative">
-                        <select id="course" className="w-full h-[56px] px-[16px] rounded-[16px] bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21] appearance-none">
-                          <option value="" disabled selected>Chọn chương trình...</option>
+                        <select id="course" defaultValue="" className="w-full h-[56px] px-[16px] rounded-[16px] bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21] appearance-none">
+                          <option value="" disabled>Chọn chương trình...</option>
                           <option value="kids">Tiếng Anh Trẻ Em (4-11 tuổi)</option>
                           <option value="teens">Tiếng Anh Thiếu Niên (12-16 tuổi)</option>
                           <option value="ielts">Luyện thi IELTS</option>

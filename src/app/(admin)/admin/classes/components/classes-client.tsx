@@ -18,15 +18,15 @@ export function ClassesClient({
   filterSlot,
 }: ClassesClientProps) {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Quản lý Lớp học</h1>
+    <div className="flex min-w-0 flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Quản lý Lớp học</h1>
           <p className="text-sm text-muted-foreground">
             Tổng {classes.length} lớp học
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <ExportExcelButton data={classes} />
           <LazyClassDialog courses={courses} />
         </div>

@@ -7,6 +7,7 @@ import { vi } from "date-fns/locale"
 import { Calendar, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { cache } from "react"
+import { formatBlogContent, stripBlogHtml } from "@/lib/blog-content"
 
 const getPublishedPost = cache(async (slug: string) => {
   return prisma.blogPost.findUnique({
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   return createPageMetadata({
     title: post.seoTitle || post.title,
-    description: post.seoDescription || post.excerpt || trimSeoText(post.content, 155),
+    description: post.seoDescription || post.excerpt || trimSeoText(stripBlogHtml(post.content), 155),
     path: `/goc-hoc-tap/${post.slug}`,
     image: post.thumbnail,
     type: "article",
@@ -53,7 +54,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           "@context": "https://schema.org",
           "@type": "Article",
           headline: post.title,
-          description: post.excerpt || trimSeoText(post.content, 155),
+          description: post.excerpt || trimSeoText(stripBlogHtml(post.content), 155),
           image: post.thumbnail ? [absoluteUrl(post.thumbnail)] : undefined,
           datePublished: (post.publishedAt || post.createdAt).toISOString(),
           dateModified: post.updatedAt.toISOString(),
@@ -105,15 +106,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             </p>
           )}
           <div
-            className="prose prose-lg max-w-none text-midnight-ink"
-            style={{ lineHeight: '1.8' }}
-          >
-            {post.content.split('\n').map((line, i) => (
-              <p key={i} className="mb-4 text-[16px] text-stone leading-relaxed">
-                {line}
-              </p>
-            ))}
-          </div>
+            className="max-w-none text-midnight-ink [&_a]:font-medium [&_a]:text-signal-blue [&_a]:underline [&_blockquote]:my-6 [&_blockquote]:rounded-2xl [&_blockquote]:bg-cloud-veil [&_blockquote]:px-5 [&_blockquote]:py-4 [&_blockquote]:italic [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-stone [&_figure]:my-8 [&_h2]:mb-4 [&_h2]:mt-10 [&_h2]:text-3xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h3]:mb-3 [&_h3]:mt-8 [&_h3]:text-2xl [&_h3]:font-semibold [&_img]:mx-auto [&_img]:max-h-[560px] [&_img]:rounded-[24px] [&_img]:object-cover [&_li]:my-2 [&_ol]:my-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-5 [&_p]:text-[16px] [&_p]:leading-relaxed [&_p]:text-stone [&_ul]:my-6 [&_ul]:list-disc [&_ul]:pl-6"
+            dangerouslySetInnerHTML={{ __html: formatBlogContent(post.content) }}
+          />
         </div>
       </section>
     </div>

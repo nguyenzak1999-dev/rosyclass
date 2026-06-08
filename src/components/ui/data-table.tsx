@@ -73,8 +73,8 @@ export function DataTable<TData, TValue>({
   })
 
   return (
-    <div className="w-full">
-      <div className="flex items-center py-4 gap-2">
+    <div className="w-full min-w-0">
+      <div className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:py-4">
         {searchKey && (
           <Input
             placeholder={searchPlaceholder}
@@ -82,11 +82,11 @@ export function DataTable<TData, TValue>({
             onChange={(event) =>
               table.getColumn(searchKey)?.setFilterValue(event.target.value)
             }
-            className="max-w-sm"
+            className="h-10 w-full sm:h-8 sm:max-w-sm"
           />
         )}
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="outline" className="ml-auto" />}>
+          <DropdownMenuTrigger render={<Button variant="outline" className="w-full justify-center sm:ml-auto sm:w-auto" />}>
             Hiển thị cột <ChevronDown className="ml-2 h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -115,8 +115,8 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border bg-card">
-        <Table>
+      <div className="w-full overflow-x-auto rounded-md border bg-card">
+        <Table className="min-w-[720px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -165,12 +165,12 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
+      <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-end">
+        <div className="text-sm text-muted-foreground sm:flex-1">
           {table.getFilteredSelectedRowModel().rows.length} trong số{" "}
           {table.getFilteredRowModel().rows.length} hàng được chọn.
         </div>
-        <div className="space-x-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:space-x-2">
           <Button
             variant="outline"
             size="sm"

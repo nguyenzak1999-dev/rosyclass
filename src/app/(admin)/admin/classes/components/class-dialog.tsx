@@ -79,7 +79,7 @@ export function ClassDialog({ initialData, trigger, courses, defaultOpen = false
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={(trigger as React.ReactElement) || <Button>+ Thêm Lớp học</Button>} />
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{initialData ? "Sửa Lớp học" : "Thêm Lớp học"}</DialogTitle>
         </DialogHeader>
@@ -112,7 +112,7 @@ export function ClassDialog({ initialData, trigger, courses, defaultOpen = false
             {errors.courseId && <p className="text-sm text-destructive">{errors.courseId.message}</p>}
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="maxStudents">Sĩ số tối đa</Label>
               <Input id="maxStudents" type="number" {...register("maxStudents")} />
@@ -146,7 +146,7 @@ export function ClassDialog({ initialData, trigger, courses, defaultOpen = false
             <Textarea id="notes" {...register("notes")} placeholder="Ghi chú..." />
           </div>
 
-          <div className="pt-4 flex justify-end space-x-2">
+          <div className="grid gap-2 pt-4 sm:flex sm:justify-end sm:space-x-2">
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
               Hủy
             </Button>

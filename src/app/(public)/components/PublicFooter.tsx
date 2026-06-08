@@ -156,9 +156,8 @@ export function PublicFooter({ settings }: PublicFooterProps) {
                     <li key={`${column.eyebrow}-${link.label}`}>
                       <Link
                         href={link.href}
-                        className="group inline-flex items-center gap-3 text-[15px] font-semibold leading-tight tracking-tight text-[#f7fbf8] transition-colors hover:text-[#25d366] lg:whitespace-nowrap lg:text-[20px] lg:font-medium"
+                        className="inline-flex items-center text-[15px] font-semibold leading-tight tracking-tight text-[#f7fbf8] transition-colors hover:text-[#25d366] lg:whitespace-nowrap lg:text-[20px] lg:font-medium"
                       >
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#1f2b31] transition-colors group-hover:bg-[#25d366] lg:hidden" />
                         <span>{link.label}</span>
                       </Link>
                     </li>

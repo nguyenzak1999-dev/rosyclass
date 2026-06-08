@@ -27,7 +27,7 @@ export type PaymentData = {
 
 import { PaymentDialog } from "./payment-dialog"
 
-export const getColumns = (students: any[]): ColumnDef<PaymentData>[] => [
+export const getColumns = (students: { id: string; fullName: string }[]): ColumnDef<PaymentData>[] => [
   {
     accessorKey: "id",
     header: "Mã phiếu",
@@ -37,7 +37,8 @@ export const getColumns = (students: any[]): ColumnDef<PaymentData>[] => [
     },
   },
   {
-    accessorKey: "student",
+    id: "student.fullName",
+    accessorFn: (row) => row.student?.fullName || "",
     header: ({ column }) => {
       return (
         <Button
@@ -53,9 +54,6 @@ export const getColumns = (students: any[]): ColumnDef<PaymentData>[] => [
       const student = row.original.student
       return <div>{student?.fullName || "—"}</div>
     },
-    filterFn: (row, id, value) => {
-      return row.original.student?.fullName.toLowerCase().includes(value.toLowerCase())
-    }
   },
   {
     accessorKey: "totalAmount",
@@ -104,7 +102,7 @@ export const getColumns = (students: any[]): ColumnDef<PaymentData>[] => [
       return (
         <div className="flex items-center justify-end">
           <PaymentDialog 
-            initialData={payment as any} 
+            initialData={payment}
             students={students} 
             trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
           />

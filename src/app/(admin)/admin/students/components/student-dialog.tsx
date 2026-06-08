@@ -93,13 +93,13 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={(trigger as React.ReactElement) || <Button>+ Thêm học viên</Button>} />
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+      <DialogContent className="flex max-h-[92vh] flex-col sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>{student ? "Sửa học viên" : "Thêm học viên mới"}</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto pr-4 pb-2">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto pb-2 pr-1 sm:pr-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="fullName">Họ và tên *</Label>
               <Input id="fullName" {...register("fullName")} placeholder="Nguyễn Văn A" />
@@ -111,7 +111,7 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" {...register("email")} placeholder="nguyenvana@example.com" />
@@ -129,7 +129,7 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="gender">Giới tính</Label>
               <Select value={gender || ""} onValueChange={(value: any) => setValue("gender", value)}>
@@ -166,7 +166,7 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
             <Input id="address" {...register("address")} placeholder="Số nhà, đường, phường, quận..." />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="parentId">Phụ huynh liên kết</Label>
               <Select value={parentId || "none"} onValueChange={(value: any) => setValue("parentId", value === "none" ? null : value)}>
@@ -199,7 +199,7 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="currentLevel">Trình độ hiện tại</Label>
               <Input id="currentLevel" {...register("currentLevel")} placeholder="Ví dụ: Starters, Movers, A1..." />
@@ -215,7 +215,7 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
             <Input id="notes" {...register("notes")} />
           </div>
           
-          <div className="pt-4 flex justify-end space-x-2 shrink-0 border-t mt-4 pb-2">
+          <div className="mt-4 grid shrink-0 gap-2 border-t pt-4 pb-2 sm:flex sm:justify-end sm:space-x-2">
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
               Hủy
             </Button>

@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { DataTable } from "@/components/ui/data-table"
 import { columns } from "./components/columns"
-import { BlogPostDialog } from "./components/blog-post-dialog"
 import { BlogFilters } from "./components/blog-filters"
 import { Prisma } from "@prisma/client"
+import { Button } from "@/components/ui/button"
+import { PenLine } from "lucide-react"
+import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
@@ -42,7 +44,10 @@ export default async function BlogAdminPage({ searchParams }: PageProps) {
             Tổng {stats.total} bài viết · {stats.published} đã xuất bản · {stats.drafts} bản nháp
           </p>
         </div>
-        <BlogPostDialog />
+        <Button render={<Link href="/admin/cms/blog/new" />}>
+          <PenLine className="h-4 w-4" />
+          Viết bài mới
+        </Button>
       </div>
 
       <BlogFilters currentStatus={filters.status || ""} />

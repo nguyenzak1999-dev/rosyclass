@@ -83,7 +83,7 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={(trigger as React.ReactElement) || <Button>+ Tạo phiếu thu</Button>} />
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{initialData ? "Sửa phiếu thu" : "Tạo phiếu thu mới"}</DialogTitle>
         </DialogHeader>
@@ -103,7 +103,7 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
             {errors.studentId && <p className="text-sm text-destructive">{errors.studentId.message}</p>}
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="totalAmount">Tổng tiền (VNĐ) *</Label>
               <Input id="totalAmount" type="number" {...register("totalAmount")} />
@@ -114,7 +114,7 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="paymentMethod">Phương thức</Label>
               <Select value={paymentMethod} onValueChange={(value: any) => setValue("paymentMethod", value)}>
@@ -151,7 +151,7 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
             <Textarea id="note" {...register("note")} />
           </div>
 
-          <div className="pt-4 flex justify-end space-x-2">
+          <div className="grid gap-2 pt-4 sm:flex sm:justify-end sm:space-x-2">
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>
               Hủy
             </Button>

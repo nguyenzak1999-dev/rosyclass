@@ -5,6 +5,7 @@ import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { blogPostSchema, type BlogPostFormValues } from "@/lib/schemas/blog-post"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
+import { formatBlogContent } from "@/lib/blog-content"
 import type { Prisma } from "@prisma/client"
 
 export async function upsertBlogPost(data: BlogPostFormValues) {
@@ -16,7 +17,7 @@ export async function upsertBlogPost(data: BlogPostFormValues) {
       title: parsed.title,
       slug: parsed.slug,
       excerpt: parsed.excerpt || null,
-      content: parsed.content,
+      content: formatBlogContent(parsed.content),
       thumbnail: parsed.thumbnail || null,
       status: parsed.status,
       seoTitle: parsed.seoTitle || null,
@@ -35,6 +36,7 @@ export async function upsertBlogPost(data: BlogPostFormValues) {
 
     revalidatePath("/admin/cms/blog")
     revalidatePath("/goc-hoc-tap")
+    revalidatePath(`/goc-hoc-tap/${parsed.slug}`)
     return { success: true }
   } catch (error: unknown) {
     console.error("BlogPost upsert error:", error)
