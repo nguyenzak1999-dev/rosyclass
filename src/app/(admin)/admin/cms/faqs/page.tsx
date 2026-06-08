@@ -1,24 +1,72 @@
 import { DataTable } from "@/components/ui/data-table"
 import { prisma } from "@/lib/prisma"
 import { FaqDialog } from "./components/faq-dialog"
+import { FaqFilters } from "./components/faq-filters"
 import { columns } from "./components/columns"
+import { Prisma } from "@prisma/client"
 
-export default async function FaqsPage() {
-  const faqs = await prisma.faq.findMany({
-    orderBy: [
-      { position: "asc" },
-      { createdAt: "desc" },
-    ],
-  })
+export const dynamic = "force-dynamic"
+
+interface PageProps {
+  searchParams: Promise<{
+    category?: string
+    status?: string
+  }>
+}
+
+export default async function FaqsPage({ searchParams }: PageProps) {
+  const filters = await searchParams
+
+  const where: Prisma.FaqWhereInput = {}
+  if (filters.category) {
+    where.category = filters.category
+  }
+  if (filters.status) {
+    where.status = filters.status as Prisma.EnumEntityStatusFilter
+  }
+
+  const [faqs, allFaqs] = await Promise.all([
+    prisma.faq.findMany({
+      where,
+      orderBy: [{ position: "asc" }, { createdAt: "desc" }],
+    }),
+    prisma.faq.findMany({ select: { category: true } }),
+  ])
+
+  // Lấy danh sách category unique
+  const categories = Array.from(
+    new Set(allFaqs.map((f) => f.category).filter((c): c is string => !!c))
+  ).sort()
+
+  const stats = {
+    total: faqs.length,
+    active: faqs.filter((f) => f.status === "ACTIVE" || f.status === "PUBLISHED").length,
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Quản lý FAQ</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Quản lý FAQ</h1>
+          <p className="text-sm text-muted-foreground">
+            Tổng {stats.total} câu hỏi · {stats.active} đang hiện · {categories.length} nhóm
+          </p>
+        </div>
         <FaqDialog />
       </div>
 
-      <DataTable columns={columns} data={faqs} searchKey="question" searchPlaceholder="Tìm FAQ..." />
+      <FaqFilters
+        currentCategory={filters.category || ""}
+        currentStatus={filters.status || ""}
+        categories={categories}
+      />
+
+      <DataTable
+        columns={columns}
+        data={faqs}
+        searchKey="question"
+        searchPlaceholder="Tìm FAQ..."
+      />
     </div>
   )
 }
