@@ -2,21 +2,17 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
+import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal, ExternalLink } from "lucide-react"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { ArrowUpDown, MoreHorizontal, ExternalLink, Copy, Trash2 } from "lucide-react"
 import { format } from "date-fns"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import Link from "next/link"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { BlogPostDialog } from "./blog-post-dialog"
 import { deleteBlogPost } from "../actions"
-import { toast } from "sonner"
-import { useRouter } from "next/navigation"
 
 export type BlogPostData = {
   id: string
@@ -25,16 +21,77 @@ export type BlogPostData = {
   status: string
   publishedAt: Date | null
   createdAt: Date
+  excerpt: string | null
 }
+
+export const columns: ColumnDef<BlogPostData>[] = [
+  {
+    accessorKey: "title",
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Tiêu đề <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const post = row.original
+      return (
+        <div className="px-4">
+          <p className="font-medium line-clamp-1">{post.title}</p>
+          {post.excerpt && (
+            <p className="text-xs text-muted-foreground line-clamp-1">{post.excerpt}</p>
+          )}
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: "slug",
+    header: "Slug",
+    cell: ({ row }) => (
+      <div className="text-xs text-muted-foreground font-mono">
+        /goc-hoc-tap/{row.getValue("slug")}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "status",
+    header: "Trạng thái",
+    cell: ({ row }) => <BadgeStatus status={row.getValue("status") as string} />,
+  },
+  {
+    accessorKey: "publishedAt",
+    header: "Ngày xuất bản",
+    cell: ({ row }) => {
+      const date = row.getValue("publishedAt") as Date | null
+      return <div className="text-sm">{date ? format(new Date(date), "dd/MM/yyyy") : "—"}</div>
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: "Ngày tạo",
+    cell: ({ row }) => {
+      const date = row.getValue("createdAt") as Date
+      return <div className="text-sm">{format(new Date(date), "dd/MM/yyyy")}</div>
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => <ActionsCell post={row.original} />,
+  },
+]
 
 function ActionsCell({ post }: { post: BlogPostData }) {
   const router = useRouter()
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDelete = async () => {
-    if (!confirm("Bạn có chắc muốn xóa bài viết này?")) return
+    setIsDeleting(true)
     const result = await deleteBlogPost(post.id)
+    setIsDeleting(false)
     if (result.success) {
-      toast.success("Đã xóa bài viết")
+      toast.success("Đã xoá bài viết")
+      setDeleteOpen(false)
       router.refresh()
     } else {
       toast.error(result.error)
@@ -47,71 +104,33 @@ function ActionsCell({ post }: { post: BlogPostData }) {
         initialData={post}
         trigger={<Button variant="ghost" size="sm">Sửa</Button>}
       />
-      <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
-          <span className="sr-only">Mở menu</span>
-          <MoreHorizontal className="h-4 w-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => window.open(`/goc-hoc-tap/${post.slug}`, '_blank')}>
-            <ExternalLink className="w-4 h-4 mr-2" /> Xem trên web
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
-            Xóa bài viết
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button
+        variant="ghost"
+        size="icon"
+        render={
+          <Link href={`/goc-hoc-tap/${post.slug}`} target="_blank" />
+        }
+      >
+        <ExternalLink className="w-4 h-4" />
+      </Button>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Xoá bài viết này?"
+        description="Hành động này không thể hoàn tác. Bài viết sẽ bị xoá khỏi hệ thống."
+        confirmText="Xoá"
+        variant="destructive"
+        onConfirm={handleDelete}
+        isSubmitting={isDeleting}
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-destructive hover:text-destructive"
+        onClick={() => setDeleteOpen(true)}
+      >
+        <Trash2 className="w-4 h-4" />
+      </Button>
     </div>
   )
 }
-
-export const columns: ColumnDef<BlogPostData>[] = [
-  {
-    accessorKey: "title",
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Tiêu đề <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => <div className="font-medium px-4">{row.getValue("title")}</div>,
-  },
-  {
-    accessorKey: "slug",
-    header: "Slug",
-    cell: ({ row }) => <div className="text-muted-foreground text-sm">/goc-hoc-tap/{row.getValue("slug")}</div>,
-  },
-  {
-    accessorKey: "status",
-    header: "Trạng thái",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      return (
-        <Badge variant={status === 'PUBLISHED' ? 'default' : 'secondary'}>
-          {status === 'PUBLISHED' ? 'Đã xuất bản' : 'Nháp'}
-        </Badge>
-      )
-    },
-  },
-  {
-    accessorKey: "publishedAt",
-    header: "Ngày xuất bản",
-    cell: ({ row }) => {
-      const date = row.getValue("publishedAt") as Date | null
-      return <div>{date ? format(new Date(date), "dd/MM/yyyy") : "—"}</div>
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Ngày tạo",
-    cell: ({ row }) => {
-      const date = row.getValue("createdAt") as Date
-      return <div>{format(new Date(date), "dd/MM/yyyy")}</div>
-    },
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => <ActionsCell post={row.original} />,
-  },
-]

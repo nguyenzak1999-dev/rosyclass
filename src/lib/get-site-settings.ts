@@ -54,7 +54,8 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       };
     }
   } catch (error) {
-    console.error("Lỗi lấy cấu hình web:", error);
+    const message = error instanceof Error ? error.message : "Unknown error"
+    console.warn(`[site-settings] Không thể lấy cấu hình web. Đang dùng cấu hình mặc định. ${message}`)
   }
 
   return {

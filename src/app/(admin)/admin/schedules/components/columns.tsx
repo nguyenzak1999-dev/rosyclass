@@ -3,8 +3,9 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, ExternalLink, CalendarCheck, Copy } from "lucide-react"
 import { format } from "date-fns"
+import Link from "next/link"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,14 +15,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+const sessionStatusMap: Record<
+  string,
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+> = {
+  SCHEDULED: { label: "Sắp tới", variant: "default" },
+  COMPLETED: { label: "Hoàn thành", variant: "secondary" },
+  CANCELLED: { label: "Đã huỷ", variant: "destructive" },
+  MAKE_UP: { label: "Phụ đạo", variant: "outline" },
+}
+
 export type ScheduleData = {
   id: string
-  sessionDate: Date
+  sessionDate: string | Date
   startTime: string
   endTime: string
-  class: { name: string, teacher: { fullName: string } | null } | null
-  room: { name: string } | null
+  topic: string | null
   status: string
+  class: {
+    id: string
+    name: string
+    course?: { name: string }
+    branch?: { name: string } | null
+    teacher?: { fullName: string } | null
+  } | null
+  teacher: { fullName: string } | null
+  room: { name: string } | null
+  _count?: { attendances: number }
 }
 
 export const columns: ColumnDef<ScheduleData>[] = [
@@ -40,23 +60,48 @@ export const columns: ColumnDef<ScheduleData>[] = [
     },
     cell: ({ row }) => {
       const date = row.getValue("sessionDate") as Date
-      return <div className="font-medium px-4">{format(new Date(date), "dd/MM/yyyy")}</div>
+      return (
+        <div className="font-medium px-4">
+          {format(new Date(date), "dd/MM/yyyy")}
+        </div>
+      )
     },
   },
   {
     id: "time",
     header: "Giờ học",
     cell: ({ row }) => {
-      const schedule = row.original
-      return <div>{schedule.startTime} - {schedule.endTime}</div>
+      const s = row.original
+      return <div>{s.startTime} - {s.endTime}</div>
     },
   },
   {
     accessorKey: "class",
-    header: "Lớp",
+    header: "Lớp / Khóa",
     cell: ({ row }) => {
       const cls = row.original.class
-      return <div>{cls?.name || "—"}</div>
+      if (!cls) return <span className="text-muted-foreground">—</span>
+      return (
+        <div>
+          <Link
+            href={`/admin/classes/${cls.id}`}
+            className="font-medium hover:underline text-primary"
+          >
+            {cls.name}
+          </Link>
+          {cls.course && (
+            <div className="text-xs text-muted-foreground">{cls.course.name}</div>
+          )}
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: "teacher",
+    header: "Giáo viên",
+    cell: ({ row }) => {
+      const teacher = row.original.teacher
+      return <div>{teacher?.fullName || "—"}</div>
     },
   },
   {
@@ -68,11 +113,15 @@ export const columns: ColumnDef<ScheduleData>[] = [
     },
   },
   {
-    id: "teacher",
-    header: "Giáo viên",
+    id: "attendance",
+    header: "Điểm danh",
     cell: ({ row }) => {
-      const teacher = row.original.class?.teacher
-      return <div>{teacher?.fullName || "—"}</div>
+      const count = row.original._count?.attendances ?? 0
+      return (
+        <Badge variant={count > 0 ? "default" : "outline"}>
+          {count > 0 ? `${count} HV` : "—"}
+        </Badge>
+      )
     },
   },
   {
@@ -80,11 +129,8 @@ export const columns: ColumnDef<ScheduleData>[] = [
     header: "Trạng thái",
     cell: ({ row }) => {
       const status = row.getValue("status") as string
-      return (
-        <Badge variant={status === 'SCHEDULED' ? 'outline' : status === 'COMPLETED' ? 'default' : 'secondary'}>
-          {status}
-        </Badge>
-      )
+      const config = sessionStatusMap[status] || { label: status, variant: "outline" }
+      return <Badge variant={config.variant}>{config.label}</Badge>
     },
   },
   {
@@ -94,7 +140,9 @@ export const columns: ColumnDef<ScheduleData>[] = [
 
       return (
         <div className="flex items-center justify-end">
-          <Button variant="ghost" size="sm">Chi tiết</Button>
+          <Button variant="ghost" size="sm" render={<Link href={`/admin/schedules/${schedule.id}`} />}>
+            <ExternalLink className="w-4 h-4 mr-1" /> Chi tiết
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
               <span className="sr-only">Mở menu</span>
@@ -102,14 +150,18 @@ export const columns: ColumnDef<ScheduleData>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+              <DropdownMenuItem render={<Link href={`/admin/schedules/${schedule.id}`} />}>
+                Xem chi tiết buổi học
+              </DropdownMenuItem>
+              <DropdownMenuItem render={<Link href={`/admin/attendance/${schedule.id}`} />}>
+                <CalendarCheck className="w-4 h-4 mr-2" /> Điểm danh
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(schedule.id)}
               >
-                Sao chép ID
+                <Copy className="w-4 h-4 mr-2" /> Sao chép ID
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Sửa lịch</DropdownMenuItem>
-              <DropdownMenuItem>Điểm danh</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

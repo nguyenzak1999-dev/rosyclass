@@ -4,7 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
-let dbUrl = process.env.DATABASE_URL || "";
+const dbUrl = process.env.DATABASE_URL || ""
 
 const pool = new Pool({ 
   connectionString: dbUrl,

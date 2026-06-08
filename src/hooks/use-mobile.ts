@@ -11,7 +11,8 @@ export function useIsMobile() {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     }
     mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    // Thiết lập giá trị ban đầu sau khi mount để tránh SSR mismatch
+    onChange()
     return () => mql.removeEventListener("change", onChange)
   }, [])
 

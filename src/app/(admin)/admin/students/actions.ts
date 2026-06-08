@@ -4,59 +4,43 @@ import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { studentSchema, type StudentFormValues } from "@/lib/schemas/student"
 import { revalidatePath } from "next/cache"
+import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
+import type { Prisma } from "@prisma/client"
 
 export async function upsertStudent(data: StudentFormValues) {
   try {
     await requirePermission(PERMISSIONS.studentsWrite)
     const parsedData = studentSchema.parse(data)
-    
+
+    const payload: Prisma.StudentUncheckedCreateInput = {
+      fullName: parsedData.fullName,
+      email: parsedData.email,
+      phone: parsedData.phone,
+      dateOfBirth: parsedData.dateOfBirth,
+      gender: parsedData.gender,
+      address: parsedData.address,
+      currentLevel: parsedData.currentLevel,
+      learningGoal: parsedData.learningGoal,
+      source: parsedData.source,
+      status: parsedData.status,
+      notes: parsedData.notes,
+      parentId: parsedData.parentId,
+    }
+
     if (parsedData.id) {
-      // Update
-      await prisma.student.update({
-        where: { id: parsedData.id },
-        data: {
-          fullName: parsedData.fullName,
-          email: parsedData.email,
-          phone: parsedData.phone,
-          dateOfBirth: parsedData.dateOfBirth,
-          gender: parsedData.gender,
-          address: parsedData.address,
-          currentLevel: parsedData.currentLevel,
-          learningGoal: parsedData.learningGoal,
-          source: parsedData.source,
-          status: parsedData.status as any,
-          notes: parsedData.notes,
-          parentId: parsedData.parentId,
-        }
-      })
+      await prisma.student.update({ where: { id: parsedData.id }, data: payload })
     } else {
-      // Create
-      await prisma.student.create({
-        data: {
-          fullName: parsedData.fullName,
-          email: parsedData.email,
-          phone: parsedData.phone,
-          dateOfBirth: parsedData.dateOfBirth,
-          gender: parsedData.gender,
-          address: parsedData.address,
-          currentLevel: parsedData.currentLevel,
-          learningGoal: parsedData.learningGoal,
-          source: parsedData.source,
-          status: parsedData.status as any,
-          notes: parsedData.notes,
-          parentId: parsedData.parentId,
-        }
-      })
+      await prisma.student.create({ data: payload })
     }
 
     revalidatePath("/admin/students")
     return { success: true }
   } catch (error: unknown) {
     console.error("Student upsert error:", error)
-    if ((error as any).code === 'P2002') {
-       return { success: false, error: "Dữ liệu này đã tồn tại" }
+    if (isPrismaUniqueError(error)) {
+      return { success: false, error: "Dữ liệu này đã tồn tại" }
     }
-    return { success: false, error: (error as any).message || "Có lỗi xảy ra" }
+    return { success: false, error: getErrorMessage(error) }
   }
 }
 

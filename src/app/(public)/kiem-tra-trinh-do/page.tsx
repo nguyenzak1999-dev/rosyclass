@@ -20,15 +20,34 @@ function parseOptions(rawOptions: string): string[] {
 }
 
 export default async function PlacementTestPage() {
-  const questions = await prisma.placementQuestion.findMany({
-    where: {
-      isPublished: true,
-    },
-    orderBy: [
-      { order: "asc" },
-      { createdAt: "asc" },
-    ],
-  })
+  const [questions, suggestedCourses] = await Promise.all([
+    prisma.placementQuestion.findMany({
+      where: {
+        isPublished: true,
+      },
+      orderBy: [
+        { order: "asc" },
+        { createdAt: "asc" },
+      ],
+    }),
+    // Lấy tất cả course ACTIVE + isPublished để suggest (filter theo level ở client)
+    prisma.course.findMany({
+      where: {
+        status: "ACTIVE",
+        isPublished: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        level: true,
+        salePrice: true,
+        tuitionFee: true,
+        thumbnail: true,
+      },
+      orderBy: { name: "asc" },
+    }),
+  ])
 
   const viewQuestions: PlacementQuestionView[] = questions
     .map((question) => ({
@@ -40,5 +59,10 @@ export default async function PlacementTestPage() {
     }))
     .filter((question) => question.options.length > question.correctIndex)
 
-  return <PlacementTestClient questions={viewQuestions} />
+  return (
+    <PlacementTestClient
+      questions={viewQuestions}
+      suggestedCourses={JSON.parse(JSON.stringify(suggestedCourses))}
+    />
+  )
 }

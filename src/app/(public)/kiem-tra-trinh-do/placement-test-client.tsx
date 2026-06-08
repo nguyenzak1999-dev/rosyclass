@@ -1,12 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
-import { CheckCircle2, Mail, PenTool, Phone, Trophy, User } from "lucide-react"
+import {
+  CheckCircle2,
+  Mail,
+  PenTool,
+  Phone,
+  Trophy,
+  User,
+  GraduationCap,
+  ArrowRight,
+  Sparkles,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { submitPlacementTestLead } from "./actions"
+import { suggestLevel, formatScorePercent } from "@/lib/placement-test"
 
 export type PlacementQuestionView = {
   id: string
@@ -16,7 +28,25 @@ export type PlacementQuestionView = {
   correctIndex: number
 }
 
-export default function PlacementTestClient({ questions }: { questions: PlacementQuestionView[] }) {
+export type SuggestedCourseView = {
+  id: string
+  name: string
+  slug: string
+  level: string
+  salePrice: number | null
+  tuitionFee: number
+  thumbnail: string | null
+}
+
+interface PlacementTestClientProps {
+  questions: PlacementQuestionView[]
+  suggestedCourses: SuggestedCourseView[]
+}
+
+export default function PlacementTestClient({
+  questions,
+  suggestedCourses,
+}: PlacementTestClientProps) {
   const [step, setStep] = useState<"form" | "test" | "result">("form")
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<number[]>([])
@@ -32,6 +62,25 @@ export default function PlacementTestClient({ questions }: { questions: Placemen
 
   const hasQuestions = questions.length > 0
   const activeQuestion = questions[currentQuestion]
+
+  // Tính gợi ý level + course dựa trên điểm hiện tại
+  const currentScore = answers.reduce(
+    (score, answer, index) =>
+      score + (answer === questions[index]?.correctIndex ? 1 : 0),
+    0
+  )
+  const suggestion = useMemo(() => {
+    if (step !== "result" || questions.length === 0) return null
+    return suggestLevel(currentScore, questions.length)
+  }, [step, currentScore, questions.length])
+  const recommendedCourses = useMemo(() => {
+    if (!suggestion) return []
+    // Map suggested level sang 1 hoặc nhiều course level
+    const targetLevels = mapToCourseLevels(suggestion.level)
+    return suggestedCourses
+      .filter((c) => targetLevels.includes(c.level))
+      .slice(0, 3)
+  }, [suggestion, suggestedCourses])
 
   const calculateScore = (answerList = answers) =>
     answerList.reduce((score, answer, index) => score + (answer === questions[index]?.correctIndex ? 1 : 0), 0)
@@ -80,6 +129,33 @@ export default function PlacementTestClient({ questions }: { questions: Placemen
     setAnswers([])
     setSelectedOption(null)
     setLeadId(null)
+  }
+
+  /**
+   * Map suggested level sang array course levels để filter courses.
+   * VD: B2_IELTS_FOUNDATION → ["B2", "IELTS_FOUNDATION"]
+   */
+  function mapToCourseLevels(level: string): string[] {
+    switch (level) {
+      case "STARTER":
+        return ["STARTER", "KIDS"]
+      case "A1":
+        return ["A1", "STARTER"]
+      case "A2":
+        return ["A2", "A1"]
+      case "B1":
+        return ["B1", "A2"]
+      case "B2":
+      case "B2_IELTS_FOUNDATION":
+        return ["B2", "IELTS_FOUNDATION"]
+      case "IELTS_5_5":
+        return ["IELTS_5_5", "IELTS_FOUNDATION"]
+      case "IELTS_6_5":
+      case "TOEIC":
+        return ["IELTS_6_5", "IELTS_5_5", "TOEIC"]
+      default:
+        return [level]
+    }
   }
 
   return (
@@ -254,32 +330,104 @@ export default function PlacementTestClient({ questions }: { questions: Placemen
           )}
 
           {step === "result" && (
-            <div className="relative overflow-hidden rounded-[24px] border border-[#e9edef] bg-white p-8 text-center shadow-sm md:p-12">
-              <div className="relative z-10">
-                <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-[#25d366] text-white shadow-sm">
-                  <Trophy className="h-12 w-12" />
-                </div>
-                <h2 className="mb-4 text-[28px] font-medium tracking-tight text-[#111b21]">Hoàn thành bài kiểm tra!</h2>
-                <p className="mb-8 text-[16px] text-[#54656f]">
-                  Cảm ơn bạn đã tham gia đánh giá năng lực. Dưới đây là kết quả sơ bộ của bạn.
-                </p>
-                <div className="mx-auto mb-10 max-w-[400px] rounded-3xl border border-[#e9edef] bg-[#f0f2f5] p-8">
-                  <div className="mb-2 text-[64px] leading-none font-medium text-[#111b21]">
-                    {calculateScore()}/{questions.length}
+            <div className="space-y-6">
+              <div className="relative overflow-hidden rounded-[24px] border border-[#e9edef] bg-white p-8 text-center shadow-sm md:p-12">
+                <div className="relative z-10">
+                  <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-[#25d366] text-white shadow-sm">
+                    <Trophy className="h-12 w-12" />
                   </div>
-                  <div className="mt-2 text-[14px] font-medium tracking-wider text-[#54656f] uppercase">
-                    Câu trả lời đúng
+                  <h2 className="mb-4 text-[28px] font-medium tracking-tight text-[#111b21]">Hoàn thành bài kiểm tra!</h2>
+                  <p className="mb-8 text-[16px] text-[#54656f]">
+                    Cảm ơn bạn đã tham gia đánh giá năng lực. Dưới đây là kết quả sơ bộ của bạn.
+                  </p>
+                  <div className="mx-auto mb-8 max-w-[400px] rounded-3xl border border-[#e9edef] bg-[#f0f2f5] p-8">
+                    <div className="mb-2 text-[64px] leading-none font-medium text-[#111b21]">
+                      {calculateScore()}/{questions.length}
+                    </div>
+                    <div className="mt-2 text-[14px] font-medium tracking-wider text-[#54656f] uppercase">
+                      Câu trả lời đúng · {formatScorePercent(currentScore, questions.length)}
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="mx-auto max-w-[400px] space-y-4">
-                  <Link href="/lien-he" className="flex h-14 w-full items-center justify-center rounded-[50px] bg-[#25d366] px-[24px] text-[16px] font-medium text-[#111b21] shadow-sm transition-colors hover:bg-[#111b21] hover:text-white">
-                    Nhận tư vấn lộ trình học
-                  </Link>
-                  <Button variant="outline" onClick={resetTest} className="h-14 w-full rounded-[50px] border border-[#111b21] bg-white font-medium text-[#111b21] hover:bg-[#f0f2f5]">
-                    Làm lại từ đầu
-                  </Button>
+              {/* Suggested Level */}
+              {suggestion && (
+                <div className="rounded-3xl border-2 border-[#25d366] bg-white p-6 md:p-8 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#d9fdd3]/50">
+                      <Sparkles className="h-6 w-6 text-[#25d366]" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[14px] font-medium text-[#54656f]">Gợi ý trình độ của bạn</p>
+                      <h3 className={`mt-1 text-[24px] font-medium ${suggestion.color}`}>
+                        {suggestion.label}
+                      </h3>
+                      <p className="mt-2 text-[15px] text-[#54656f]">{suggestion.description}</p>
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {/* Recommended Courses */}
+              {recommendedCourses.length > 0 && (
+                <div>
+                  <h3 className="mb-4 flex items-center gap-2 text-[20px] font-medium text-[#111b21]">
+                    <GraduationCap className="h-5 w-5" />
+                    Khóa học phù hợp với bạn
+                  </h3>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {recommendedCourses.map((course) => {
+                      const price = course.salePrice || course.tuitionFee
+                      return (
+                        <Link
+                          key={course.id}
+                          href={`/khoa-hoc/${course.slug}`}
+                          className="group rounded-2xl border border-[#e9edef] bg-white p-5 transition-all hover:border-[#25d366] hover:shadow-md"
+                        >
+                          <Badge variant="outline" className="mb-2 text-xs">
+                            {course.level}
+                          </Badge>
+                          <h4 className="mb-2 line-clamp-2 text-[16px] font-medium text-[#111b21]">
+                            {course.name}
+                          </h4>
+                          <p className="text-[14px] font-medium text-[#25d366]">
+                            {new Intl.NumberFormat("vi-VN", {
+                              style: "currency",
+                              currency: "VND",
+                              maximumFractionDigits: 0,
+                            }).format(price)}
+                          </p>
+                          <p className="mt-2 flex items-center gap-1 text-[13px] text-[#54656f] group-hover:text-[#25d366]">
+                            Xem chi tiết <ArrowRight className="h-3 w-3" />
+                          </p>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {recommendedCourses.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-[#e9edef] bg-[#f0f2f5] p-6 text-center text-sm text-[#54656f]">
+                  Hiện chưa có khóa học phù hợp được mở bán. Vui lòng liên hệ trung tâm để được tư vấn.
+                </div>
+              )}
+
+              <div className="grid gap-3 md:grid-cols-2 max-w-[600px] mx-auto">
+                <Link
+                  href="/lien-he"
+                  className="flex h-14 items-center justify-center rounded-[50px] bg-[#25d366] px-[24px] text-[16px] font-medium text-[#111b21] shadow-sm transition-colors hover:bg-[#111b21] hover:text-white"
+                >
+                  Nhận tư vấn lộ trình học
+                </Link>
+                <Button
+                  variant="outline"
+                  onClick={resetTest}
+                  className="h-14 rounded-[50px] border border-[#111b21] bg-white font-medium text-[#111b21] hover:bg-[#f0f2f5]"
+                >
+                  Làm lại từ đầu
+                </Button>
               </div>
             </div>
           )}

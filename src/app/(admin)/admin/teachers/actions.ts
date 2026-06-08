@@ -4,12 +4,14 @@ import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { teacherSchema, type TeacherFormValues } from "@/lib/schemas/teacher"
 import { revalidatePath } from "next/cache"
+import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
+import type { Prisma } from "@prisma/client"
 
 export async function upsertTeacher(data: TeacherFormValues) {
   try {
     await requirePermission(PERMISSIONS.teachersWrite)
     const parsedData = teacherSchema.parse(data)
-    
+
     // Find role
     const role = await prisma.role.findUnique({
       where: { code: parsedData.roleCode }
@@ -34,31 +36,22 @@ export async function upsertTeacher(data: TeacherFormValues) {
       })
 
       if (parsedData.roleCode === "TEACHER") {
+        const teacherPayload: Prisma.TeacherUncheckedCreateInput = {
+          userId: user.id,
+          fullName: parsedData.fullName,
+          phone: parsedData.phone || "",
+          email: parsedData.email,
+          avatar: parsedData.avatar,
+          bio: parsedData.bio,
+          specialties: parsedData.specialties,
+          certificates: parsedData.certificates,
+          status: parsedData.status,
+          showOnHomepage: parsedData.showOnHomepage ?? false,
+        }
         await prisma.teacher.upsert({
           where: { userId: user.id },
-          update: {
-            fullName: parsedData.fullName,
-            phone: parsedData.phone || "",
-            email: parsedData.email,
-            avatar: parsedData.avatar,
-            bio: parsedData.bio,
-            specialties: parsedData.specialties,
-            certificates: parsedData.certificates,
-            status: parsedData.status,
-            showOnHomepage: parsedData.showOnHomepage ?? false,
-          },
-          create: {
-            userId: user.id,
-            fullName: parsedData.fullName,
-            phone: parsedData.phone || "",
-            email: parsedData.email,
-            avatar: parsedData.avatar,
-            bio: parsedData.bio,
-            specialties: parsedData.specialties,
-            certificates: parsedData.certificates,
-            status: parsedData.status,
-            showOnHomepage: parsedData.showOnHomepage ?? false,
-          }
+          update: teacherPayload,
+          create: teacherPayload,
         })
       }
     } else {
@@ -97,9 +90,9 @@ export async function upsertTeacher(data: TeacherFormValues) {
     return { success: true }
   } catch (error: unknown) {
     console.error("Teacher upsert error:", error)
-    if ((error as any).code === 'P2002') {
-       return { success: false, error: "Email này đã được sử dụng" }
+    if (isPrismaUniqueError(error)) {
+      return { success: false, error: "Email này đã được sử dụng" }
     }
-    return { success: false, error: (error as any).message || "Có lỗi xảy ra" }
+    return { success: false, error: getErrorMessage(error) }
   }
 }

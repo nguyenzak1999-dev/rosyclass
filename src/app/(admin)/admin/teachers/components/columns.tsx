@@ -3,8 +3,9 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, ExternalLink } from "lucide-react"
 import { format } from "date-fns"
+import Link from "next/link"
 import { TeacherDialog } from "./teacher-dialog"
 import {
   DropdownMenu,
@@ -26,6 +27,7 @@ export type StaffData = {
     name: string
   }
   teacherProfile?: {
+    id?: string
     bio?: string | null
     specialties?: string | null
     certificates?: string | null
@@ -50,7 +52,21 @@ export const columns: ColumnDef<StaffData>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => <div className="font-medium px-4">{row.getValue("fullName")}</div>,
+    cell: ({ row }) => {
+      const user = row.original
+      const teacherId = user.teacherProfile?.id
+      if (teacherId) {
+        return (
+          <Link
+            href={`/admin/teachers/${teacherId}`}
+            className="font-medium px-4 hover:underline text-primary"
+          >
+            {user.fullName}
+          </Link>
+        )
+      }
+      return <div className="font-medium px-4">{user.fullName}</div>
+    },
   },
   {
     accessorKey: "email",
@@ -93,10 +109,16 @@ export const columns: ColumnDef<StaffData>[] = [
     id: "actions",
     cell: ({ row }) => {
       const user = row.original
+      const teacherId = user.teacherProfile?.id
 
       return (
         <div className="flex items-center justify-end">
-          <TeacherDialog 
+          {teacherId && (
+            <Button variant="ghost" size="sm" render={<Link href={`/admin/teachers/${teacherId}`} />}>
+              <ExternalLink className="w-4 h-4 mr-1" /> Hồ sơ
+            </Button>
+          )}
+          <TeacherDialog
             teacher={{
               id: user.id,
               fullName: user.fullName,
@@ -109,8 +131,8 @@ export const columns: ColumnDef<StaffData>[] = [
               certificates: user.teacherProfile?.certificates || "",
               avatar: user.teacherProfile?.avatar || user.avatar || "",
               showOnHomepage: user.teacherProfile?.showOnHomepage ?? false,
-            }} 
-            trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
+            }}
+            trigger={<Button variant="ghost" size="sm">Sửa</Button>}
           />
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
@@ -125,7 +147,11 @@ export const columns: ColumnDef<StaffData>[] = [
                 Sao chép ID
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Xem chi tiết</DropdownMenuItem>
+              {teacherId && (
+                <DropdownMenuItem render={<Link href={`/admin/teachers/${teacherId}`} />}>
+                  Xem hồ sơ giáo viên
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem>Phân quyền</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

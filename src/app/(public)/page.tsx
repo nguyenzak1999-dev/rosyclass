@@ -4,123 +4,191 @@ import { getSiteSettings } from "@/lib/get-site-settings"
 
 const dayNames = ["Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"]
 
+export const revalidate = 300
+
 export default async function HomePage() {
-  const courses = await prisma.course.findMany({
-    where: {
-      status: "PUBLISHED",
-      isPublished: true
-    },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      thumbnail: true,
-      level: true,
-      targetAudience: true,
-      learningOutcomes: true,
-    },
-    orderBy: {
-      createdAt: "asc"
-    },
-    take: 3,
-  });
-
-  const upcomingClasses = await prisma.class.findMany({
-    where: {
-      status: "UPCOMING",
-    },
-    include: {
-      course: {
-        select: {
-          name: true,
-        },
-      },
-      teacher: {
-        select: {
-          fullName: true,
-        },
-      },
-      branch: {
-        select: {
-          name: true,
-        },
-      },
-      schedules: {
-        orderBy: [
-          {
-            dayOfWeek: "asc",
-          },
-          {
-            startTime: "asc",
-          },
-        ],
-        take: 3,
-      },
-      students: {
-        select: {
-          studentId: true,
-        },
-      },
-    },
-    orderBy: [
-      {
-        startDate: "asc",
-      },
-      {
-        createdAt: "asc",
-      },
-    ],
-    take: 3,
-  });
-
-  // Lấy 3 giáo viên ACTIVE đầu tiên cho trang chủ
-  const teachers = await prisma.teacher.findMany({
-    where: {
-      status: "ACTIVE",
-      showOnHomepage: true,
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-    take: 3,
-  });
-
-  const settings = await getSiteSettings();
-  const heroSlides = await prisma.banner.findMany({
-    where: {
-      isActive: true,
-    },
-    orderBy: [
-      {
-        position: "asc",
-      },
-      {
-        createdAt: "asc",
-      },
-    ],
-  });
-  const testimonials = await prisma.testimonial.findMany({
-    where: {
-      isPublished: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    take: 5,
-  });
-  const faqs = await prisma.faq.findMany({
-    where: {
-      status: {
-        in: ["ACTIVE", "PUBLISHED"],
-      },
-    },
-    orderBy: [
-      { position: "asc" },
-      { createdAt: "asc" },
-    ],
-    take: 4,
-  });
+  const [courses, upcomingClasses, teachers, settings, heroSlides, testimonials, faqs] =
+    await Promise.all([
+      safeQuery(
+        "homepage courses",
+        () =>
+          prisma.course.findMany({
+            where: {
+              status: "PUBLISHED",
+              isPublished: true
+            },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              description: true,
+              thumbnail: true,
+              level: true,
+              targetAudience: true,
+              learningOutcomes: true,
+            },
+            orderBy: {
+              createdAt: "asc"
+            },
+            take: 3,
+          }),
+        []
+      ),
+      safeQuery(
+        "homepage upcoming classes",
+        () =>
+          prisma.class.findMany({
+            where: {
+              status: "UPCOMING",
+            },
+            select: {
+              id: true,
+              name: true,
+              startDate: true,
+              maxStudents: true,
+              course: {
+                select: {
+                  name: true,
+                },
+              },
+              teacher: {
+                select: {
+                  fullName: true,
+                },
+              },
+              branch: {
+                select: {
+                  name: true,
+                },
+              },
+              schedules: {
+                select: {
+                  dayOfWeek: true,
+                  startTime: true,
+                  endTime: true,
+                },
+                orderBy: [
+                  {
+                    dayOfWeek: "asc",
+                  },
+                  {
+                    startTime: "asc",
+                  },
+                ],
+                take: 3,
+              },
+              _count: {
+                select: {
+                  students: true,
+                },
+              },
+            },
+            orderBy: [
+              {
+                startDate: "asc",
+              },
+              {
+                createdAt: "asc",
+              },
+            ],
+            take: 3,
+          }),
+        []
+      ),
+      safeQuery(
+        "homepage teachers",
+        () =>
+          prisma.teacher.findMany({
+            where: {
+              status: "ACTIVE",
+              showOnHomepage: true,
+            },
+            select: {
+              id: true,
+              fullName: true,
+              avatar: true,
+              bio: true,
+              specialties: true,
+              certificates: true,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            take: 3,
+          }),
+        []
+      ),
+      getSiteSettings(),
+      safeQuery(
+        "homepage hero slides",
+        () =>
+          prisma.banner.findMany({
+            where: {
+              isActive: true,
+            },
+            select: {
+              id: true,
+              title: true,
+              subtitle: true,
+              image: true,
+              buttonText: true,
+              buttonUrl: true,
+            },
+            orderBy: [
+              {
+                position: "asc",
+              },
+              {
+                createdAt: "asc",
+              },
+            ],
+            take: 3,
+          }),
+        []
+      ),
+      safeQuery(
+        "homepage testimonials",
+        () =>
+          prisma.testimonial.findMany({
+            where: {
+              isPublished: true,
+            },
+            select: {
+              id: true,
+              avatar: true,
+              authorName: true,
+              authorTitle: true,
+              content: true,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+            take: 5,
+          }),
+        []
+      ),
+      safeQuery(
+        "homepage faqs",
+        () =>
+          prisma.faq.findMany({
+            where: {
+              status: {
+                in: ["ACTIVE", "PUBLISHED"],
+              },
+            },
+            select: {
+              question: true,
+              answer: true,
+            },
+            orderBy: [
+              { position: "asc" },
+              { createdAt: "asc" },
+            ],
+            take: 4,
+          }),
+        []
+      ),
+    ]);
 
   return (
     <HomeClient
@@ -137,7 +205,7 @@ export default async function HomePage() {
       upcomingClasses={upcomingClasses.map((classItem) => ({
         id: classItem.id,
         name: classItem.name,
-        courseName: classItem.course.name,
+        courseName: classItem.course?.name || "Đang cập nhật khóa học",
         startDate: classItem.startDate?.toISOString() || null,
         schedule:
           classItem.schedules.length > 0
@@ -147,7 +215,7 @@ export default async function HomePage() {
             : "Đang cập nhật lịch học",
         branchName: classItem.branch?.name || "Đang cập nhật cơ sở",
         teacherName: classItem.teacher?.fullName || "Đang cập nhật giáo viên",
-        spotsLeft: Math.max(classItem.maxStudents - classItem.students.length, 0),
+        spotsLeft: Math.max(classItem.maxStudents - classItem._count.students, 0),
       }))}
       teachers={teachers.map((teacher) => ({
         id: teacher.id,
@@ -170,4 +238,18 @@ export default async function HomePage() {
       }))}
     />
   )
+}
+
+async function safeQuery<T>(
+  label: string,
+  query: () => Promise<T>,
+  fallback: T
+): Promise<T> {
+  try {
+    return await query()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error"
+    console.warn(`[homepage] Không thể lấy dữ liệu ${label}. Đang dùng dữ liệu dự phòng. ${message}`)
+    return fallback
+  }
 }

@@ -14,7 +14,7 @@ export default async function TeachersPage() {
     },
     include: {
       role: true,
-      teacherProfile: true
+      teacherProfile: { select: { id: true, bio: true, specialties: true, certificates: true, avatar: true, showOnHomepage: true } }
     },
     orderBy: {
       createdAt: 'desc'

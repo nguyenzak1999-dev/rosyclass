@@ -18,7 +18,15 @@ export default async function ClassDetailPage({ params }: { params: { id: string
           student: true
         }
       },
-      schedules: true,
+      schedules: {
+        include: { teacher: true, room: true },
+        orderBy: { dayOfWeek: "asc" },
+      },
+      sessions: {
+        include: { teacher: true, room: true, _count: { select: { attendances: true } } },
+        orderBy: { sessionDate: "asc" },
+      },
+      classNotes: { orderBy: { createdAt: "desc" }, take: 5 },
     }
   })
 
@@ -31,6 +39,28 @@ export default async function ClassDetailPage({ params }: { params: { id: string
     where: { status: "ACTIVE" },
     select: { id: true, fullName: true, phone: true, email: true }
   })
+
+  // Lookup data cho schedule & session dialogs
+  const [teachers, rooms, scores] = await Promise.all([
+    prisma.teacher.findMany({
+      where: { status: "ACTIVE" },
+      select: { id: true, fullName: true },
+      orderBy: { fullName: "asc" },
+    }),
+    prisma.room.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, capacity: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.score.findMany({
+      where: { classId: params.id },
+      orderBy: { date: "desc" },
+      include: {
+        student: { select: { id: true, fullName: true } },
+        session: { select: { id: true, sessionDate: true, topic: true } },
+      },
+    }),
+  ])
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -47,8 +77,14 @@ export default async function ClassDetailPage({ params }: { params: { id: string
           </p>
         </div>
       </div>
-      
-      <ClassDetailClient classData={classData as any} allStudents={allStudents} />
+
+      <ClassDetailClient
+        classData={classData as any}
+        allStudents={allStudents}
+        teachers={teachers}
+        rooms={rooms}
+        scores={JSON.parse(JSON.stringify(scores))}
+      />
     </div>
   )
 }

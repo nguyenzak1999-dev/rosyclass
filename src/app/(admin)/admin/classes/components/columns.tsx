@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
+import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import {
@@ -13,19 +13,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { LazyClassDialog } from "./class-dialog-lazy"
+
+type ClassStatus = "UPCOMING" | "ACTIVE" | "COMPLETED" | "PAUSED" | "CANCELLED"
 
 export type ClassData = {
   id: string
   name: string
+  courseId: string
+  maxStudents: number
+  status: ClassStatus
+  notes: string | null
+  startDate: Date | string | null
+  expectedEndDate: Date | string | null
+  createdAt: Date | string
   course: { name: string } | null
   teacher: { fullName: string } | null
   branch: { name: string } | null
-  status: string
+  _count?: { students: number }
 }
 
-import { ClassDialog } from "./class-dialog"
-
-export const getColumns = (courses: any[]): ColumnDef<ClassData>[] => [
+export const getColumns = (
+  courses: { id: string; name: string }[]
+): ColumnDef<ClassData>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -69,12 +79,7 @@ export const getColumns = (courses: any[]): ColumnDef<ClassData>[] => [
     accessorKey: "status",
     header: "Trạng thái",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      return (
-        <Badge variant={status === 'ACTIVE' ? "default" : "secondary"}>
-          {status}
-        </Badge>
-      )
+      return <BadgeStatus status={row.getValue("status") as string} />
     },
   },
   {
@@ -84,8 +89,15 @@ export const getColumns = (courses: any[]): ColumnDef<ClassData>[] => [
 
       return (
         <div className="flex items-center justify-end">
-          <ClassDialog 
-            initialData={classData as any} 
+          <LazyClassDialog
+            initialData={{
+              id: classData.id,
+              name: classData.name,
+              courseId: classData.courseId,
+              maxStudents: classData.maxStudents,
+              status: classData.status,
+              notes: classData.notes ?? undefined,
+            }}
             courses={courses} 
             trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
           />

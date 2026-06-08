@@ -4,12 +4,13 @@ import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { branchSchema, type BranchFormValues } from "@/lib/schemas/branch"
 import { revalidatePath } from "next/cache"
+import { getErrorMessage } from "@/lib/errors"
 
 export async function upsertBranch(data: BranchFormValues) {
   try {
     await requirePermission(PERMISSIONS.settingsWrite)
     const parsedData = branchSchema.parse(data)
-    
+
     if (parsedData.id) {
       await prisma.branch.update({
         where: { id: parsedData.id },
@@ -25,7 +26,7 @@ export async function upsertBranch(data: BranchFormValues) {
     return { success: true }
   } catch (error: unknown) {
     console.error("Branch upsert error:", error)
-    return { success: false, error: (error as any).message || "Có lỗi xảy ra" }
+    return { success: false, error: getErrorMessage(error) }
   }
 }
 

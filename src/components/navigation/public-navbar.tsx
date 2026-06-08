@@ -5,7 +5,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { AnimatedButton } from "@/components/ui/animated-button"
-import { motion, AnimatePresence } from "framer-motion"
 
 export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteName?: string; logoUrl?: string }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -23,12 +22,7 @@ export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteNam
   return (
     <header className="fixed top-0 inset-x-0 z-[999] bg-[#fcf5eb] transition-all duration-300">
       <div className="w-full px-4 md:px-12 mx-auto">
-        <motion.div
-          className="flex items-center justify-between relative z-[999] h-[80px]"
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <div className="flex items-center justify-between relative z-[999] h-[80px]">
           {/* Left: Logo */}
           <Link href="/" className="flex items-center space-x-2 group shrink-0">
             {logoUrl ? (
@@ -103,31 +97,19 @@ export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteNam
               </svg>
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Mobile Menu Backdrop */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 h-screen bg-midnight-ink/40 backdrop-blur-sm z-40 lg:hidden"
-            />
-          )}
-        </AnimatePresence>
+        {mobileMenuOpen && (
+          <div
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 h-screen bg-midnight-ink/40 backdrop-blur-sm z-40 lg:hidden"
+          />
+        )}
 
         {/* Mobile Menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="absolute top-[calc(100%+8px)] left-4 right-4 z-50 flex flex-col gap-4 overflow-hidden rounded-[24px] bg-[#ffffff] p-5 shadow-xl lg:hidden"
-            >
+        {mobileMenuOpen && (
+          <div className="absolute top-[calc(100%+8px)] left-4 right-4 z-50 flex flex-col gap-4 overflow-hidden rounded-[24px] bg-[#ffffff] p-5 shadow-xl lg:hidden">
               <div className="flex flex-col space-y-2">
                 {navLinks.map((link) => {
                   const isActive = pathname === link.href || pathname?.startsWith(link.href + "/")
@@ -151,9 +133,8 @@ export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteNam
                   <span>Kiểm tra trình độ</span>
                 </Link>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </div>
+        )}
       </div>
     </header>
   )

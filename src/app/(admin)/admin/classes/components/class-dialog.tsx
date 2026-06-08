@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useForm } from "react-hook-form"
+import { type Resolver, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { classSchema, type ClassFormValues } from "@/lib/schemas/class"
 import { Button } from "@/components/ui/button"
@@ -27,17 +27,18 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
 interface ClassDialogProps {
-  initialData?: any
+  initialData?: ClassFormValues
   trigger?: React.ReactNode
   courses: { id: string; name: string }[]
+  defaultOpen?: boolean
 }
 
-export function ClassDialog({ initialData, trigger, courses }: ClassDialogProps) {
-  const [open, setOpen] = React.useState(false)
+export function ClassDialog({ initialData, trigger, courses, defaultOpen = false }: ClassDialogProps) {
+  const [open, setOpen] = React.useState(defaultOpen)
   const router = useRouter()
   
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, reset } = useForm<ClassFormValues>({
-    resolver: zodResolver(classSchema) as any,
+    resolver: zodResolver(classSchema) as Resolver<ClassFormValues>,
     defaultValues: initialData || {
       name: "",
       courseId: "",
@@ -91,7 +92,14 @@ export function ClassDialog({ initialData, trigger, courses }: ClassDialogProps)
 
           <div className="space-y-2">
             <Label htmlFor="courseId">Thuộc Khóa học *</Label>
-            <Select value={courseId} onValueChange={(value: any) => setValue("courseId", value)}>
+            <Select
+              value={courseId}
+              onValueChange={(value) => {
+                if (value) {
+                  setValue("courseId", value)
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Chọn khóa học" />
               </SelectTrigger>
@@ -111,7 +119,14 @@ export function ClassDialog({ initialData, trigger, courses }: ClassDialogProps)
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Trạng thái</Label>
-              <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
+              <Select
+                value={status}
+                onValueChange={(value) => {
+                  if (value) {
+                    setValue("status", value as ClassFormValues["status"])
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>

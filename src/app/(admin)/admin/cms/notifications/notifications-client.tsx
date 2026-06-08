@@ -19,7 +19,7 @@ import {
   type LeadNotificationSettings,
   type SiteSettings,
 } from "@/lib/site-settings"
-import { saveLeadNotificationSettings } from "./actions"
+import { saveLeadNotificationSettings, testLeadNotification } from "./actions"
 
 const formKeys: LeadFormKey[] = ["contact", "registration", "placementTest", "classSchedule"]
 
@@ -28,6 +28,8 @@ const placeholderHelp = "{{formLabel}}, {{fullName}}, {{phone}}, {{email}}, {{co
 export default function NotificationsCmsClient({ settings }: { settings: SiteSettings }) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [testEmail, setTestEmail] = useState("")
+  const [testingKey, setTestingKey] = useState<string | null>(null)
 
   const defaultValues: LeadNotificationSettings = {
     ...DEFAULT_LEAD_NOTIFICATION_SETTINGS,
@@ -52,7 +54,7 @@ export default function NotificationsCmsClient({ settings }: { settings: SiteSet
     },
   }
 
-  const { register, handleSubmit, control, setValue } = useForm<LeadNotificationSettings>({
+  const { register, handleSubmit, control, setValue, getValues } = useForm<LeadNotificationSettings>({
     defaultValues,
   })
 
@@ -66,6 +68,29 @@ export default function NotificationsCmsClient({ settings }: { settings: SiteSet
     if (result.success) {
       toast.success("Đã lưu cấu hình thông báo form")
       router.refresh()
+    } else {
+      toast.error(result.error)
+    }
+  }
+
+  const handleTest = async (formKey: LeadFormKey, channel: "telegram" | "email") => {
+    if (channel === "email" && !testEmail.trim()) {
+      toast.error("Nhập email nhận test trước khi gửi thử")
+      return
+    }
+
+    const key = `${formKey}-${channel}`
+    setTestingKey(key)
+    const result = await testLeadNotification({
+      settings: getValues(),
+      formKey,
+      channel,
+      testEmail: testEmail.trim() || undefined,
+    })
+    setTestingKey(null)
+
+    if (result.success) {
+      toast.success(result.message)
     } else {
       toast.error(result.error)
     }
@@ -127,6 +152,15 @@ export default function NotificationsCmsClient({ settings }: { settings: SiteSet
           <div className="space-y-2">
             <Label>Email nhận phản hồi</Label>
             <Input {...register("replyToEmail")} placeholder="contact@rosyclass.edu.vn" />
+          </div>
+          <div className="space-y-2">
+            <Label>Email nhận test</Label>
+            <Input
+              type="email"
+              value={testEmail}
+              onChange={(event) => setTestEmail(event.target.value)}
+              placeholder="admin@rosyclass.edu.vn"
+            />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>Nội dung Telegram</Label>
@@ -190,6 +224,28 @@ export default function NotificationsCmsClient({ settings }: { settings: SiteSet
                   <Label>Nội dung email HTML</Label>
                   <Textarea {...register(`forms.${formKey}.customerEmailHtml`)} className="min-h-[220px] font-mono text-sm" />
                   <p className="text-xs text-muted-foreground">Placeholder: {placeholderHelp}</p>
+                </div>
+                <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="gap-2"
+                    disabled={testingKey !== null}
+                    onClick={() => handleTest(formKey, "telegram")}
+                  >
+                    <Bell className="h-4 w-4" />
+                    {testingKey === `${formKey}-telegram` ? "Đang test..." : "Test Telegram"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="gap-2"
+                    disabled={testingKey !== null}
+                    onClick={() => handleTest(formKey, "email")}
+                  >
+                    <Mail className="h-4 w-4" />
+                    {testingKey === `${formKey}-email` ? "Đang test..." : "Test Email"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

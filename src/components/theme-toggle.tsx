@@ -6,7 +6,7 @@ import { useTheme } from "next-themes"
 import { Switch } from "@/components/ui/switch"
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme()
+  const { setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -14,7 +14,7 @@ export function ThemeToggle() {
   }, [])
 
   if (!mounted) {
-    return <div className="w-[68px] h-6"></div> // Placeholder to prevent layout shift
+    return <div className="w-[68px] h-6" suppressHydrationWarning></div> // Placeholder to prevent layout shift
   }
 
   const isDark = resolvedTheme === "dark"

@@ -1,11 +1,4 @@
-"use client"
-
 import { SiteSettings } from "@/lib/site-settings"
-
-import { useRef } from "react"
-import gsap from "gsap"
-import { useGSAP } from "@gsap/react"
-import ScrollTrigger from "gsap/ScrollTrigger"
 
 import { HeroSection, type HeroSlide } from "./components/home/HeroSection"
 import { FeatureSections } from "./components/home/FeatureSections"
@@ -17,10 +10,6 @@ import { LearningPathSection } from "./components/home/LearningPathSection"
 import { UpcomingClassesSection, type UpcomingClass } from "./components/home/UpcomingClassesSection"
 import { FeaturedTeachersSection, type FeaturedTeacher } from "./components/home/FeaturedTeachersSection"
 import { HomeFaqSection, type HomeFaqItem } from "./components/home/HomeFaqSection"
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger, useGSAP)
-}
 
 export type FeaturedCourseData = {
   id: string
@@ -50,28 +39,10 @@ export default function HomeClient({
   testimonials: TestimonialItem[]
   faqs: HomeFaqItem[]
 }) {
-  const container = useRef<HTMLDivElement>(null);
   const featuredCourses = courses;
 
-  useGSAP(() => {
-    // Reveal Sections on scroll
-    const sections = gsap.utils.toArray<HTMLElement>(".reveal-section");
-    sections.forEach((sec) => {
-      gsap.from(sec, {
-        scrollTrigger: {
-          trigger: sec,
-          start: "top 80%",
-        },
-        y: 40,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power2.out"
-      });
-    });
-  }, { scope: container });
-
   return (
-    <div ref={container} className="flex flex-col w-full font-sans pb-10 bg-background relative overflow-hidden">
+    <div className="flex flex-col w-full font-sans pb-10 bg-background relative overflow-hidden">
 
       {/* 1. HERO SECTION */}
       <HeroSection settings={settings} slides={heroSlides} />
