@@ -127,8 +127,8 @@ export function ImageUploader({
       onChange(data.media.url)
       toast.success("Tải ảnh lên thành công!")
       setDialogOpen(false)
-    } catch (err: any) {
-      toast.error(err.message || "Tải lên thất bại")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Tải lên thất bại")
     } finally {
       setUploading(false)
     }
@@ -184,8 +184,8 @@ export function ImageUploader({
       // Remove from state
       setGalleryFiles((prev) => prev.filter((f) => f.id !== file.id))
       if (value === file.url) onChange("")
-    } catch (err: any) {
-      toast.error(err.message)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Đã có lỗi xảy ra")
     }
   }
 
@@ -282,7 +282,7 @@ export function ImageUploader({
           </DialogHeader>
 
           <Tabs value={tab} onValueChange={(v) => {
-            setTab(v as any)
+            setTab(v as "upload" | "gallery")
             if (v === "gallery") loadGallery(gallerySearch)
           }}>
             <TabsList className="w-full">

@@ -13,11 +13,13 @@ export async function submitPlacementTestLead(data: {
   totalQuestions?: number
 }) {
   try {
+    const notes = `Quan tâm khóa: ${data.courseInterest}. Điểm Test Sơ Bộ: ${data.score !== undefined ? `${data.score}/${data.totalQuestions}` : 'Chưa làm'}`
+
     if (data.leadId) {
-      await prisma.lead.update({
+      const lead = await prisma.lead.update({
         where: { id: data.leadId },
         data: {
-          notes: `Quan tâm khóa: ${data.courseInterest}. Điểm Test Sơ Bộ: ${data.score !== undefined ? `${data.score}/${data.totalQuestions}` : "Chưa làm"}`,
+          notes,
           status: data.score !== undefined ? "TESTED" : "NEW",
         },
       })
@@ -33,10 +35,19 @@ export async function submitPlacementTestLead(data: {
         },
       })
 
-      return { success: true, leadId: data.leadId }
-    }
+      // Gửi thông báo về kết quả placement test cho admin (Telegram) và email cho khách
+      await notifyLeadSubmitted({
+        formKey: "placementTest",
+        fullName: lead.fullName,
+        phone: lead.phone,
+        email: lead.email,
+        courseInterest: data.courseInterest,
+        notes,
+        leadId: lead.id,
+      })
 
-    const notes = `Quan tâm khóa: ${data.courseInterest}. Điểm Test Sơ Bộ: ${data.score !== undefined ? `${data.score}/${data.totalQuestions}` : 'Chưa làm'}`
+      return { success: true, leadId: lead.id }
+    }
 
     const lead = await prisma.lead.create({
       data: {
@@ -58,7 +69,7 @@ export async function submitPlacementTestLead(data: {
       notes,
       leadId: lead.id,
     })
-    
+
     return { success: true, leadId: lead.id }
   } catch (error) {
     console.error("Error creating lead:", error)

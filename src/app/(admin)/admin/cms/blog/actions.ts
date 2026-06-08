@@ -4,19 +4,21 @@ import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { blogPostSchema, type BlogPostFormValues } from "@/lib/schemas/blog-post"
 import { revalidatePath } from "next/cache"
+import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
+import type { Prisma } from "@prisma/client"
 
 export async function upsertBlogPost(data: BlogPostFormValues) {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
     const parsed = blogPostSchema.parse(data)
 
-    const payload = {
+    const payload: Prisma.BlogPostUncheckedCreateInput = {
       title: parsed.title,
       slug: parsed.slug,
       excerpt: parsed.excerpt || null,
       content: parsed.content,
       thumbnail: parsed.thumbnail || null,
-      status: parsed.status as any,
+      status: parsed.status,
       seoTitle: parsed.seoTitle || null,
       seoDescription: parsed.seoDescription || null,
       publishedAt: parsed.status === 'PUBLISHED' ? new Date() : null,
@@ -34,12 +36,12 @@ export async function upsertBlogPost(data: BlogPostFormValues) {
     revalidatePath("/admin/cms/blog")
     revalidatePath("/goc-hoc-tap")
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("BlogPost upsert error:", error)
-    if (error.code === 'P2002') {
+    if (isPrismaUniqueError(error)) {
       return { success: false, error: "Slug này đã tồn tại" }
     }
-    return { success: false, error: error.message || "Có lỗi xảy ra" }
+    return { success: false, error: getErrorMessage(error) }
   }
 }
 
@@ -50,7 +52,7 @@ export async function deleteBlogPost(id: string) {
     revalidatePath("/admin/cms/blog")
     revalidatePath("/goc-hoc-tap")
     return { success: true }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("BlogPost delete error:", error)
     return { success: false, error: "Không thể xóa bài viết này" }
   }

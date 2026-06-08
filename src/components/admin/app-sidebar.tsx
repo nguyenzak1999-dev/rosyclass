@@ -9,6 +9,7 @@ import {
   BookOpen,
   CalendarDays,
   CalendarCheck,
+  UserPlus,
   Wallet,
   PieChart,
   Settings,
@@ -56,6 +57,18 @@ const data = {
           url: "/admin/reports",
           icon: PieChart,
           permissions: [PERMISSIONS.reportsRead],
+        },
+        {
+          title: "Báo cáo chuyên cần",
+          url: "/admin/reports/attendance",
+          icon: PieChart,
+          permissions: [PERMISSIONS.attendanceRead],
+        },
+        {
+          title: "Thông báo",
+          url: "/admin/notifications",
+          icon: Bell,
+          permissions: [PERMISSIONS.studentsRead],
         },
       ]
     },
@@ -108,6 +121,12 @@ const data = {
           url: "/admin/attendance",
           icon: CalendarCheck,
           permissions: [PERMISSIONS.attendanceRead],
+        },
+        {
+          title: "Xếp lớp",
+          url: "/admin/classes/arrange",
+          icon: UserPlus,
+          permissions: [PERMISSIONS.classesWrite],
         },
       ]
     },

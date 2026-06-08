@@ -4,51 +4,33 @@ import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { courseSchema, type CourseFormValues } from "@/lib/schemas/course"
 import { revalidatePath } from "next/cache"
+import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 
 export async function upsertCourse(data: CourseFormValues) {
   try {
     await requirePermission(PERMISSIONS.coursesWrite)
     const parsedData = courseSchema.parse(data)
-    
+
+    const payload = {
+      name: parsedData.name,
+      slug: parsedData.slug,
+      level: parsedData.level,
+      description: parsedData.description,
+      targetAudience: parsedData.targetAudience,
+      learningOutcomes: parsedData.learningOutcomes,
+      tuitionFee: parsedData.tuitionFee,
+      salePrice: parsedData.salePrice,
+      thumbnail: parsedData.thumbnail,
+      totalSessions: parsedData.totalSessions,
+      sessionDurationMinutes: parsedData.sessionDurationMinutes,
+      isPublished: parsedData.isPublished,
+      status: parsedData.status,
+    }
+
     if (parsedData.id) {
-      // Update
-      await prisma.course.update({
-        where: { id: parsedData.id },
-        data: {
-          name: parsedData.name,
-          slug: parsedData.slug,
-          level: parsedData.level,
-          description: parsedData.description,
-          targetAudience: parsedData.targetAudience,
-          learningOutcomes: parsedData.learningOutcomes,
-          tuitionFee: parsedData.tuitionFee,
-          salePrice: parsedData.salePrice,
-          thumbnail: parsedData.thumbnail,
-          totalSessions: parsedData.totalSessions,
-          sessionDurationMinutes: parsedData.sessionDurationMinutes,
-          isPublished: parsedData.isPublished,
-          status: parsedData.status,
-        }
-      })
+      await prisma.course.update({ where: { id: parsedData.id }, data: payload })
     } else {
-      // Create
-      await prisma.course.create({
-        data: {
-          name: parsedData.name,
-          slug: parsedData.slug,
-          level: parsedData.level,
-          description: parsedData.description,
-          targetAudience: parsedData.targetAudience,
-          learningOutcomes: parsedData.learningOutcomes,
-          tuitionFee: parsedData.tuitionFee,
-          salePrice: parsedData.salePrice,
-          thumbnail: parsedData.thumbnail,
-          totalSessions: parsedData.totalSessions,
-          sessionDurationMinutes: parsedData.sessionDurationMinutes,
-          isPublished: parsedData.isPublished,
-          status: parsedData.status,
-        }
-      })
+      await prisma.course.create({ data: payload })
     }
 
     revalidatePath("/admin/courses")
@@ -57,10 +39,10 @@ export async function upsertCourse(data: CourseFormValues) {
     return { success: true }
   } catch (error: unknown) {
     console.error("Course upsert error:", error)
-    if ((error as any).code === 'P2002') {
-       return { success: false, error: "Đường dẫn (slug) này đã tồn tại" }
+    if (isPrismaUniqueError(error)) {
+      return { success: false, error: "Đường dẫn (slug) này đã tồn tại" }
     }
-    return { success: false, error: (error as any).message || "Có lỗi xảy ra" }
+    return { success: false, error: getErrorMessage(error) }
   }
 }
 

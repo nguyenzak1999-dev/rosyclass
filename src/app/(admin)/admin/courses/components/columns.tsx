@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
+import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import { CourseDialog } from "./course-dialog"
@@ -73,12 +74,7 @@ export const columns: ColumnDef<CourseData>[] = [
     accessorKey: "status",
     header: "Trạng thái",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      return (
-        <Badge variant={status === 'ACTIVE' ? "default" : "destructive"}>
-          {status === 'ACTIVE' ? "Đang mở" : "Đã đóng"}
-        </Badge>
-      )
+      return <BadgeStatus status={row.getValue("status") as string} />
     },
   },
   {
