@@ -27,7 +27,7 @@ export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteNam
           <Link href="/" className="flex items-center space-x-2 group shrink-0">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={siteName} className="h-9 object-contain" />
+              <img src={logoUrl} alt={siteName} className="h-[72px] object-contain" />
             ) : (
               <>
                 <div className="w-8 h-8 rounded-lg bg-[#25d366] flex items-center justify-center text-pure-white font-medium text-lg rotate-3 group-hover:-rotate-3 transition-transform">

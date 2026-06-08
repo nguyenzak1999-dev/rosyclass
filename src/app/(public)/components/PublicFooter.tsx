@@ -50,7 +50,7 @@ function LogoMark({ settings }: PublicFooterProps) {
         <img
           src={settings.logoUrl}
           alt={settings.siteName}
-          className="h-10 max-w-[190px] object-contain brightness-0 invert"
+          className="h-[80px] max-w-[380px] object-contain brightness-0 invert"
         />
       ) : (
         <>

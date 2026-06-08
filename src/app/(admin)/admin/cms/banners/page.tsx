@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { DataTable } from "@/components/ui/data-table"
-import { BannerDialog } from "./components/banner-dialog"
 import { BannerFilters } from "./components/banner-filters"
 import { columns } from "./components/columns"
 import { Prisma } from "@prisma/client"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
@@ -43,7 +45,10 @@ export default async function BannersPage({ searchParams }: PageProps) {
             Tổng {stats.total} banner · {stats.active} đang hiện · {stats.inactive} đã ẩn
           </p>
         </div>
-        <BannerDialog totalBanners={banners.length} />
+        <Button render={<Link href="/admin/cms/banners/new" />}>
+          <Plus className="h-4 w-4" />
+          Thêm Hero
+        </Button>
       </div>
 
       <BannerFilters currentIsActive={filters.isActive || ""} />
