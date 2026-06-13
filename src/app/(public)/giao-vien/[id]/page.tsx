@@ -8,7 +8,11 @@ import { Button } from "@/components/ui/button"
 import { createPageMetadata, JsonLd } from "@/lib/seo"
 import { prisma } from "@/lib/prisma"
 
-export async function generateMetadata(props: PageProps<"/giao-vien/[id]">): Promise<Metadata> {
+interface TeacherDetailPageProps {
+  params: Promise<{ id: string }>
+}
+
+export async function generateMetadata(props: TeacherDetailPageProps): Promise<Metadata> {
   const { id } = await props.params
   const teacher = await prisma.teacher.findUnique({
     where: { id },
@@ -35,7 +39,7 @@ export async function generateMetadata(props: PageProps<"/giao-vien/[id]">): Pro
   })
 }
 
-export default async function TeacherDetailPage(props: PageProps<"/giao-vien/[id]">) {
+export default async function TeacherDetailPage(props: TeacherDetailPageProps) {
   const { id } = await props.params
   const teacher = await prisma.teacher.findFirst({
     where: {

@@ -6,6 +6,7 @@ import { useState } from "react"
 import { saveSiteSettings } from "../../settings/site/actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
@@ -83,6 +84,7 @@ export default function HomeCmsClient({ settings }: { settings: SiteSettings }) 
             CTA
           </TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="featured-courses">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

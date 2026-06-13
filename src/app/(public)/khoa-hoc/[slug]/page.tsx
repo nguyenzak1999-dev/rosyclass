@@ -10,7 +10,11 @@ import { prisma } from "@/lib/prisma"
 
 const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"]
 
-export async function generateMetadata(props: PageProps<"/khoa-hoc/[slug]">): Promise<Metadata> {
+interface CourseDetailPageProps {
+  params: Promise<{ slug: string }>
+}
+
+export async function generateMetadata(props: CourseDetailPageProps): Promise<Metadata> {
   const { slug } = await props.params
   const course = await prisma.course.findUnique({
     where: { slug },
@@ -37,7 +41,7 @@ export async function generateMetadata(props: PageProps<"/khoa-hoc/[slug]">): Pr
   })
 }
 
-export default async function CourseDetailPage(props: PageProps<"/khoa-hoc/[slug]">) {
+export default async function CourseDetailPage(props: CourseDetailPageProps) {
   const { slug } = await props.params
   const course = await prisma.course.findFirst({
     where: {
