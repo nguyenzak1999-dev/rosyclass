@@ -47,17 +47,47 @@ export function LeadFilters({
         <Select
           value={currentStatus || "all"}
           onValueChange={(v) => updateParam("status", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            ...LEAD_STATUSES.map((s) => {
+              const statusLabels: Record<string, string> = {
+                NEW: "Mới",
+                CONTACTED: "Đã liên hệ",
+                NO_ANSWER: "Không nghe máy",
+                CONSULTED: "Đã tư vấn",
+                PLACEMENT_TEST_BOOKED: "Đã đặt lịch test",
+                TESTED: "Đã test",
+                WAITING_FOR_PAYMENT: "Chờ thanh toán",
+                ENROLLED: "Đã nhập học",
+                LOST: "Đã mất",
+              }
+              return { value: s, label: statusLabels[s] || s }
+            }),
+          ]}
         >
           <SelectTrigger className="w-[200px] bg-background">
             <SelectValue placeholder="Tất cả" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            {LEAD_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
+            {LEAD_STATUSES.map((s) => {
+              const statusLabels: Record<string, string> = {
+                NEW: "Mới",
+                CONTACTED: "Đã liên hệ",
+                NO_ANSWER: "Không nghe máy",
+                CONSULTED: "Đã tư vấn",
+                PLACEMENT_TEST_BOOKED: "Đã đặt lịch test",
+                TESTED: "Đã test",
+                WAITING_FOR_PAYMENT: "Chờ thanh toán",
+                ENROLLED: "Đã nhập học",
+                LOST: "Đã mất",
+              }
+              return (
+                <SelectItem key={s} value={s}>
+                  {statusLabels[s] || s}
+                </SelectItem>
+              )
+            })}
           </SelectContent>
         </Select>
       </div>
@@ -67,6 +97,10 @@ export function LeadFilters({
         <Select
           value={currentSource || "all"}
           onValueChange={(v) => updateParam("source", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            ...LEAD_SOURCES.map((s) => ({ value: s, label: s })),
+          ]}
         >
           <SelectTrigger className="w-[180px] bg-background">
             <SelectValue placeholder="Tất cả" />
@@ -87,6 +121,10 @@ export function LeadFilters({
         <Select
           value={currentAssignedToId || "all"}
           onValueChange={(v) => updateParam("assignedToId", v)}
+          items={[
+            { value: "all", label: "Tất cả TVV" },
+            ...consultants.map((c) => ({ value: c.id, label: c.fullName })),
+          ]}
         >
           <SelectTrigger className="w-[200px] bg-background">
             <SelectValue placeholder="Tất cả" />

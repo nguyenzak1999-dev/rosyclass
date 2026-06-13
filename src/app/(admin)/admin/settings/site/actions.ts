@@ -36,6 +36,7 @@ export async function saveSiteSettings(data: SiteSettings) {
 
     revalidatePath("/")
     revalidatePath("/admin/settings/site")
+    revalidatePath("/admin/payments")
     return { success: true }
   } catch (error: any) {
     console.error("Save site settings error:", error)

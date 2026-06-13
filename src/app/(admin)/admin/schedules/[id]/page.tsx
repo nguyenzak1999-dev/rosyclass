@@ -8,10 +8,11 @@ import SessionDetailClient from "./session-detail-client"
 export default async function SessionDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const session = await prisma.classSession.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       class: {
         select: {

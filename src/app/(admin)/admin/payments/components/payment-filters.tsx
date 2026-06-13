@@ -54,17 +54,39 @@ export function PaymentFilters({
         <Select
           value={currentStatus || "all"}
           onValueChange={(v) => updateParam("status", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            ...PAYMENT_STATUSES.map((s) => {
+              const statusLabels: Record<string, string> = {
+                UNPAID: "Chưa thanh toán",
+                PARTIAL: "Một phần",
+                PAID: "Đã thanh toán",
+                REFUNDED: "Đã hoàn tiền",
+                CANCELLED: "Đã huỷ",
+              }
+              return { value: s, label: statusLabels[s] || s }
+            }),
+          ]}
         >
           <SelectTrigger className="w-full bg-background sm:w-[160px]">
             <SelectValue placeholder="Tất cả" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            {PAYMENT_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
-              </SelectItem>
-            ))}
+            {PAYMENT_STATUSES.map((s) => {
+              const statusLabels: Record<string, string> = {
+                UNPAID: "Chưa thanh toán",
+                PARTIAL: "Một phần",
+                PAID: "Đã thanh toán",
+                REFUNDED: "Đã hoàn tiền",
+                CANCELLED: "Đã huỷ",
+              }
+              return (
+                <SelectItem key={s} value={s}>
+                  {statusLabels[s] || s}
+                </SelectItem>
+              )
+            })}
           </SelectContent>
         </Select>
       </div>
@@ -74,6 +96,10 @@ export function PaymentFilters({
         <Select
           value={currentMethod || "all"}
           onValueChange={(v) => updateParam("method", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            ...PAYMENT_METHODS.map((m) => ({ value: m, label: methodLabels[m] || m })),
+          ]}
         >
           <SelectTrigger className="w-full bg-background sm:w-[180px]">
             <SelectValue placeholder="Tất cả" />
@@ -94,6 +120,10 @@ export function PaymentFilters({
         <Select
           value={currentStudentId || "all"}
           onValueChange={(v) => updateParam("studentId", v)}
+          items={[
+            { value: "all", label: "Tất cả HV" },
+            ...students.map((s) => ({ value: s.id, label: s.fullName })),
+          ]}
         >
           <SelectTrigger className="w-full bg-background sm:w-[220px]">
             <SelectValue placeholder="Tất cả" />

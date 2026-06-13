@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { classSchema, type ClassFormValues } from "@/lib/schemas/class"
+import * as z from "zod"
 import { notifyAdmins } from "@/app/(admin)/admin/notifications/actions"
 import { createPaymentForStudent } from "@/app/(admin)/admin/payments/actions"
 import {
@@ -13,28 +14,62 @@ import {
   type CancelSessionFormValues,
   type GenerateSessionsFormValues,
   type ScheduleFormValues,
-  type UpdateSessionFormValues,
+  type UpdateSessionFormValues
 } from "@/lib/schemas/schedule"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage } from "@/lib/errors"
+
+const addStudentToClassSchema = z.object({
+  classId: z.string().min(1, "Lớp học là bắt buộc"),
+  studentId: z.string().min(1, "Học viên là bắt buộc"),
+  createPayment: z.coerce.boolean<boolean>().default(true)
+})
 
 export async function upsertClass(data: ClassFormValues) {
   try {
     await requirePermission(PERMISSIONS.classesWrite)
     const parsedData = classSchema.parse(data)
+    const { id, studentIds, ...classData } = parsedData
+    let classId = id
 
-    if (parsedData.id) {
+    if (id) {
       await prisma.class.update({
-        where: { id: parsedData.id },
-        data: { ...parsedData }
+        where: { id },
+        data: classData
       })
     } else {
-      await prisma.class.create({
-        data: { ...parsedData }
+      const createdClass = await prisma.class.create({
+        data: classData
+      })
+      classId = createdClass.id
+    }
+
+    if (classId) {
+      await prisma.$transaction(async (tx) => {
+        await tx.classStudent.deleteMany({
+          where: {
+            classId,
+            studentId: { notIn: studentIds }
+          }
+        })
+
+        if (studentIds.length > 0) {
+          await tx.classStudent.createMany({
+            data: studentIds.map((studentId) => ({
+              classId,
+              studentId,
+              status: "ACTIVE" as const
+            })),
+            skipDuplicates: true
+          })
+        }
       })
     }
 
     revalidatePath("/admin/classes")
+    if (classId) {
+      revalidatePath(`/admin/classes/${classId}`)
+    }
     return { success: true }
   } catch (error: unknown) {
     console.error("Class upsert error:", error)
@@ -54,16 +89,28 @@ export async function deleteClass(id: string) {
   }
 }
 
-export async function addStudentToClass(classId: string, studentId: string) {
+export async function addStudentToClass(
+  classIdOrData:
+    | string
+    | { classId: string; studentId: string; createPayment?: boolean },
+  studentIdArg?: string
+) {
   try {
     const user = await requirePermission(PERMISSIONS.classesWrite)
+    const parsed = addStudentToClassSchema.parse(
+      typeof classIdOrData === "string"
+        ? { classId: classIdOrData, studentId: studentIdArg, createPayment: true }
+        : classIdOrData
+    )
+    const { classId, studentId } = parsed
+
     // Check if already in class
     const existing = await prisma.classStudent.findUnique({
       where: {
         classId_studentId: { classId, studentId }
       }
     })
-    
+
     if (existing) {
       return { success: false, error: "Học viên này đã ở trong lớp" }
     }
@@ -72,8 +119,9 @@ export async function addStudentToClass(classId: string, studentId: string) {
     const targetClass = await prisma.class.findUnique({
       where: { id: classId },
       include: {
+        course: { select: { id: true, name: true } },
         _count: {
-          select: { students: { where: { status: 'ACTIVE' } } }
+          select: { students: { where: { status: "ACTIVE" } } }
         }
       }
     })
@@ -91,24 +139,32 @@ export async function addStudentToClass(classId: string, studentId: string) {
     })
 
     // Tự động tạo payment cho HV (nếu course có học phí > 0)
-    const payment = await createPaymentForStudent(studentId, classId, 14, user.id)
+    const payment = await createPaymentForStudent(
+      studentId,
+      classId,
+      14,
+      user.id,
+      parsed.createPayment
+    )
 
     // Notify admins
     const [cls, student] = await Promise.all([
       prisma.class.findUnique({ where: { id: classId }, select: { name: true } }),
-      prisma.student.findUnique({ where: { id: studentId }, select: { fullName: true } }),
+      prisma.student.findUnique({ where: { id: studentId }, select: { fullName: true } })
     ])
     if (cls && student) {
       notifyAdmins(
         "Xếp học viên vào lớp",
         payment
-          ? `${student.fullName} vừa được xếp vào lớp ${cls.name} (đã tạo payment ${payment.totalAmount.toLocaleString("vi-VN")}đ)`
-          : `${student.fullName} vừa được xếp vào lớp ${cls.name}`,
+          ? `${student.fullName} vừa được xếp vào lớp ${cls.name} (đã tạo phiếu thu ${payment.totalAmount.toLocaleString("vi-VN")}đ)`
+          : `${student.fullName} vừa được xếp vào lớp ${cls.name} (đã tạo enrollment)`,
         `/admin/classes/${classId}`
       )
     }
 
     revalidatePath(`/admin/classes/${classId}`)
+    revalidatePath(`/admin/students/${studentId}`)
+    revalidatePath("/admin/classes/arrange")
     revalidatePath("/admin/payments")
     return { success: true }
   } catch (error) {
@@ -148,7 +204,7 @@ export async function createClassSchedule(data: ScheduleFormValues) {
 
     const cls = await prisma.class.findUnique({
       where: { id: parsed.classId },
-      select: { id: true, teacherId: true, roomId: true },
+      select: { id: true, teacherId: true, roomId: true }
     })
     if (!cls) {
       return { success: false, error: "Không tìm thấy lớp học" }
@@ -161,8 +217,8 @@ export async function createClassSchedule(data: ScheduleFormValues) {
         startTime: parsed.startTime,
         endTime: parsed.endTime,
         teacherId: parsed.teacherId ?? cls.teacherId ?? null,
-        roomId: parsed.roomId ?? cls.roomId ?? null,
-      },
+        roomId: parsed.roomId ?? cls.roomId ?? null
+      }
     })
 
     revalidatePath(`/admin/classes/${parsed.classId}`)
@@ -186,7 +242,7 @@ export async function updateClassSchedule(data: ScheduleFormValues) {
 
     const existing = await prisma.classSchedule.findUnique({
       where: { id: parsed.id },
-      select: { classId: true },
+      select: { classId: true }
     })
     if (!existing) {
       return { success: false, error: "Không tìm thấy lịch học" }
@@ -199,8 +255,8 @@ export async function updateClassSchedule(data: ScheduleFormValues) {
         startTime: parsed.startTime,
         endTime: parsed.endTime,
         teacherId: parsed.teacherId ?? null,
-        roomId: parsed.roomId ?? null,
-      },
+        roomId: parsed.roomId ?? null
+      }
     })
 
     revalidatePath(`/admin/classes/${existing.classId}`)
@@ -220,7 +276,7 @@ export async function deleteClassSchedule(scheduleId: string) {
 
     const existing = await prisma.classSchedule.findUnique({
       where: { id: scheduleId },
-      select: { classId: true },
+      select: { classId: true }
     })
     if (!existing) {
       return { success: false, error: "Không tìm thấy lịch học" }
@@ -253,14 +309,14 @@ export async function generateSessions(data: GenerateSessionsFormValues) {
 
     const cls = await prisma.class.findUnique({
       where: { id: parsed.classId },
-      select: { id: true, teacherId: true, roomId: true },
+      select: { id: true, teacherId: true, roomId: true }
     })
     if (!cls) {
       return { success: false, error: "Không tìm thấy lớp học" }
     }
 
     const schedules = await prisma.classSchedule.findMany({
-      where: { classId: parsed.classId },
+      where: { classId: parsed.classId }
     })
     if (schedules.length === 0) {
       return { success: false, error: "Lớp chưa có lịch học cố định nào. Hãy tạo lịch trước." }
@@ -279,13 +335,13 @@ export async function generateSessions(data: GenerateSessionsFormValues) {
           classId: parsed.classId,
           sessionDate: { gte: from, lte: to },
           status: "SCHEDULED",
-          attendances: { none: {} },
+          attendances: { none: {} }
         },
-        select: { id: true },
+        select: { id: true }
       })
       if (futureScheduled.length > 0) {
         await prisma.classSession.deleteMany({
-          where: { id: { in: futureScheduled.map((s) => s.id) } },
+          where: { id: { in: futureScheduled.map((s) => s.id) } }
         })
       }
     }
@@ -313,7 +369,7 @@ export async function generateSessions(data: GenerateSessionsFormValues) {
           startTime: schedule.startTime,
           endTime: schedule.endTime,
           teacherId: schedule.teacherId ?? cls.teacherId ?? null,
-          roomId: schedule.roomId ?? cls.roomId ?? null,
+          roomId: schedule.roomId ?? cls.roomId ?? null
         })
       }
       cursor.setDate(cursor.getDate() + 1)
@@ -325,7 +381,7 @@ export async function generateSessions(data: GenerateSessionsFormValues) {
 
     const result = await prisma.classSession.createMany({
       data: toCreate,
-      skipDuplicates: true, // chống trùng nhờ @@unique
+      skipDuplicates: true // chống trùng nhờ @@unique
     })
 
     revalidatePath(`/admin/classes/${parsed.classId}`)
@@ -348,7 +404,7 @@ export async function updateSession(data: UpdateSessionFormValues) {
 
     const existing = await prisma.classSession.findUnique({
       where: { id: parsed.id },
-      include: { _count: { select: { attendances: true } } },
+      include: { _count: { select: { attendances: true } } }
     })
     if (!existing) {
       return { success: false, error: "Không tìm thấy buổi học" }
@@ -369,8 +425,8 @@ export async function updateSession(data: UpdateSessionFormValues) {
         roomId: parsed.roomId ?? null,
         teacherId: parsed.teacherId ?? null,
         topic: parsed.topic ?? null,
-        notes: parsed.notes ?? null,
-      },
+        notes: parsed.notes ?? null
+      }
     })
 
     revalidatePath(`/admin/classes/${existing.classId}`)
@@ -378,9 +434,7 @@ export async function updateSession(data: UpdateSessionFormValues) {
     revalidatePath(`/admin/schedules/${existing.id}`)
 
     const warning =
-      existing._count.attendances > 0
-        ? "Đã cập nhật buổi học. Lưu ý: buổi này đã có điểm danh."
-        : undefined
+      existing._count.attendances > 0 ? "Đã cập nhật buổi học. Lưu ý: buổi này đã có điểm danh." : undefined
     return { success: true, data: { warning } }
   } catch (error) {
     console.error("Update session error:", error)
@@ -398,7 +452,7 @@ export async function cancelSession(data: CancelSessionFormValues) {
 
     const existing = await prisma.classSession.findUnique({
       where: { id: parsed.id },
-      include: { _count: { select: { attendances: true } } },
+      include: { _count: { select: { attendances: true } } }
     })
     if (!existing) {
       return { success: false, error: "Không tìm thấy buổi học" }
@@ -417,14 +471,14 @@ export async function cancelSession(data: CancelSessionFormValues) {
       where: { id: parsed.id },
       data: {
         status: "CANCELLED",
-        notes: newNotes,
-      },
+        notes: newNotes
+      }
     })
 
     // Notify admins
     const cls = await prisma.class.findUnique({
       where: { id: existing.classId },
-      select: { name: true },
+      select: { name: true }
     })
     if (cls) {
       notifyAdmins(
@@ -456,6 +510,7 @@ export async function cancelSession(data: CancelSessionFormValues) {
 export type ClassSuggestion = {
   classId: string
   className: string
+  courseId: string
   courseName: string
   courseLevel: string
   teacherName: string | null
@@ -496,12 +551,12 @@ export async function suggestClassesForStudent(studentId: string) {
               select: {
                 id: true,
                 branchId: true,
-                schedules: { select: { dayOfWeek: true } },
-              },
-            },
-          },
-        },
-      },
+                schedules: { select: { dayOfWeek: true } }
+              }
+            }
+          }
+        }
+      }
     })
     if (!student) {
       return { success: false, error: "Không tìm thấy học viên" }
@@ -523,7 +578,7 @@ export async function suggestClassesForStudent(studentId: string) {
     const candidates = await prisma.class.findMany({
       where: {
         status: { in: ["UPCOMING", "ACTIVE"] },
-        id: { notIn: Array.from(enrolledClassIds) },
+        id: { notIn: Array.from(enrolledClassIds) }
       },
       include: {
         course: { select: { name: true, level: true } },
@@ -532,10 +587,10 @@ export async function suggestClassesForStudent(studentId: string) {
         room: { select: { name: true } },
         schedules: { select: { dayOfWeek: true } },
         _count: {
-          select: { students: { where: { status: "ACTIVE" } } },
-        },
+          select: { students: { where: { status: "ACTIVE" } } }
+        }
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "desc" }
     })
 
     // Chấm điểm từng lớp
@@ -573,9 +628,7 @@ export async function suggestClassesForStudent(studentId: string) {
           if (conflicts.length > 0) {
             score -= 30
             hasConflict = true
-            const dayLabel = conflicts
-              .map((d) => ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][d])
-              .join(", ")
+            const dayLabel = conflicts.map((d) => ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][d]).join(", ")
             conflictWith = `Trùng ${dayLabel} với lớp đang học`
             reasons.push("- trùng lịch học hiện tại")
           }
@@ -584,6 +637,7 @@ export async function suggestClassesForStudent(studentId: string) {
         return {
           classId: cls.id,
           className: cls.name,
+          courseId: cls.courseId,
           courseName: cls.course.name,
           courseLevel: cls.course.level,
           teacherName: cls.teacher?.fullName || null,
@@ -594,7 +648,7 @@ export async function suggestClassesForStudent(studentId: string) {
           score,
           reason: reasons.join(" · ") || "Không có yếu tố phù hợp đặc biệt",
           hasScheduleConflict: hasConflict,
-          conflictWith,
+          conflictWith
         }
       })
       // Loại lớp đầy (currentStudents >= maxStudents)
@@ -617,11 +671,7 @@ export async function suggestClassesForStudent(studentId: string) {
  * - Tạo ClassStudent(B).status = ACTIVE
  * - Tất cả trong 1 Prisma transaction
  */
-export async function transferStudentToClass(
-  studentId: string,
-  fromClassId: string,
-  toClassId: string
-) {
+export async function transferStudentToClass(studentId: string, fromClassId: string, toClassId: string) {
   try {
     await requirePermission(PERMISSIONS.classesWrite)
 
@@ -632,11 +682,11 @@ export async function transferStudentToClass(
     const [student, fromClass, toClass, existingInTarget] = await Promise.all([
       prisma.student.findUnique({
         where: { id: studentId },
-        select: { id: true, fullName: true },
+        select: { id: true, fullName: true }
       }),
       prisma.class.findUnique({
         where: { id: fromClassId },
-        select: { id: true, name: true, maxStudents: true },
+        select: { id: true, name: true, maxStudents: true }
       }),
       prisma.class.findUnique({
         where: { id: toClassId },
@@ -644,12 +694,12 @@ export async function transferStudentToClass(
           id: true,
           name: true,
           maxStudents: true,
-          _count: { select: { students: { where: { status: "ACTIVE" } } } },
-        },
+          _count: { select: { students: { where: { status: "ACTIVE" } } } }
+        }
       }),
       prisma.classStudent.findUnique({
-        where: { classId_studentId: { classId: toClassId, studentId } },
-      }),
+        where: { classId_studentId: { classId: toClassId, studentId } }
+      })
     ])
 
     if (!student) return { success: false, error: "Không tìm thấy học viên" }
@@ -659,25 +709,25 @@ export async function transferStudentToClass(
     if (existingInTarget?.status === "ACTIVE") {
       return {
         success: false,
-        error: `Học viên đã ở trong lớp ${toClass.name}`,
+        error: `Học viên đã ở trong lớp ${toClass.name}`
       }
     }
 
     if (toClass._count.students >= toClass.maxStudents) {
       return {
         success: false,
-        error: `Lớp ${toClass.name} đã đủ sĩ số tối đa`,
+        error: `Lớp ${toClass.name} đã đủ sĩ số tối đa`
       }
     }
 
     // Lấy thông tin lớp nguồn trong ClassStudent để ghi chú
     const sourceClassStudent = await prisma.classStudent.findUnique({
-      where: { classId_studentId: { classId: fromClassId, studentId } },
+      where: { classId_studentId: { classId: fromClassId, studentId } }
     })
     if (!sourceClassStudent || sourceClassStudent.status !== "ACTIVE") {
       return {
         success: false,
-        error: `Học viên không ở trong lớp ${fromClass.name} (đang ACTIVE)`,
+        error: `Học viên không ở trong lớp ${fromClass.name} (đang ACTIVE)`
       }
     }
 
@@ -687,8 +737,8 @@ export async function transferStudentToClass(
       await tx.classStudent.update({
         where: { classId_studentId: { classId: fromClassId, studentId } },
         data: {
-          status: "DROPPED",
-        },
+          status: "DROPPED"
+        }
       })
 
       // 2. Tạo mới ở lớp đích
@@ -698,16 +748,16 @@ export async function transferStudentToClass(
           where: { classId_studentId: { classId: toClassId, studentId } },
           data: {
             status: "ACTIVE",
-            joinedAt: new Date(),
-          },
+            joinedAt: new Date()
+          }
         })
       } else {
         await tx.classStudent.create({
           data: {
             classId: toClassId,
             studentId,
-            status: "ACTIVE",
-          },
+            status: "ACTIVE"
+          }
         })
       }
     })
@@ -719,7 +769,7 @@ export async function transferStudentToClass(
 
     return {
       success: true,
-      data: { fromClassName: fromClass.name, toClassName: toClass.name },
+      data: { fromClassName: fromClass.name, toClassName: toClass.name }
     }
   } catch (error) {
     console.error("Transfer student error:", error)

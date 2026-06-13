@@ -36,6 +36,11 @@ export function BannerFilters({ currentIsActive }: BannerFiltersProps) {
         <Select
           value={currentIsActive || "all"}
           onValueChange={(v) => updateParam("isActive", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            { value: "true", label: "Đang hiện" },
+            { value: "false", label: "Đã ẩn" },
+          ]}
         >
           <SelectTrigger className="w-[160px] bg-background">
             <SelectValue placeholder="Tất cả" />

@@ -28,6 +28,8 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { ImageUploader } from "@/components/ui/image-uploader"
 
+import { formatMoneyInput } from "@/lib/utils"
+
 interface CourseDialogProps {
   course?: any
   trigger?: React.ReactNode
@@ -59,6 +61,8 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
   const isPublished = watch("isPublished")
   const level = watch("level")
   const status = watch("status")
+  const tuitionFeeVal = watch("tuitionFee")
+  const salePriceVal = watch("salePrice")
 
   // Reset form when dialog opens with new course data
   React.useEffect(() => {
@@ -95,6 +99,9 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
       toast.error(result.error)
     }
   }
+
+  const { ref: tuitionFeeRef, ...tuitionFeeRegister } = register("tuitionFee")
+  const { ref: salePriceRef, ...salePriceRegister } = register("salePrice")
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -142,7 +149,21 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="tuitionFee">Học phí (VNĐ)</Label>
-              <Input id="tuitionFee" type="number" {...register("tuitionFee")} />
+              <Input
+                id="tuitionFee"
+                type="text"
+                inputMode="numeric"
+                value={tuitionFeeVal !== undefined && tuitionFeeVal !== null ? formatMoneyInput(tuitionFeeVal) : ""}
+                onChange={(e) => {
+                  const rawVal = e.target.value
+                  const cleanVal = rawVal.replace(/\D/g, "")
+                  setValue("tuitionFee", cleanVal ? parseInt(cleanVal, 10) : 0, { shouldValidate: true, shouldDirty: true })
+                }}
+                ref={tuitionFeeRef}
+                name={tuitionFeeRegister.name}
+                onBlur={tuitionFeeRegister.onBlur}
+                placeholder="0"
+              />
               {errors.tuitionFee && <p className="text-sm text-destructive">{errors.tuitionFee.message}</p>}
             </div>
           </div>
@@ -150,7 +171,21 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="salePrice">Giá ưu đãi (nếu có)</Label>
-              <Input id="salePrice" type="number" {...register("salePrice")} />
+              <Input
+                id="salePrice"
+                type="text"
+                inputMode="numeric"
+                value={salePriceVal !== undefined && salePriceVal !== null ? formatMoneyInput(salePriceVal) : ""}
+                onChange={(e) => {
+                  const rawVal = e.target.value
+                  const cleanVal = rawVal.replace(/\D/g, "")
+                  setValue("salePrice", cleanVal ? parseInt(cleanVal, 10) : null, { shouldValidate: true, shouldDirty: true })
+                }}
+                ref={salePriceRef}
+                name={salePriceRegister.name}
+                onBlur={salePriceRegister.onBlur}
+                placeholder="Nhập giá ưu đãi..."
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="targetAudience">Đối tượng học viên</Label>

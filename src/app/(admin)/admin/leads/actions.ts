@@ -211,9 +211,31 @@ export async function convertLeadToStudent(data: ConvertLeadToStudentFormValues)
 
     // Tạo student + update lead trong transaction
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Tạo Student
+      // 1. Sinh mã học viên tự động
+      const lastStudent = await tx.student.findFirst({
+        where: {
+          code: {
+            startsWith: "HV",
+          },
+        },
+        orderBy: {
+          code: "desc",
+        },
+      })
+
+      let nextNum = 1
+      if (lastStudent && lastStudent.code) {
+        const match = lastStudent.code.match(/HV(\d+)/)
+        if (match) {
+          nextNum = parseInt(match[1], 10) + 1
+        }
+      }
+      const studentCode = `HV${String(nextNum).padStart(4, "0")}`
+
+      // 2. Tạo Student
       const student = await tx.student.create({
         data: {
+          code: studentCode,
           fullName: parsed.fullName || lead.fullName,
           phone: lead.phone,
           email: parsed.email || lead.email || null,
@@ -226,7 +248,7 @@ export async function convertLeadToStudent(data: ConvertLeadToStudentFormValues)
         },
       })
 
-      // 2. Update lead
+      // 3. Update lead
       await tx.lead.update({
         where: { id: parsed.leadId },
         data: { status: "ENROLLED" },

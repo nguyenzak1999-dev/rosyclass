@@ -17,12 +17,22 @@ interface LazyClassDialogProps {
   initialData?: ClassFormValues
   trigger?: React.ReactElement<{ onClick?: React.MouseEventHandler }>
   courses: { id: string; name: string }[]
+  teachers?: { id: string; fullName: string }[]
+  teachingAssistants?: { id: string; fullName: string }[]
+  branches?: { id: string; name: string }[]
+  rooms?: { id: string; name: string; capacity: number; branchId: string; branch: { name: string } }[]
+  students?: { id: string; fullName: string; phone: string | null; email: string | null }[]
 }
 
 export function LazyClassDialog({
   initialData,
   trigger,
   courses,
+  teachers = [],
+  teachingAssistants = [],
+  branches = [],
+  rooms = [],
+  students = [],
 }: LazyClassDialogProps) {
   const [shouldLoad, setShouldLoad] = React.useState(false)
 
@@ -32,6 +42,11 @@ export function LazyClassDialog({
         initialData={initialData}
         trigger={trigger}
         courses={courses}
+        teachers={teachers}
+        teachingAssistants={teachingAssistants}
+        branches={branches}
+        rooms={rooms}
+        students={students}
         defaultOpen
       />
     )

@@ -8,11 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StudentPicker, type StudentOption } from "./components/student-picker"
 import { ClassSuggestions } from "./components/class-suggestions"
 import { TransferDialog } from "./components/transfer-dialog"
-import {
-  addStudentToClass,
-  suggestClassesForStudent,
-  type ClassSuggestion,
-} from "@/app/(admin)/admin/classes/actions"
+import { addStudentToClass, suggestClassesForStudent, type ClassSuggestion } from "@/app/(admin)/admin/classes/actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { UserPlus, ArrowLeftRight, GraduationCap } from "lucide-react"
@@ -37,10 +33,21 @@ interface WaitingStudent {
 interface ClassOption {
   id: string
   name: string
+  courseId: string
   courseName: string
   currentStudents: number
   maxStudents: number
   status: string
+}
+
+interface TuitionPlanOption {
+  id: string
+  name: string
+  price: number
+  sessionCount: number
+  teacherType: string
+  courseId: string | null
+  course: { name: string } | null
 }
 
 interface ArrangeClientProps {
@@ -49,11 +56,7 @@ interface ArrangeClientProps {
   allClasses: ClassOption[]
 }
 
-export default function ArrangeClient({
-  waitingStudents,
-  allStudents,
-  allClasses,
-}: ArrangeClientProps) {
+export default function ArrangeClient({ waitingStudents, allStudents, allClasses }: ArrangeClientProps) {
   const router = useRouter()
   const [tab, setTab] = useState<"new" | "transfer">("new")
 
@@ -72,9 +75,7 @@ export default function ArrangeClient({
   // Tìm HV được chọn
   const selectedStudent = waitingStudents.find((s) => s.id === selectedStudentId)
   const selectedTransferStudent = allStudents.find((s) => s.id === transferStudentId)
-  const transferFromClass = selectedTransferStudent?.currentClasses?.find(
-    (c) => c.id === transferFromClassId
-  )
+  const transferFromClass = selectedTransferStudent?.currentClasses?.find((c) => c.id === transferFromClassId)
   const transferToClass = allClasses.find((c) => c.id === transferToClassId)
 
   // Load suggestions khi chọn HV
@@ -98,7 +99,11 @@ export default function ArrangeClient({
   const handleEnroll = async (classId: string) => {
     if (!selectedStudentId) return
     setEnrollingClassId(classId)
-    const res = await addStudentToClass(classId, selectedStudentId)
+    const res = await addStudentToClass({
+      classId,
+      studentId: selectedStudentId,
+      createPayment: true
+    })
     setEnrollingClassId(null)
 
     if (res.success) {
@@ -123,49 +128,43 @@ export default function ArrangeClient({
     fullName: s.fullName,
     phone: s.phone,
     currentLevel: s.currentLevel,
-    status: "WAITING_CLASS",
+    status: "WAITING_CLASS"
   }))
 
   // Lớp đích: loại trừ lớp nguồn + chỉ lấy lớp có thể nhận (UPCOMING/ACTIVE, còn chỗ)
   const destinationClasses = allClasses.filter(
     (c) =>
-      c.id !== transferFromClassId &&
-      ["UPCOMING", "ACTIVE"].includes(c.status) &&
-      c.currentStudents < c.maxStudents
+      c.id !== transferFromClassId && ["UPCOMING", "ACTIVE"].includes(c.status) && c.currentStudents < c.maxStudents
   )
 
   return (
     <Tabs value={tab} onValueChange={(v) => setTab(v as "new" | "transfer")}>
       <TabsList>
         <TabsTrigger value="new" className="gap-2">
-          <UserPlus className="w-4 h-4" /> Xếp học viên mới
+          <UserPlus className="h-4 w-4" /> Xếp học viên mới
         </TabsTrigger>
         <TabsTrigger value="transfer" className="gap-2">
-          <ArrowLeftRight className="w-4 h-4" /> Chuyển lớp
+          <ArrowLeftRight className="h-4 w-4" /> Chuyển lớp
         </TabsTrigger>
       </TabsList>
 
       {/* Tab 1: Xếp HV mới vào lớp */}
       <TabsContent value="new" className="space-y-4">
         <div className="grid gap-4 lg:grid-cols-5">
-          <div className="lg:col-span-2 space-y-4">
+          <div className="space-y-4 lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <UserPlus className="w-4 h-4" />
+                  <UserPlus className="h-4 w-4" />
                   Học viên chờ xếp lớp
                 </CardTitle>
-                <CardDescription>
-                  {waitingStudents.length} học viên đang ở trạng thái WAITING_CLASS
-                </CardDescription>
+                <CardDescription>{waitingStudents.length} học viên đang ở trạng thái WAITING_CLASS</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {waitingStudents.length === 0 ? (
-                  <div className="h-32 flex flex-col items-center justify-center text-muted-foreground text-sm gap-2 border-2 border-dashed rounded-lg">
+                  <div className="text-muted-foreground flex h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-sm">
                     <p>Không có học viên chờ xếp lớp.</p>
-                    <p className="text-xs">
-                      Tạo HV mới với status WAITING_CLASS, hoặc chuyển từ Lead.
-                    </p>
+                    <p className="text-xs">Tạo HV mới với status WAITING_CLASS, hoặc chuyển từ Lead.</p>
                   </div>
                 ) : (
                   <>
@@ -175,19 +174,19 @@ export default function ArrangeClient({
                       onChange={setSelectedStudentId}
                       placeholder="Tìm & chọn học viên..."
                     />
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    <div className="max-h-[300px] space-y-2 overflow-y-auto">
                       {waitingStudents.slice(0, 5).map((s) => (
                         <button
                           key={s.id}
                           onClick={() => setSelectedStudentId(s.id)}
-                          className={`w-full text-left p-3 border rounded-lg hover:bg-muted/30 transition-colors ${
+                          className={`hover:bg-muted/30 w-full rounded-lg border p-3 text-left transition-colors ${
                             selectedStudentId === s.id ? "border-primary bg-primary/5" : ""
                           }`}
                         >
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="font-medium">{s.fullName}</p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-muted-foreground text-xs">
                                 {s.age ? `${s.age} tuổi` : ""} · {s.currentLevel || "Chưa có level"}
                               </p>
                             </div>
@@ -198,14 +197,14 @@ export default function ArrangeClient({
                             )}
                           </div>
                           {s.learningGoal && (
-                            <p className="text-xs text-muted-foreground mt-1 italic line-clamp-1">
+                            <p className="text-muted-foreground mt-1 line-clamp-1 text-xs italic">
                               Mục tiêu: {s.learningGoal}
                             </p>
                           )}
                         </button>
                       ))}
                       {waitingStudents.length > 5 && (
-                        <p className="text-xs text-center text-muted-foreground pt-2">
+                        <p className="text-muted-foreground pt-2 text-center text-xs">
                           +{waitingStudents.length - 5} học viên khác — dùng ô tìm kiếm ở trên
                         </p>
                       )}
@@ -219,27 +218,27 @@ export default function ArrangeClient({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <GraduationCap className="w-4 h-4" />
+                    <GraduationCap className="h-4 w-4" />
                     {selectedStudent.fullName}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <p className="text-xs text-muted-foreground">Tuổi</p>
+                      <p className="text-muted-foreground text-xs">Tuổi</p>
                       <p className="font-medium">{selectedStudent.age || "—"}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Trình độ</p>
+                      <p className="text-muted-foreground text-xs">Trình độ</p>
                       <p className="font-medium">{selectedStudent.currentLevel || "—"}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-xs text-muted-foreground">Mục tiêu</p>
+                      <p className="text-muted-foreground text-xs">Mục tiêu</p>
                       <p className="font-medium">{selectedStudent.learningGoal || "—"}</p>
                     </div>
                     {selectedStudent.parent && (
                       <div className="col-span-2">
-                        <p className="text-xs text-muted-foreground">Phụ huynh</p>
+                        <p className="text-muted-foreground text-xs">Phụ huynh</p>
                         <p className="font-medium">
                           {selectedStudent.parent.fullName} · {selectedStudent.parent.phone}
                         </p>
@@ -247,16 +246,14 @@ export default function ArrangeClient({
                     )}
                   </div>
                   {selectedStudent.placementTest && (
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-xs font-medium text-blue-900 mb-1">
-                        Kết quả Placement Test
-                      </p>
+                    <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                      <p className="mb-1 text-xs font-medium text-blue-900">Kết quả Placement Test</p>
                       <p className="text-xs text-blue-800">
-                        Level: <strong>{selectedStudent.placementTest.levelResult || "—"}</strong> ·
-                        Điểm: {selectedStudent.placementTest.totalScore || "—"}
+                        Level: <strong>{selectedStudent.placementTest.levelResult || "—"}</strong> · Điểm:{" "}
+                        {selectedStudent.placementTest.totalScore || "—"}
                       </p>
                       {selectedStudent.placementTest.suggestedCourse && (
-                        <p className="text-xs text-blue-800 mt-1">
+                        <p className="mt-1 text-xs text-blue-800">
                           Gợi ý: {selectedStudent.placementTest.suggestedCourse.name}
                         </p>
                       )}
@@ -265,6 +262,8 @@ export default function ArrangeClient({
                 </CardContent>
               </Card>
             )}
+
+
           </div>
 
           <div className="lg:col-span-3">
@@ -284,19 +283,15 @@ export default function ArrangeClient({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ArrowLeftRight className="w-4 h-4" />
+              <ArrowLeftRight className="h-4 w-4" />
               Chuyển lớp cho học viên
             </CardTitle>
-            <CardDescription>
-              Chọn học viên đang học → chọn lớp nguồn → chọn lớp đích.
-            </CardDescription>
+            <CardDescription>Chọn học viên đang học → chọn lớp nguồn → chọn lớp đích.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-3 md:grid-cols-3">
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground font-medium">
-                  1. Học viên
-                </label>
+                <label className="text-muted-foreground text-xs font-medium">1. Học viên</label>
                 <StudentPicker
                   students={allStudents}
                   value={transferStudentId}
@@ -309,11 +304,9 @@ export default function ArrangeClient({
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground font-medium">
-                  2. Lớp nguồn (đang học)
-                </label>
+                <label className="text-muted-foreground text-xs font-medium">2. Lớp nguồn (đang học)</label>
                 <select
-                  className="w-full h-10 px-3 border rounded-md bg-background text-sm disabled:opacity-50"
+                  className="bg-background h-10 w-full rounded-md border px-3 text-sm disabled:opacity-50"
                   value={transferFromClassId || ""}
                   onChange={(e) => {
                     setTransferFromClassId(e.target.value || null)
@@ -330,11 +323,9 @@ export default function ArrangeClient({
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground font-medium">
-                  3. Lớp đích
-                </label>
+                <label className="text-muted-foreground text-xs font-medium">3. Lớp đích</label>
                 <select
-                  className="w-full h-10 px-3 border rounded-md bg-background text-sm disabled:opacity-50"
+                  className="bg-background h-10 w-full rounded-md border px-3 text-sm disabled:opacity-50"
                   value={transferToClassId || ""}
                   onChange={(e) => setTransferToClassId(e.target.value || null)}
                   disabled={!transferFromClassId}
@@ -347,9 +338,7 @@ export default function ArrangeClient({
                   ))}
                 </select>
                 {transferFromClassId && destinationClasses.length === 0 && (
-                  <p className="text-xs text-yellow-600 mt-1">
-                    Không có lớp nào còn chỗ trống phù hợp.
-                  </p>
+                  <p className="mt-1 text-xs text-yellow-600">Không có lớp nào còn chỗ trống phù hợp.</p>
                 )}
               </div>
             </div>
@@ -365,7 +354,7 @@ export default function ArrangeClient({
                 }}
                 disabled={!transferStudentId || !transferFromClassId || !transferToClassId}
               >
-                <ArrowLeftRight className="w-4 h-4 mr-2" /> Chuyển lớp
+                <ArrowLeftRight className="mr-2 h-4 w-4" /> Chuyển lớp
               </Button>
             </div>
 
@@ -383,21 +372,12 @@ export default function ArrangeClient({
                 transferStudentId
                   ? {
                       id: transferStudentId,
-                      fullName:
-                        allStudents.find((s) => s.id === transferStudentId)?.fullName || "",
+                      fullName: allStudents.find((s) => s.id === transferStudentId)?.fullName || ""
                     }
                   : null
               }
-              fromClass={
-                transferFromClass
-                  ? { id: transferFromClass.id, name: transferFromClass.name }
-                  : null
-              }
-              toClass={
-                transferToClass
-                  ? { id: transferToClass.id, name: transferToClass.name }
-                  : null
-              }
+              fromClass={transferFromClass ? { id: transferFromClass.id, name: transferFromClass.name } : null}
+              toClass={transferToClass ? { id: transferToClass.id, name: transferToClass.name } : null}
               onSuccess={handleTransferSuccess}
             />
           </CardContent>
@@ -405,4 +385,14 @@ export default function ArrangeClient({
       </TabsContent>
     </Tabs>
   )
+}
+
+
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0
+  }).format(value)
 }

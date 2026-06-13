@@ -8,10 +8,11 @@ import ParentDetailClient from "./parent-detail-client"
 export default async function ParentDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const parent = await prisma.parent.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       students: {
         include: {

@@ -12,6 +12,8 @@ export const teacherSchema = z.object({
   certificates: z.string().optional(),
   avatar: z.string().optional(),
   showOnHomepage: z.boolean().default(false),
+  hourlyRate: z.coerce.number().min(0, "Lương không thể âm").default(0),
 })
 
 export type TeacherFormValues = z.infer<typeof teacherSchema>
+

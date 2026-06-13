@@ -30,7 +30,7 @@ export default async function ClassesPage({ searchParams }: PageProps) {
     where.teacherId = filters.teacherId
   }
 
-  const [classes, courses, teachers, branches] = await Promise.all([
+  const [classes, courses, teachers, teachingAssistants, branches, rooms, students] = await Promise.all([
     prisma.class.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -38,6 +38,10 @@ export default async function ClassesPage({ searchParams }: PageProps) {
         id: true,
         name: true,
         courseId: true,
+        teacherId: true,
+        teachingAssistantId: true,
+        branchId: true,
+        roomId: true,
         maxStudents: true,
         status: true,
         notes: true,
@@ -46,7 +50,15 @@ export default async function ClassesPage({ searchParams }: PageProps) {
         createdAt: true,
         course: { select: { name: true } },
         teacher: { select: { fullName: true } },
+        teachingAssistant: { select: { fullName: true } },
         branch: { select: { name: true } },
+        room: { select: { name: true } },
+        students: {
+          select: {
+            studentId: true,
+            status: true,
+          },
+        },
         _count: { select: { students: { where: { status: "ACTIVE" } } } },
       },
     }),
@@ -60,10 +72,34 @@ export default async function ClassesPage({ searchParams }: PageProps) {
       select: { id: true, fullName: true },
       orderBy: { fullName: "asc" },
     }),
+    prisma.user.findMany({
+      where: {
+        status: "ACTIVE",
+        role: { code: { in: ["ADMIN", "SUPER_ADMIN", "TEACHER", "CONSULTANT"] } },
+      },
+      select: { id: true, fullName: true },
+      orderBy: { fullName: "asc" },
+    }),
     prisma.branch.findMany({
       where: { isActive: true },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
+    }),
+    prisma.room.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        name: true,
+        capacity: true,
+        branchId: true,
+        branch: { select: { name: true } },
+      },
+      orderBy: [{ branch: { name: "asc" } }, { name: "asc" }],
+    }),
+    prisma.student.findMany({
+      where: { status: "ACTIVE" },
+      select: { id: true, fullName: true, phone: true, email: true },
+      orderBy: { fullName: "asc" },
     }),
   ])
 
@@ -71,8 +107,14 @@ export default async function ClassesPage({ searchParams }: PageProps) {
     <ClassesClient
       classes={classes}
       courses={courses}
+      teachers={teachers}
+      teachingAssistants={teachingAssistants}
+      branches={branches}
+      rooms={rooms}
+      students={students}
       filterSlot={
         <ClassFilters
+          key="class-filters"
           currentStatus={filters.status || ""}
           currentCourseId={filters.courseId || ""}
           currentBranchId={filters.branchId || ""}

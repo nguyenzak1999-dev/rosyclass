@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
+import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import { format } from "date-fns"
@@ -49,11 +50,8 @@ export const columns: ColumnDef<PageData>[] = [
     header: "Trạng thái",
     cell: ({ row }) => {
       const status = row.getValue("status") as string
-      return (
-        <Badge variant={status === 'ACTIVE' ? 'default' : 'secondary'}>
-          {status}
-        </Badge>
-      )
+      const key = status === "ACTIVE" ? "ACTIVE_USER" : status === "INACTIVE" ? "INACTIVE_USER" : status
+      return <BadgeStatus status={key} />
     },
   },
   {

@@ -9,10 +9,11 @@ import TeacherProfileClient from "./teacher-profile-client"
 export default async function TeacherProfilePage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const teacher = await prisma.teacher.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       user: { select: { email: true, status: true } },
       classes: {

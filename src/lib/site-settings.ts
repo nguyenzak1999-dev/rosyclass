@@ -13,6 +13,11 @@ export interface SiteSettings {
   workingHours: string
   googleMapEmbedUrl?: string
 
+  // Cấu hình tài khoản nhận học phí (VietQR)
+  paymentBankCode?: string
+  paymentBankAccountNo?: string
+  paymentBankAccountName?: string
+
   // Mạng xã hội
   facebook: string
   youtube: string
@@ -207,6 +212,11 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   email: "contact@rosyclass.edu.vn",
   workingHours: "Thứ 2 – Chủ Nhật: 7:00 – 21:00",
   googleMapEmbedUrl: "",
+
+  // Cấu hình tài khoản nhận học phí (VietQR)
+  paymentBankCode: "MB",
+  paymentBankAccountNo: "",
+  paymentBankAccountName: "",
 
   facebook: "",
   youtube: "",

@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
+import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import {
@@ -51,11 +52,7 @@ export const columns: ColumnDef<BranchData>[] = [
     header: "Trạng thái",
     cell: ({ row }) => {
       const isActive = row.getValue("isActive") as boolean
-      return (
-        <Badge variant={isActive ? 'default' : 'secondary'}>
-          {isActive ? 'Hoạt động' : 'Tạm ngưng'}
-        </Badge>
-      )
+      return <BadgeStatus status={isActive ? "ACTIVE_USER" : "INACTIVE_USER"} />
     },
   },
   {

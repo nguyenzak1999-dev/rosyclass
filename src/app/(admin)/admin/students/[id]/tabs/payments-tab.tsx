@@ -13,6 +13,9 @@ import { CreditCard, Plus, Receipt } from "lucide-react"
 import { createPayment } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { formatMoneyInput } from "@/lib/utils"
+
+import { PaymentReceiptDialog } from "@/app/(admin)/admin/payments/components/payment-receipt-dialog"
 
 const paymentStatusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   PAID: { label: "Đã thanh toán", variant: "default" },
@@ -29,6 +32,7 @@ export function PaymentsTab({ student }: { student: any }) {
   const payments = student.payments || []
   const [open, setOpen] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
+  const [selectedPayment, setSelectedPayment] = React.useState<any | null>(null)
   const [form, setForm] = React.useState({
     totalAmount: "",
     paidAmount: "",
@@ -79,13 +83,19 @@ export function PaymentsTab({ student }: { student: any }) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Tổng học phí (VND) *</Label>
-                  <Input type="number" placeholder="3000000" value={form.totalAmount}
-                    onChange={e => setForm(p => ({ ...p, totalAmount: e.target.value }))} />
+                  <Input type="text" inputMode="numeric" placeholder="3.000.000" value={formatMoneyInput(form.totalAmount)}
+                    onChange={e => {
+                      const clean = e.target.value.replace(/\D/g, "")
+                      setForm(p => ({ ...p, totalAmount: clean }))
+                    }} />
                 </div>
                 <div className="space-y-2">
                   <Label>Đã đóng (VND)</Label>
-                  <Input type="number" placeholder="0" value={form.paidAmount}
-                    onChange={e => setForm(p => ({ ...p, paidAmount: e.target.value }))} />
+                  <Input type="text" inputMode="numeric" placeholder="0" value={formatMoneyInput(form.paidAmount)}
+                    onChange={e => {
+                      const clean = e.target.value.replace(/\D/g, "")
+                      setForm(p => ({ ...p, paidAmount: clean }))
+                    }} />
                 </div>
               </div>
               <div className="space-y-2">
@@ -156,7 +166,11 @@ export function PaymentsTab({ student }: { student: any }) {
               {[...payments].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((p: any) => {
                 const config = paymentStatusConfig[p.status] || { label: p.status, variant: "outline" }
                 return (
-                  <div key={p.id} className="flex items-start justify-between p-4 rounded-lg border hover:bg-accent/30 transition-colors">
+                  <div 
+                    key={p.id} 
+                    className="flex items-start justify-between p-4 rounded-lg border hover:bg-accent/30 transition-colors cursor-pointer"
+                    onClick={() => setSelectedPayment(p)}
+                  >
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <Receipt className="h-4 w-4 text-muted-foreground" />
@@ -183,6 +197,13 @@ export function PaymentsTab({ student }: { student: any }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Receipt Dialog */}
+      <PaymentReceiptDialog
+        payment={selectedPayment}
+        open={!!selectedPayment}
+        onOpenChange={(isOpen) => !isOpen && setSelectedPayment(null)}
+      />
     </div>
   )
 }

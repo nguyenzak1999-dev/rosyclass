@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Globe, Phone, MapPin, Search, Share2, Building2, Save, LayoutTemplate } from "lucide-react"
+import { Globe, Phone, MapPin, Search, Share2, Building2, Save, LayoutTemplate, CreditCard, QrCode } from "lucide-react"
 import { ImageUploader } from "@/components/ui/image-uploader"
 
 export default function SiteSettingsClient({ settings }: { settings: SiteSettings }) {
@@ -128,6 +128,7 @@ export default function SiteSettingsClient({ settings }: { settings: SiteSetting
           </div>
         </CardContent>
       </Card>
+
 
       {/* Mạng xã hội */}
       <Card className="gap-3">

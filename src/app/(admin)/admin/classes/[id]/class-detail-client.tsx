@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { BadgeStatus } from "@/components/ui/badge-status"
 import { Users, Calendar, Settings, UserMinus, Award, ClipboardList } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
@@ -18,7 +19,7 @@ export default function ClassDetailClient({
   allStudents,
   teachers,
   rooms,
-  scores = [],
+  scores = []
 }: {
   classData: any
   allStudents: any[]
@@ -32,7 +33,7 @@ export default function ClassDetailClient({
   const classStudents = classData.students.map((cs: any) => ({
     ...cs.student,
     classStudentStatus: cs.status,
-    joinedAt: cs.joinedAt,
+    joinedAt: cs.joinedAt
   }))
 
   const handleRemoveStudent = async (studentId: string) => {
@@ -51,23 +52,19 @@ export default function ClassDetailClient({
   const studentColumns = [
     {
       accessorKey: "fullName",
-      header: "Tên học viên",
+      header: "Tên học viên"
     },
     {
       accessorKey: "phone",
-      header: "Số điện thoại",
+      header: "Số điện thoại"
     },
     {
       accessorKey: "classStudentStatus",
       header: "Trạng thái tại lớp",
       cell: ({ row }: any) => {
         const status = row.getValue("classStudentStatus")
-        return (
-          <Badge variant={status === "ACTIVE" ? "default" : "destructive"}>
-            {status}
-          </Badge>
-        )
-      },
+        return <BadgeStatus status={status} />
+      }
     },
     {
       id: "actions",
@@ -80,30 +77,30 @@ export default function ClassDetailClient({
             className="text-destructive hover:text-destructive hover:bg-destructive/10"
             onClick={() => handleRemoveStudent(student.id)}
           >
-            <UserMinus className="w-4 h-4 mr-2" /> Xóa khỏi lớp
+            <UserMinus className="mr-2 h-4 w-4" /> Xóa khỏi lớp
           </Button>
         )
-      },
-    },
+      }
+    }
   ]
 
   return (
     <Tabs defaultValue="students" className="space-y-4">
       <TabsList>
         <TabsTrigger value="students" className="gap-2">
-          <Users className="w-4 h-4" /> Học viên
+          <Users className="h-4 w-4" /> Học viên
         </TabsTrigger>
         <TabsTrigger value="overview" className="gap-2">
-          <Settings className="w-4 h-4" /> Tổng quan
+          <Settings className="h-4 w-4" /> Tổng quan
         </TabsTrigger>
         <TabsTrigger value="schedule" className="gap-2">
-          <Calendar className="w-4 h-4" /> Lịch học
+          <Calendar className="h-4 w-4" /> Lịch học
         </TabsTrigger>
         <TabsTrigger value="scores" className="gap-2">
-          <Award className="w-4 h-4" /> Điểm số
+          <Award className="h-4 w-4" /> Điểm số
         </TabsTrigger>
         <TabsTrigger value="notes" className="gap-2">
-          <ClipboardList className="w-4 h-4" /> Ghi chú
+          <ClipboardList className="h-4 w-4" /> Ghi chú
         </TabsTrigger>
       </TabsList>
 
@@ -142,9 +139,7 @@ export default function ClassDetailClient({
             <CardContent className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Giáo viên:</span>
-                <span className="font-medium">
-                  {classData.teacher?.fullName || "Chưa phân công"}
-                </span>
+                <span className="font-medium">{classData.teacher?.fullName || "Chưa phân công"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Chi nhánh:</span>
@@ -156,9 +151,7 @@ export default function ClassDetailClient({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Sĩ số hiện tại:</span>
-                <span className="font-medium">
-                  {classStudents.length} học viên
-                </span>
+                <span className="font-medium">{classStudents.length} học viên</span>
               </div>
             </CardContent>
           </Card>
@@ -180,12 +173,12 @@ export default function ClassDetailClient({
           classId={classData.id}
           students={classStudents.map((s: any) => ({
             id: s.id,
-            fullName: s.fullName,
+            fullName: s.fullName
           }))}
           sessions={(classData.sessions || []).map((s: any) => ({
             id: s.id,
             sessionDate: s.sessionDate,
-            topic: s.topic,
+            topic: s.topic
           }))}
           scores={scores}
         />
@@ -195,25 +188,23 @@ export default function ClassDetailClient({
         <Card>
           <CardHeader>
             <CardTitle>Ghi chú lớp học</CardTitle>
-            <CardDescription>
-              Ghi chú nội bộ của giáo viên cho lớp này
-            </CardDescription>
+            <CardDescription>Ghi chú nội bộ của giáo viên cho lớp này</CardDescription>
           </CardHeader>
           <CardContent>
             {classData.classNotes && classData.classNotes.length > 0 ? (
               <div className="space-y-3">
                 {classData.classNotes.map((note: any) => (
-                  <div key={note.id} className="p-3 border rounded-lg">
+                  <div key={note.id} className="rounded-lg border p-3">
                     <p className="text-sm whitespace-pre-wrap">{note.content}</p>
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-muted-foreground mt-2 text-xs">
                       {new Date(note.createdAt).toLocaleString("vi-VN")}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg text-muted-foreground gap-2">
-                <ClipboardList className="w-8 h-8 opacity-50" />
+              <div className="text-muted-foreground flex h-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed">
+                <ClipboardList className="h-8 w-8 opacity-50" />
                 <p>Chưa có ghi chú nào.</p>
                 <p className="text-xs">Tính năng nhập ghi chú sẽ bổ sung sau.</p>
               </div>

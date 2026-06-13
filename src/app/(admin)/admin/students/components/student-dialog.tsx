@@ -52,6 +52,7 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
   const gender = watch("gender")
   const source = watch("source")
   const parentId = watch("parentId")
+  const selectedParent = parents.find((parent) => parent.id === parentId)
 
   React.useEffect(() => {
     if (open) {
@@ -99,6 +100,13 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
         </DialogHeader>
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 overflow-y-auto pb-2 pr-1 sm:pr-4">
+          {student && (
+            <div className="space-y-2">
+              <Label htmlFor="code">Mã học viên</Label>
+              <Input id="code" {...register("code")} disabled className="font-mono bg-muted" />
+            </div>
+          )}
+          
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="fullName">Họ và tên *</Label>
@@ -171,7 +179,11 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
               <Label htmlFor="parentId">Phụ huynh liên kết</Label>
               <Select value={parentId || "none"} onValueChange={(value: any) => setValue("parentId", value === "none" ? null : value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Chọn phụ huynh" />
+                  <span className="truncate text-left">
+                    {selectedParent
+                      ? `${selectedParent.fullName} (${selectedParent.phone})`
+                      : "Chọn phụ huynh"}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">-- Không liên kết --</SelectItem>

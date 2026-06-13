@@ -5,11 +5,12 @@ import { StudentDetailClient } from "./student-detail-client"
 export default async function StudentDetailPage({
   params
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const [student, availableClasses] = await Promise.all([
     prisma.student.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         parent: true,
         classStudents: {
@@ -35,7 +36,7 @@ export default async function StudentDetailPage({
         },
         placementTests: {
           orderBy: { testDate: 'desc' }
-        },
+        }
       }
     }),
     prisma.class.findMany({

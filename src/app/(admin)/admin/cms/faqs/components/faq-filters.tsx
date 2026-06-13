@@ -44,6 +44,10 @@ export function FaqFilters({
         <Select
           value={currentCategory || "all"}
           onValueChange={(v) => updateParam("category", v)}
+          items={[
+            { value: "all", label: "Tất cả nhóm" },
+            ...categories.map((c) => ({ value: c, label: c })),
+          ]}
         >
           <SelectTrigger className="w-[200px] bg-background">
             <SelectValue placeholder="Tất cả" />
@@ -64,6 +68,13 @@ export function FaqFilters({
         <Select
           value={currentStatus || "all"}
           onValueChange={(v) => updateParam("status", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            { value: "ACTIVE", label: "Đang hiện" },
+            { value: "PUBLISHED", label: "Đã xuất bản" },
+            { value: "DRAFT", label: "Bản nháp" },
+            { value: "INACTIVE", label: "Không hoạt động" },
+          ]}
         >
           <SelectTrigger className="w-[160px] bg-background">
             <SelectValue placeholder="Tất cả" />

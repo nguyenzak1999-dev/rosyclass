@@ -72,7 +72,17 @@ export function ScheduleFilters({
 
       <div className="space-y-1.5">
         <label className="text-xs text-muted-foreground font-medium">Trạng thái</label>
-        <Select value={currentStatus || "all"} onValueChange={(v) => updateParam("status", v)}>
+        <Select
+          value={currentStatus || "all"}
+          onValueChange={(v) => updateParam("status", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            { value: "SCHEDULED", label: "Sắp tới" },
+            { value: "COMPLETED", label: "Hoàn thành" },
+            { value: "CANCELLED", label: "Đã huỷ" },
+            { value: "MAKE_UP", label: "Phụ đạo" },
+          ]}
+        >
           <SelectTrigger className="w-[160px] bg-background">
             <SelectValue placeholder="Tất cả" />
           </SelectTrigger>
@@ -88,7 +98,14 @@ export function ScheduleFilters({
 
       <div className="space-y-1.5">
         <label className="text-xs text-muted-foreground font-medium">Chi nhánh</label>
-        <Select value={currentBranchId || "all"} onValueChange={(v) => updateParam("branchId", v)}>
+        <Select
+          value={currentBranchId || "all"}
+          onValueChange={(v) => updateParam("branchId", v)}
+          items={[
+            { value: "all", label: "Tất cả chi nhánh" },
+            ...branches.map((b) => ({ value: b.id, label: b.name })),
+          ]}
+        >
           <SelectTrigger className="w-[180px] bg-background">
             <SelectValue placeholder="Tất cả" />
           </SelectTrigger>
@@ -105,7 +122,14 @@ export function ScheduleFilters({
 
       <div className="space-y-1.5">
         <label className="text-xs text-muted-foreground font-medium">Lớp học</label>
-        <Select value={currentClassId || "all"} onValueChange={(v) => updateParam("classId", v)}>
+        <Select
+          value={currentClassId || "all"}
+          onValueChange={(v) => updateParam("classId", v)}
+          items={[
+            { value: "all", label: "Tất cả lớp" },
+            ...classes.map((c) => ({ value: c.id, label: c.name })),
+          ]}
+        >
           <SelectTrigger className="w-[200px] bg-background">
             <SelectValue placeholder="Tất cả lớp" />
           </SelectTrigger>
@@ -122,7 +146,14 @@ export function ScheduleFilters({
 
       <div className="space-y-1.5">
         <label className="text-xs text-muted-foreground font-medium">Giáo viên</label>
-        <Select value={currentTeacherId || "all"} onValueChange={(v) => updateParam("teacherId", v)}>
+        <Select
+          value={currentTeacherId || "all"}
+          onValueChange={(v) => updateParam("teacherId", v)}
+          items={[
+            { value: "all", label: "Tất cả giáo viên" },
+            ...teachers.map((t) => ({ value: t.id, label: t.fullName })),
+          ]}
+        >
           <SelectTrigger className="w-[200px] bg-background">
             <SelectValue placeholder="Tất cả GV" />
           </SelectTrigger>

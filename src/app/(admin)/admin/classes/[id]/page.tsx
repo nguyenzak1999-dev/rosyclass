@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
-export default async function ClassDetailPage({ params }: { params: { id: string } }) {
+export default async function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const classData = await prisma.class.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       course: true,
       teacher: true,
@@ -20,13 +21,13 @@ export default async function ClassDetailPage({ params }: { params: { id: string
       },
       schedules: {
         include: { teacher: true, room: true },
-        orderBy: { dayOfWeek: "asc" },
+        orderBy: { dayOfWeek: "asc" }
       },
       sessions: {
         include: { teacher: true, room: true, _count: { select: { attendances: true } } },
-        orderBy: { sessionDate: "asc" },
+        orderBy: { sessionDate: "asc" }
       },
-      classNotes: { orderBy: { createdAt: "desc" }, take: 5 },
+      classNotes: { orderBy: { createdAt: "desc" }, take: 5 }
     }
   })
 
@@ -45,25 +46,25 @@ export default async function ClassDetailPage({ params }: { params: { id: string
     prisma.teacher.findMany({
       where: { status: "ACTIVE" },
       select: { id: true, fullName: true },
-      orderBy: { fullName: "asc" },
+      orderBy: { fullName: "asc" }
     }),
     prisma.room.findMany({
       where: { isActive: true },
       select: { id: true, name: true, capacity: true },
-      orderBy: { name: "asc" },
+      orderBy: { name: "asc" }
     }),
     prisma.score.findMany({
-      where: { classId: params.id },
+      where: { classId: id },
       orderBy: { date: "desc" },
       include: {
         student: { select: { id: true, fullName: true } },
-        session: { select: { id: true, sessionDate: true, topic: true } },
-      },
-    }),
+        session: { select: { id: true, sessionDate: true, topic: true } }
+      }
+    })
   ])
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center gap-4">
         <Link href="/admin/classes">
           <Button variant="outline" size="icon">

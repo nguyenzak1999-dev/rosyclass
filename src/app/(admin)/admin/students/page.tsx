@@ -30,6 +30,7 @@ export default async function StudentsPage() {
 
     return {
       id: student.id,
+      code: student.code,
       fullName: student.fullName,
       email: student.email,
       phone: student.phone,

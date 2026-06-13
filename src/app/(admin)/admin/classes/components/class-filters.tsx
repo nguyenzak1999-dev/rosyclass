@@ -52,6 +52,14 @@ export function ClassFilters({
         <Select
           value={currentStatus || "all"}
           onValueChange={(v) => updateParam("status", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            { value: "UPCOMING", label: "Sắp mở" },
+            { value: "ACTIVE", label: "Đang học" },
+            { value: "COMPLETED", label: "Đã kết thúc" },
+            { value: "PAUSED", label: "Tạm dừng" },
+            { value: "CANCELLED", label: "Đã huỷ" },
+          ]}
         >
           <SelectTrigger className="w-full bg-background sm:w-[160px]">
             <SelectValue placeholder="Tất cả" />
@@ -72,6 +80,10 @@ export function ClassFilters({
         <Select
           value={currentCourseId || "all"}
           onValueChange={(v) => updateParam("courseId", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            ...courses.map((c) => ({ value: c.id, label: c.name })),
+          ]}
         >
           <SelectTrigger className="w-full bg-background sm:w-[200px]">
             <SelectValue placeholder="Tất cả" />
@@ -92,6 +104,10 @@ export function ClassFilters({
         <Select
           value={currentBranchId || "all"}
           onValueChange={(v) => updateParam("branchId", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            ...branches.map((b) => ({ value: b.id, label: b.name })),
+          ]}
         >
           <SelectTrigger className="w-full bg-background sm:w-[180px]">
             <SelectValue placeholder="Tất cả" />
@@ -112,6 +128,10 @@ export function ClassFilters({
         <Select
           value={currentTeacherId || "all"}
           onValueChange={(v) => updateParam("teacherId", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            ...teachers.map((t) => ({ value: t.id, label: t.fullName })),
+          ]}
         >
           <SelectTrigger className="w-full bg-background sm:w-[200px]">
             <SelectValue placeholder="Tất cả" />

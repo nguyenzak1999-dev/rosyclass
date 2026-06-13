@@ -25,6 +25,7 @@ import {
 import { upsertPayment } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { formatMoneyInput } from "@/lib/utils"
 
 interface PaymentDialogProps {
   initialData?: any
@@ -36,7 +37,7 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   
-  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, reset } = useForm<PaymentFormValues>({
+  const { register, handleSubmit, setValue, watch, trigger: triggerValidation, formState: { errors, isSubmitting }, reset } = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema) as any,
     defaultValues: initialData || {
       studentId: "",
@@ -51,6 +52,8 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
   const studentId = watch("studentId")
   const paymentMethod = watch("paymentMethod")
   const status = watch("status")
+  const totalAmountVal = watch("totalAmount")
+  const paidAmountVal = watch("paidAmount")
 
   React.useEffect(() => {
     if (open) {
@@ -80,6 +83,9 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
     }
   }
 
+  const { ref: totalAmountRef, ...totalAmountRegister } = register("totalAmount")
+  const { ref: paidAmountRef, ...paidAmountRegister } = register("paidAmount")
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={(trigger as React.ReactElement) || <Button>+ Tạo phiếu thu</Button>} />
@@ -92,7 +98,9 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
             <Label htmlFor="studentId">Học viên *</Label>
             <Select value={studentId} onValueChange={(value: any) => setValue("studentId", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Chọn học viên" />
+                <SelectValue placeholder="Chọn học viên">
+                  {studentId ? students.find(s => s.id === studentId)?.fullName || "Chọn học viên" : "Chọn học viên"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {students.map(s => (
@@ -106,11 +114,35 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="totalAmount">Tổng tiền (VNĐ) *</Label>
-              <Input id="totalAmount" type="number" {...register("totalAmount")} />
+              <Input
+                id="totalAmount"
+                type="text"
+                inputMode="numeric"
+                value={totalAmountVal !== undefined && totalAmountVal !== null ? formatMoneyInput(totalAmountVal) : ""}
+                onChange={(e) => {
+                  const rawVal = e.target.value
+                  const cleanVal = rawVal.replace(/\D/g, "")
+                  setValue("totalAmount", cleanVal ? parseInt(cleanVal, 10) : 0, { shouldValidate: true, shouldDirty: true })
+                }}
+                onBlur={() => triggerValidation("totalAmount")}
+                placeholder="0"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="paidAmount">Đã đóng (VNĐ)</Label>
-              <Input id="paidAmount" type="number" {...register("paidAmount")} />
+              <Input
+                id="paidAmount"
+                type="text"
+                inputMode="numeric"
+                value={paidAmountVal !== undefined && paidAmountVal !== null ? formatMoneyInput(paidAmountVal) : ""}
+                onChange={(e) => {
+                  const rawVal = e.target.value
+                  const cleanVal = rawVal.replace(/\D/g, "")
+                  setValue("paidAmount", cleanVal ? parseInt(cleanVal, 10) : 0, { shouldValidate: true, shouldDirty: true })
+                }}
+                onBlur={() => triggerValidation("paidAmount")}
+                placeholder="0"
+              />
             </div>
           </div>
 
@@ -119,7 +151,12 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
               <Label htmlFor="paymentMethod">Phương thức</Label>
               <Select value={paymentMethod} onValueChange={(value: any) => setValue("paymentMethod", value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Phương thức" />
+                  <SelectValue placeholder="Phương thức">
+                    {paymentMethod === "CASH" ? "Tiền mặt" :
+                     paymentMethod === "BANK_TRANSFER" ? "Chuyển khoản" :
+                     paymentMethod === "CARD" ? "Quẹt thẻ" :
+                     paymentMethod === "OTHER" ? "Khác" : "Phương thức"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="CASH">Tiền mặt</SelectItem>
@@ -133,7 +170,13 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
               <Label htmlFor="status">Trạng thái</Label>
               <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Trạng thái" />
+                  <SelectValue placeholder="Trạng thái">
+                    {status === "UNPAID" ? "Chưa thanh toán" :
+                     status === "PARTIAL" ? "Thanh toán 1 phần" :
+                     status === "PAID" ? "Đã thanh toán đủ" :
+                     status === "REFUNDED" ? "Đã hoàn tiền" :
+                     status === "CANCELLED" ? "Hủy" : "Trạng thái"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="UNPAID">Chưa thanh toán</SelectItem>

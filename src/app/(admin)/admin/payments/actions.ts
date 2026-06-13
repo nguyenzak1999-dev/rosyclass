@@ -6,11 +6,20 @@ import {
   paymentSchema,
   recordPaymentSchema,
   type PaymentFormValues,
-  type RecordPaymentFormValues,
+  type RecordPaymentFormValues
 } from "@/lib/schemas/payment"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage } from "@/lib/errors"
 import { notifyAdmins } from "@/app/(admin)/admin/notifications/actions"
+
+function removeDiacritics(str: string): string {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toUpperCase();
+}
 
 export async function upsertPayment(data: PaymentFormValues) {
   try {
@@ -36,16 +45,40 @@ export async function upsertPayment(data: PaymentFormValues) {
       note: parsedData.note,
       studentId: parsedData.studentId,
       classId: parsedData.classId ?? null,
-      courseId: parsedData.courseId ?? null,
+      courseId: parsedData.courseId ?? null
     }
 
     let resultId: string
     if (parsedData.id) {
-      await prisma.payment.update({ where: { id: parsedData.id }, data: payload })
+      const student = await prisma.student.findUnique({
+        where: { id: parsedData.studentId },
+        select: { code: true, fullName: true }
+      })
+      const existing = await prisma.payment.findUnique({
+        where: { id: parsedData.id },
+        select: { receiptCode: true }
+      })
+      const receiptCode = existing?.receiptCode || await generateReceiptCode()
+      const qrPayload = buildQrPayload(receiptCode, parsedData.totalAmount, student)
+
+      await prisma.payment.update({ 
+        where: { id: parsedData.id }, 
+        data: {
+          ...payload,
+          qrPayload
+        } 
+      })
       resultId = parsedData.id
     } else {
+      const receiptCode = await generateReceiptCode()
+      const student = await prisma.student.findUnique({
+        where: { id: parsedData.studentId },
+        select: { code: true, fullName: true }
+      })
+      const qrPayload = buildQrPayload(receiptCode, parsedData.totalAmount, student)
+
       const newPayment = await prisma.payment.create({
-        data: { ...payload, createdById: user.id },
+        data: { ...payload, receiptCode, qrPayload, createdById: user.id }
       })
       resultId = newPayment.id
     }
@@ -85,7 +118,7 @@ export async function recordPayment(data: RecordPaymentFormValues) {
 
     const payment = await prisma.payment.findUnique({
       where: { id: parsed.paymentId },
-      include: { student: { select: { id: true, fullName: true } } },
+      include: { student: { select: { id: true, fullName: true } } }
     })
     if (!payment) {
       return { success: false, error: "Không tìm thấy payment" }
@@ -93,7 +126,7 @@ export async function recordPayment(data: RecordPaymentFormValues) {
     if (payment.status === "CANCELLED" || payment.status === "REFUNDED") {
       return {
         success: false,
-        error: `Không thể ghi nhận thanh toán cho payment đã ${payment.status === "CANCELLED" ? "huỷ" : "hoàn tiền"}`,
+        error: `Không thể ghi nhận thanh toán cho payment đã ${payment.status === "CANCELLED" ? "huỷ" : "hoàn tiền"}`
       }
     }
 
@@ -101,7 +134,7 @@ export async function recordPayment(data: RecordPaymentFormValues) {
     if (newPaidAmount > payment.totalAmount) {
       return {
         success: false,
-        error: `Số tiền thanh toán vượt quá tổng (đã trả ${payment.paidAmount.toLocaleString("vi-VN")}đ / tổng ${payment.totalAmount.toLocaleString("vi-VN")}đ)`,
+        error: `Số tiền thanh toán vượt quá tổng (đã trả ${payment.paidAmount.toLocaleString("vi-VN")}đ / tổng ${payment.totalAmount.toLocaleString("vi-VN")}đ)`
       }
     }
 
@@ -116,9 +149,7 @@ export async function recordPayment(data: RecordPaymentFormValues) {
 
     // Build note lịch sử
     const historyEntry = `[${new Date().toLocaleString("vi-VN")}] ${user.fullName} - ${parsed.amount.toLocaleString("vi-VN")}đ (${parsed.paymentMethod})${parsed.note ? ` - ${parsed.note}` : ""}`
-    const newNote = payment.note
-      ? `${payment.note}\n${historyEntry}`
-      : historyEntry
+    const newNote = payment.note ? `${payment.note}\n${historyEntry}` : historyEntry
 
     await prisma.payment.update({
       where: { id: parsed.paymentId },
@@ -128,8 +159,8 @@ export async function recordPayment(data: RecordPaymentFormValues) {
         status: newStatus,
         paymentMethod: parsed.paymentMethod,
         paymentDate,
-        note: newNote,
-      },
+        note: newNote
+      }
     })
 
     // Notify admin nếu PAID xong
@@ -159,53 +190,148 @@ export async function createPaymentForStudent(
   studentId: string,
   classId: string,
   dueDays: number = 14,
-  createdById?: string
-) {
+  createdById?: string,
+  createPayment: boolean = true
+): Promise<{ id: string; totalAmount: number } | null> {
   try {
     const actorId = createdById ?? (await requirePermission(PERMISSIONS.paymentsWrite)).id
     const cls = await prisma.class.findUnique({
       where: { id: classId },
       select: {
         id: true,
-        course: { select: { id: true, tuitionFee: true, salePrice: true } },
-      },
+        name: true,
+        tuitionFee: true,
+        course: {
+          select: {
+            id: true,
+            name: true,
+            totalSessions: true,
+            tuitionFee: true,
+            salePrice: true
+          }
+        }
+      }
     })
     if (!cls || !cls.course) return null
 
-    const totalAmount = cls.course.salePrice || cls.course.tuitionFee
-    if (totalAmount <= 0) return null
+    const totalAmount = cls.tuitionFee ?? (cls.course.salePrice || cls.course.tuitionFee)
+    const sessionCount = cls.course.totalSessions || 1
+    const receiptCode = await generateReceiptCode()
+    let newPayment: { id: string; totalAmount: number } | null = null
 
     // Tạo dueDate = now + dueDays
     const dueDate = new Date()
     dueDate.setDate(dueDate.getDate() + dueDays)
 
-    const newPayment = await prisma.payment.create({
-      data: {
-        studentId,
-        classId,
-        courseId: cls.course.id,
-        totalAmount,
-        paidAmount: 0,
-        remainingAmount: totalAmount,
-        status: "UNPAID",
-        paymentMethod: "CASH",
-        dueDate,
-        note: "Tự động tạo khi xếp vào lớp",
-        createdById: actorId,
-      },
+    await prisma.$transaction(async (tx) => {
+      if (createPayment && totalAmount > 0) {
+        const student = await tx.student.findUnique({
+          where: { id: studentId },
+          select: { code: true, fullName: true }
+        })
+        newPayment = await tx.payment.create({
+          data: {
+            receiptCode,
+            studentId,
+            classId,
+            courseId: cls.course.id,
+            totalAmount,
+            paidAmount: 0,
+            remainingAmount: totalAmount,
+            status: "UNPAID",
+            paymentMethod: "BANK_TRANSFER",
+            dueDate,
+            qrPayload: buildQrPayload(receiptCode, totalAmount, student),
+            bankName: process.env.PAYMENT_BANK_NAME || null,
+            bankAccountName: process.env.PAYMENT_BANK_ACCOUNT_NAME || null,
+            bankAccountNo: process.env.PAYMENT_BANK_ACCOUNT_NO || null,
+            note: "Tự động tạo khi xếp vào lớp",
+            createdById: actorId,
+            lineItems: {
+              create: {
+                description: `${cls.course.name} (${sessionCount} buổi)`,
+                category: "TUITION",
+                quantity: 1,
+                unitAmount: totalAmount,
+                totalAmount,
+              }
+            }
+          }
+        })
+      }
+
+      await tx.classStudent.create({
+        data: {
+          studentId,
+          classId,
+          status: "ACTIVE"
+        }
+      })
+
+      await tx.student.update({
+        where: { id: studentId },
+        data: { status: "ACTIVE" }
+      })
     })
 
-    notifyAdmins(
-      "Payment mới",
-      `Học viên vừa được tạo payment ${totalAmount.toLocaleString("vi-VN")}đ`,
-      `/admin/payments/${newPayment.id}`
-    )
+    const paymentForNotification = newPayment as { id: string; totalAmount: number } | null
+    if (paymentForNotification) {
+      notifyAdmins(
+        "Payment mới",
+        `Học viên vừa được tạo payment ${totalAmount.toLocaleString("vi-VN")}đ`,
+        `/admin/payments/${paymentForNotification.id}`
+      )
+    }
 
-    return newPayment
+    return paymentForNotification
   } catch (error) {
     console.error("Create payment for student error:", error)
     return null
   }
+}
+
+async function generateReceiptCode() {
+  const today = new Date()
+  const yyyymmdd = today.toISOString().slice(0, 10).replaceAll("-", "")
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const suffix = Math.random().toString(36).slice(2, 8).toUpperCase()
+    const receiptCode = `PT-${yyyymmdd}-${suffix}`
+    const existing = await prisma.payment.findUnique({ where: { receiptCode } })
+    if (!existing) return receiptCode
+  }
+
+  return `PT-${yyyymmdd}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
+}
+
+function buildQrPayload(
+  receiptCode: string,
+  amount: number,
+  student?: { code?: string | null; fullName?: string | null } | null
+) {
+  const bankCode = process.env.VIETQR_BANK_CODE
+  const accountNo = process.env.PAYMENT_BANK_ACCOUNT_NO
+  const accountName = process.env.PAYMENT_BANK_ACCOUNT_NAME
+
+  let addInfo = `ROSY ${receiptCode}`
+  if (student && student.code) {
+    const cleanName = student.fullName ? removeDiacritics(student.fullName) : ""
+    addInfo = `ROSY ${student.code} ${cleanName}`.trim()
+  }
+
+  if (!bankCode || !accountNo) {
+    return addInfo
+  }
+
+  const params = new URLSearchParams({
+    amount: String(Math.round(amount)),
+    addInfo
+  })
+  if (accountName) {
+    params.set("accountName", accountName)
+  }
+
+  return `https://img.vietqr.io/image/${bankCode}-${accountNo}-compact2.png?${params.toString()}`
 }
 
 /**
@@ -216,7 +342,7 @@ export async function refundPayment(paymentId: string, reason: string) {
     const user = await requirePermission(PERMISSIONS.paymentsWrite)
     const payment = await prisma.payment.findUnique({
       where: { id: paymentId },
-      include: { student: { select: { fullName: true } } },
+      include: { student: { select: { fullName: true } } }
     })
     if (!payment) return { success: false, error: "Không tìm thấy payment" }
     if (payment.status === "REFUNDED") {
@@ -224,16 +350,14 @@ export async function refundPayment(paymentId: string, reason: string) {
     }
 
     const historyEntry = `[${new Date().toLocaleString("vi-VN")}] ${user.fullName} - HOÀN TIỀN${reason ? `: ${reason}` : ""}`
-    const newNote = payment.note
-      ? `${payment.note}\n${historyEntry}`
-      : historyEntry
+    const newNote = payment.note ? `${payment.note}\n${historyEntry}` : historyEntry
 
     await prisma.payment.update({
       where: { id: paymentId },
       data: {
         status: "REFUNDED",
-        note: newNote,
-      },
+        note: newNote
+      }
     })
 
     notifyAdmins(

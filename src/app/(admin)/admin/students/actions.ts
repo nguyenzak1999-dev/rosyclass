@@ -7,6 +7,29 @@ import { revalidatePath } from "next/cache"
 import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 import type { Prisma } from "@prisma/client"
 
+export async function generateStudentCode() {
+  const lastStudent = await prisma.student.findFirst({
+    where: {
+      code: {
+        startsWith: "HV",
+      },
+    },
+    orderBy: {
+      code: "desc",
+    },
+  })
+
+  let nextNum = 1
+  if (lastStudent && lastStudent.code) {
+    const match = lastStudent.code.match(/HV(\d+)/)
+    if (match) {
+      nextNum = parseInt(match[1], 10) + 1
+    }
+  }
+
+  return `HV${String(nextNum).padStart(4, "0")}`
+}
+
 export async function upsertStudent(data: StudentFormValues) {
   try {
     await requirePermission(PERMISSIONS.studentsWrite)
@@ -25,11 +48,15 @@ export async function upsertStudent(data: StudentFormValues) {
       status: parsedData.status,
       notes: parsedData.notes,
       parentId: parsedData.parentId,
+      code: parsedData.code || undefined,
     }
 
     if (parsedData.id) {
       await prisma.student.update({ where: { id: parsedData.id }, data: payload })
     } else {
+      if (!payload.code) {
+        payload.code = await generateStudentCode()
+      }
       await prisma.student.create({ data: payload })
     }
 

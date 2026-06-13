@@ -35,6 +35,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ADMIN_COLORS, getPrimaryForeground, resolveAdminPrimaryColor } from "@/lib/theme-appearance"
 import type { AdminUser } from "@/lib/auth/permission-definitions"
+import type { SiteSettings } from "@/lib/site-settings"
+import { saveSiteSettings } from "../site/actions"
+import { CreditCard } from "lucide-react"
 
 const TABS = [
   { id: "profile", label: "Hồ sơ cá nhân", icon: User },
@@ -42,6 +45,7 @@ const TABS = [
   { id: "notifications", label: "Thông báo", icon: Bell },
   { id: "security", label: "Bảo mật", icon: Shield },
   { id: "language", label: "Ngôn ngữ & Vùng", icon: Globe },
+  { id: "payment", label: "Thanh toán", icon: CreditCard },
 ]
 
 const RADII = [
@@ -66,9 +70,9 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
-export default function PreferencesClient({ user }: { user: AdminUser }) {
+export default function PreferencesClient({ user, siteSettings }: { user: AdminUser, siteSettings: SiteSettings }) {
   const { theme, setTheme } = useTheme()
-  const [activeTab, setActiveTab] = useState("appearance")
+  const [activeTab, setActiveTab] = useState("payment")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Appearance state
@@ -124,12 +128,35 @@ export default function PreferencesClient({ user }: { user: AdminUser }) {
   const [pushNotifs, setPushNotifs] = useState(true)
   const [marketingNotifs, setMarketingNotifs] = useState(false)
 
+  // Payment State
+  const [paymentBankCode, setPaymentBankCode] = useState(siteSettings.paymentBankCode || "")
+  const [paymentBankAccountNo, setPaymentBankAccountNo] = useState(siteSettings.paymentBankAccountNo || "")
+  const [paymentBankAccountName, setPaymentBankAccountName] = useState(siteSettings.paymentBankAccountName || "")
+
+  const handleSavePaymentSettings = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    setIsSubmitting(true)
+    const newSettings = {
+      ...siteSettings,
+      paymentBankCode,
+      paymentBankAccountNo,
+      paymentBankAccountName
+    }
+    const result = await saveSiteSettings(newSettings)
+    setIsSubmitting(false)
+    if (result.success) {
+      toast.success("Đã lưu thông tin tài khoản VietQR!")
+    } else {
+      toast.error(result.error || "Có lỗi xảy ra khi lưu")
+    }
+  }
+
   return (
     <div className="flex flex-col space-y-6 max-w-6xl">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Cài đặt Preferences</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Cài đặt Hệ thống</h1>
         <p className="text-muted-foreground mt-2">
-          Quản lý tài khoản, giao diện, thông báo và bảo mật cá nhân của bạn.
+          Quản lý tài khoản, giao diện, thanh toán và bảo mật hệ thống.
         </p>
       </div>
       <Separator />
@@ -495,6 +522,53 @@ export default function PreferencesClient({ user }: { user: AdminUser }) {
               <div className="flex justify-end pt-4">
                 <Button onClick={handleSave} disabled={isSubmitting}>Lưu cấu hình vùng</Button>
               </div>
+            </div>
+          )}
+
+          {activeTab === "payment" && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div>
+                <h3 className="text-lg font-medium">Cấu hình thanh toán (VietQR)</h3>
+                <p className="text-sm text-muted-foreground">Thông tin ngân hàng để tự động hiển thị mã VietQR chuyển khoản trên biên lai thu học phí.</p>
+              </div>
+              <Separator />
+
+              <form onSubmit={handleSavePaymentSettings} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Mã ngân hàng (VietQR Bank Code) *</Label>
+                  <Input 
+                    value={paymentBankCode} 
+                    onChange={(e) => setPaymentBankCode(e.target.value)} 
+                    placeholder="Ví dụ: MB, VCB, TCB, BIDV..." 
+                    required
+                  />
+                  <p className="text-[10px] text-muted-foreground">Mã ngân hàng viết tắt chuẩn VietQR (MB, VCB, TCB, BIDV, ACB, VPB...)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Số tài khoản *</Label>
+                  <Input 
+                    value={paymentBankAccountNo} 
+                    onChange={(e) => setPaymentBankAccountNo(e.target.value)} 
+                    placeholder="Ví dụ: 0983456789" 
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tên chủ tài khoản (Viết hoa không dấu) *</Label>
+                  <Input 
+                    value={paymentBankAccountName} 
+                    onChange={(e) => setPaymentBankAccountName(e.target.value)} 
+                    placeholder="Ví dụ: NGUYEN VAN A" 
+                    required
+                  />
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Đang lưu..." : "Lưu tài khoản"}
+                  </Button>
+                </div>
+              </form>
             </div>
           )}
         </main>

@@ -19,6 +19,7 @@ export function PersonalInfoTab({ student }: { student: any }) {
     resolver: zodResolver(studentSchema) as any,
     defaultValues: {
       id: student.id,
+      code: student.code || "",
       fullName: student.fullName,
       email: student.email || "",
       phone: student.phone || "",
@@ -54,6 +55,11 @@ export function PersonalInfoTab({ student }: { student: any }) {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="code">Mã học viên</Label>
+              <Input id="code" {...register("code")} disabled className="font-mono bg-muted" />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="fullName">Họ và tên *</Label>
               <Input id="fullName" {...register("fullName")} placeholder="Nguyễn Văn A" />

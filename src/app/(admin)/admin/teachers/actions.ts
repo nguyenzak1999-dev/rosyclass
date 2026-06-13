@@ -47,6 +47,7 @@ export async function upsertTeacher(data: TeacherFormValues) {
           certificates: parsedData.certificates,
           status: parsedData.status,
           showOnHomepage: parsedData.showOnHomepage ?? false,
+          hourlyRate: parsedData.hourlyRate ?? 0,
         }
         await prisma.teacher.upsert({
           where: { userId: user.id },
@@ -81,6 +82,7 @@ export async function upsertTeacher(data: TeacherFormValues) {
             certificates: parsedData.certificates,
             status: parsedData.status,
             showOnHomepage: parsedData.showOnHomepage ?? false,
+            hourlyRate: parsedData.hourlyRate ?? 0,
           }
         })
       }
@@ -94,5 +96,32 @@ export async function upsertTeacher(data: TeacherFormValues) {
       return { success: false, error: "Email này đã được sử dụng" }
     }
     return { success: false, error: getErrorMessage(error) }
+  }
+}
+
+export async function deleteTeacher(userId: string) {
+  try {
+    await requirePermission(PERMISSIONS.teachersWrite)
+
+    // Delete Teacher profile first if exists
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId }
+    })
+    if (teacher) {
+      await prisma.teacher.delete({
+        where: { id: teacher.id }
+      })
+    }
+
+    // Then delete User
+    await prisma.user.delete({
+      where: { id: userId }
+    })
+
+    revalidatePath("/admin/teachers")
+    return { success: true }
+  } catch (error: unknown) {
+    console.error("Teacher delete error:", error)
+    return { success: false, error: "Không thể xóa nhân sự này do có dữ liệu liên kết" }
   }
 }

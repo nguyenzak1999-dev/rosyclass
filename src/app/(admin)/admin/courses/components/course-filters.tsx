@@ -59,6 +59,10 @@ export function CourseFilters({
         <Select
           value={currentLevel || "all"}
           onValueChange={(v) => updateParam("level", v)}
+          items={[
+            { value: "all", label: "Tất cả cấp độ" },
+            ...COURSE_LEVELS,
+          ]}
         >
           <SelectTrigger className="w-[180px] bg-background">
             <SelectValue placeholder="Tất cả" />
@@ -79,6 +83,13 @@ export function CourseFilters({
         <Select
           value={currentStatus || "all"}
           onValueChange={(v) => updateParam("status", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            { value: "ACTIVE", label: "Đang mở" },
+            { value: "INACTIVE", label: "Khóa" },
+            { value: "DRAFT", label: "Bản nháp" },
+            { value: "PUBLISHED", label: "Đã xuất bản" },
+          ]}
         >
           <SelectTrigger className="w-[160px] bg-background">
             <SelectValue placeholder="Tất cả" />
@@ -98,6 +109,11 @@ export function CourseFilters({
         <Select
           value={currentIsPublished || "all"}
           onValueChange={(v) => updateParam("isPublished", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            { value: "true", label: "Đang hiển thị" },
+            { value: "false", label: "Đang ẩn" },
+          ]}
         >
           <SelectTrigger className="w-[180px] bg-background">
             <SelectValue placeholder="Tất cả" />

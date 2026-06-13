@@ -8,10 +8,11 @@ import AttendanceFormClient from "./attendance-form-client"
 export default async function AttendanceDetailPage({
   params,
 }: {
-  params: { sessionId: string }
+  params: Promise<{ sessionId: string }>
 }) {
+  const { sessionId } = await params
   const session = await prisma.classSession.findUnique({
-    where: { id: params.sessionId },
+    where: { id: sessionId },
     include: {
       class: {
         select: {

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { format } from "date-fns"
 import { Plus, GraduationCap, Users, Clock, BookOpen } from "lucide-react"
@@ -81,7 +81,16 @@ export function ClassesTab({ student, availableClasses = [] }: ClassesTabProps) 
                 <Label>Chọn lớp phù hợp</Label>
                 <Select value={selectedClass} onValueChange={(value) => value && setSelectedClass(value)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Chọn lớp học..." />
+                    <span className="truncate text-left">
+                      {selectedClass
+                        ? (() => {
+                            const cls = availableClasses.find((c: any) => c.id === selectedClass)
+                            if (!cls) return "Chọn lớp học..."
+                            const seatsLeft = cls.maxStudents - (cls._count?.students || 0)
+                            return `${cls.name} — ${cls.course?.name} (${seatsLeft} chỗ trống)`
+                          })()
+                        : "Chọn lớp học..."}
+                    </span>
                   </SelectTrigger>
                   <SelectContent>
                     {availableClasses.length === 0 ? (

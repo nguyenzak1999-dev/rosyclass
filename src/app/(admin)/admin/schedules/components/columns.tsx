@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
+import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal, ExternalLink, CalendarCheck, Copy } from "lucide-react"
 import { format } from "date-fns"
@@ -15,15 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const sessionStatusMap: Record<
-  string,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
-> = {
-  SCHEDULED: { label: "Sắp tới", variant: "default" },
-  COMPLETED: { label: "Hoàn thành", variant: "secondary" },
-  CANCELLED: { label: "Đã huỷ", variant: "destructive" },
-  MAKE_UP: { label: "Phụ đạo", variant: "outline" },
-}
 
 export type ScheduleData = {
   id: string
@@ -127,11 +119,9 @@ export const columns: ColumnDef<ScheduleData>[] = [
   {
     accessorKey: "status",
     header: "Trạng thái",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      const config = sessionStatusMap[status] || { label: status, variant: "outline" }
-      return <Badge variant={config.variant}>{config.label}</Badge>
-    },
+    cell: ({ row }) => (
+      <BadgeStatus status={row.getValue("status") as string} />
+    ),
   },
   {
     id: "actions",

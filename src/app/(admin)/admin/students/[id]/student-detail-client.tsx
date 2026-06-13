@@ -50,7 +50,9 @@ export function StudentDetailClient({ student, availableClasses = [] }: StudentD
         </Button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold tracking-tight truncate">{student.fullName}</h1>
+            <h1 className="text-2xl font-bold tracking-tight truncate">
+              {student.fullName} {student.code && <span className="text-muted-foreground font-mono text-base font-normal">({student.code})</span>}
+            </h1>
             <Badge variant={statusCfg.variant as any}>{statusCfg.label}</Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">

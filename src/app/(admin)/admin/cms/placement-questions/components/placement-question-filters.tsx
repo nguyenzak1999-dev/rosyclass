@@ -67,6 +67,10 @@ export function PlacementQuestionFilters({
         <Select
           value={currentType || "all"}
           onValueChange={(v) => updateParam("type", v)}
+          items={[
+            { value: "all", label: "Tất cả loại" },
+            ...QUESTION_TYPES.map((t) => ({ value: t, label: t })),
+          ]}
         >
           <SelectTrigger className="w-[160px] bg-background">
             <SelectValue placeholder="Tất cả" />
@@ -87,6 +91,10 @@ export function PlacementQuestionFilters({
         <Select
           value={currentLevel || "all"}
           onValueChange={(v) => updateParam("level", v)}
+          items={[
+            { value: "all", label: "Tất cả cấp độ" },
+            ...COURSE_LEVELS,
+          ]}
         >
           <SelectTrigger className="w-[200px] bg-background">
             <SelectValue placeholder="Tất cả" />
@@ -107,6 +115,11 @@ export function PlacementQuestionFilters({
         <Select
           value={currentIsPublished || "all"}
           onValueChange={(v) => updateParam("isPublished", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            { value: "true", label: "Đang hiện" },
+            { value: "false", label: "Đang ẩn" },
+          ]}
         >
           <SelectTrigger className="w-[160px] bg-background">
             <SelectValue placeholder="Tất cả" />

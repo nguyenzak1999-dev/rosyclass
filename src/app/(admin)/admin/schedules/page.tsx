@@ -1,12 +1,11 @@
 import { prisma } from "@/lib/prisma"
-import { DataTable } from "@/components/ui/data-table"
-import { columns } from "./components/columns"
 import { Button } from "@/components/ui/button"
 import { Plus, CalendarDays } from "lucide-react"
 import { ScheduleFilters } from "./components/schedule-filters"
 import Link from "next/link"
 import { Prisma } from "@prisma/client"
 import { addDays, startOfMonth, endOfMonth, subMonths, startOfDay } from "date-fns"
+import { SchedulesClient } from "./components/schedules-client"
 
 export const dynamic = "force-dynamic"
 
@@ -123,12 +122,7 @@ export default async function SchedulesPage({ searchParams }: PageProps) {
           <p className="text-xs">Thử đổi tháng hoặc bỏ bộ lọc.</p>
         </div>
       ) : (
-        <DataTable
-          columns={columns as any}
-          data={JSON.parse(JSON.stringify(schedules))}
-          searchKey="topic"
-          searchPlaceholder="Tìm theo chủ đề..."
-        />
+        <SchedulesClient schedules={JSON.parse(JSON.stringify(schedules))} />
       )}
     </div>
   )

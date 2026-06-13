@@ -45,6 +45,7 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
       roleCode: "TEACHER",
       status: "ACTIVE",
       showOnHomepage: false,
+      hourlyRate: 0,
     }
   })
 
@@ -63,6 +64,7 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
           roleCode: "TEACHER",
           status: "ACTIVE",
           showOnHomepage: false,
+          hourlyRate: 0,
         })
       }
     }
@@ -82,7 +84,7 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={(trigger as React.ReactElement) || <Button>+ Thêm nhân sự</Button>} />
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[900px] max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{teacher ? "Sửa thông tin nhân sự" : "Thêm nhân sự mới"}</DialogTitle>
         </DialogHeader>
@@ -143,6 +145,21 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
               <div className="space-y-2">
                 <Label htmlFor="bio">Giới thiệu ngắn (Kinh nghiệm)</Label>
                 <Input id="bio" {...register("bio")} placeholder="5 năm kinh nghiệm giảng dạy" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="hourlyRate" className="flex items-center gap-1.5">
+                  Lương theo giờ (VNĐ)
+                  <span className="text-xs text-muted-foreground font-normal">— Dùng để tính bảng lương hàng tháng</span>
+                </Label>
+                <Input
+                  id="hourlyRate"
+                  type="number"
+                  min={0}
+                  step={5000}
+                  {...register("hourlyRate", { valueAsNumber: true })}
+                  placeholder="Ví dụ: 150000"
+                />
+                {errors.hourlyRate && <p className="text-sm text-destructive">{errors.hourlyRate.message}</p>}
               </div>
               <ImageUploader
                 label="Ảnh đại diện (Avatar)"

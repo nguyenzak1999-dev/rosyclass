@@ -36,6 +36,13 @@ export function BlogFilters({ currentStatus }: BlogFiltersProps) {
         <Select
           value={currentStatus || "all"}
           onValueChange={(v) => updateParam("status", v)}
+          items={[
+            { value: "all", label: "Tất cả" },
+            { value: "DRAFT", label: "Bản nháp" },
+            { value: "PUBLISHED", label: "Đã xuất bản" },
+            { value: "ACTIVE", label: "Đang hoạt động" },
+            { value: "INACTIVE", label: "Không hoạt động" },
+          ]}
         >
           <SelectTrigger className="w-[160px] bg-background">
             <SelectValue placeholder="Tất cả" />

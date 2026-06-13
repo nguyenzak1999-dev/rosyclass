@@ -24,6 +24,7 @@ import { Wallet, Loader2, AlertCircle } from "lucide-react"
 import { recordPayment } from "../../actions"
 import { PAYMENT_METHODS } from "@/lib/schemas/payment"
 import { toast } from "sonner"
+import { formatMoneyInput } from "@/lib/utils"
 
 interface RecordPaymentDialogProps {
   open: boolean
@@ -112,12 +113,14 @@ export function RecordPaymentDialog({
             <Label htmlFor="amount">Số tiền (VNĐ) *</Label>
             <Input
               id="amount"
-              type="number"
-              min="0"
-              step="1000"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="VD: 1000000"
+              type="text"
+              inputMode="numeric"
+              value={formatMoneyInput(amount)}
+              onChange={(e) => {
+                const clean = e.target.value.replace(/\D/g, "")
+                setAmount(clean)
+              }}
+              placeholder="VD: 1.000.000"
               disabled={isSubmitting}
             />
             {willBeFull && numAmount > 0 && (

@@ -2,6 +2,7 @@ import { z } from "zod"
 
 export const studentSchema = z.object({
   id: z.string().optional(),
+  code: z.string().optional(),
   fullName: z.string().min(2, "Họ tên phải có ít nhất 2 ký tự"),
   email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),

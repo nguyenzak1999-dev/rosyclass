@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
+import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
 import { format } from "date-fns"
@@ -16,9 +17,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { deleteStudent } from "../actions"
+import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { Trash2 } from "lucide-react"
 
 export type StudentData = {
   id: string
+  code: string | null
   fullName: string
   email: string | null
   phone: string | null
@@ -31,16 +39,17 @@ export type StudentData = {
   createdAt: Date
 }
 
-const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  ACTIVE: { label: "Đang học", variant: "default" },
-  WAITING_CLASS: { label: "Chờ xếp lớp", variant: "outline" },
-  RESERVED: { label: "Bảo lưu", variant: "secondary" },
-  PAUSED: { label: "Tạm dừng", variant: "secondary" },
-  COMPLETED: { label: "Hoàn thành", variant: "default" },
-  DROPPED: { label: "Đã nghỉ", variant: "destructive" },
-}
 
 export const getColumns = (parents: any[]): ColumnDef<StudentData>[] => [
+  {
+    accessorKey: "code",
+    header: "Mã HV",
+    cell: ({ row }) => (
+      <div className="font-mono text-xs font-semibold text-muted-foreground">
+        {row.getValue("code") || "—"}
+      </div>
+    ),
+  },
   {
     accessorKey: "fullName",
     header: ({ column }) => {
@@ -85,15 +94,9 @@ export const getColumns = (parents: any[]): ColumnDef<StudentData>[] => [
   {
     accessorKey: "status",
     header: "Trạng thái",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      const config = statusMap[status] || { label: status, variant: "outline" }
-      return (
-        <Badge variant={config.variant as any}>
-          {config.label}
-        </Badge>
-      )
-    },
+    cell: ({ row }) => (
+      <BadgeStatus status={row.getValue("status") as string} />
+    ),
   },
   {
     accessorKey: "joinedAt",
@@ -105,44 +108,81 @@ export const getColumns = (parents: any[]): ColumnDef<StudentData>[] => [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const student = row.original
-      const dialogStudent: StudentFormValues = {
-        id: student.id,
-        fullName: student.fullName,
-        email: student.email || "",
-        phone: student.phone || "",
-        status: student.status,
-        currentLevel: student.currentLevel || undefined,
-      }
-
-      return (
-        <div className="flex items-center justify-end">
-          <StudentDialog 
-            student={dialogStudent}
-            parents={parents}
-            trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
-              <span className="sr-only">Mở menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-              <DropdownMenuItem render={<Link href={`/admin/students/${student.id}`} />}>
-                Xem chi tiết
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(student.id)}
-              >
-                Sao chép ID
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )
-    },
+    cell: ({ row }) => <ActionsCell student={row.original} parents={parents} />,
   },
 ]
+
+function ActionsCell({ student, parents }: { student: StudentData; parents: any[] }) {
+  const router = useRouter()
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    const result = await deleteStudent(student.id)
+    setIsDeleting(false)
+    if (result.success) {
+      toast.success("Đã xoá học viên")
+      setDeleteOpen(false)
+      router.refresh()
+    } else {
+      toast.error(result.error)
+    }
+  }
+
+  const dialogStudent: StudentFormValues = {
+    id: student.id,
+    code: student.code || "",
+    fullName: student.fullName,
+    email: student.email || "",
+    phone: student.phone || "",
+    status: student.status,
+    currentLevel: student.currentLevel || undefined,
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <StudentDialog 
+        student={dialogStudent}
+        parents={parents}
+        trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
+          <span className="sr-only">Mở menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+          <DropdownMenuItem render={<Link href={`/admin/students/${student.id}`} />}>
+            Xem chi tiết
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => navigator.clipboard.writeText(student.id)}
+          >
+            Sao chép ID
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Xóa học viên
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Xoá học viên này?"
+        description="Lưu ý: Hành động này không thể hoàn tác. Học viên và tất cả lịch sử học tập, học phí, điểm danh liên quan sẽ bị xóa khỏi hệ thống."
+        confirmText="Xoá"
+        variant="destructive"
+        onConfirm={handleDelete}
+        isSubmitting={isDeleting}
+      />
+    </div>
+  )
+}

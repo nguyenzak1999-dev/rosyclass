@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { PaymentsClient } from "./components/payments-client"
 import { PaymentFilters } from "./components/payment-filters"
 import { Prisma } from "@prisma/client"
+import { getSiteSettings } from "@/lib/get-site-settings"
 
 export const dynamic = "force-dynamic"
 
@@ -27,20 +28,40 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
     where.studentId = filters.studentId
   }
 
-  const [payments, students] = await Promise.all([
+  const [payments, students, siteSettings] = await Promise.all([
     prisma.payment.findMany({
       where,
       orderBy: { createdAt: "desc" },
       include: {
-        student: { select: { id: true, fullName: true, phone: true } },
+        student: { 
+          select: { 
+            id: true, 
+            fullName: true, 
+            phone: true, 
+            email: true,
+            code: true,
+            parent: {
+              select: {
+                fullName: true,
+                phone: true,
+                email: true
+              }
+            }
+          } 
+        },
         class: { select: { id: true, name: true } },
         course: { select: { name: true } },
+        createdBy: { select: { fullName: true } },
+        lineItems: {
+          orderBy: { createdAt: "asc" }
+        }
       },
     }),
     prisma.student.findMany({
       select: { id: true, fullName: true },
       orderBy: { fullName: "asc" },
     }),
+    getSiteSettings(),
   ])
 
   // Stats
@@ -56,6 +77,7 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
 
   const validPayments = payments.map((p) => ({
     id: p.id,
+    receiptCode: p.receiptCode,
     studentId: p.studentId,
     totalAmount: p.totalAmount,
     paidAmount: p.paidAmount,
@@ -64,15 +86,24 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
     status: p.status,
     paymentDate: p.paymentDate,
     dueDate: p.dueDate,
+    qrPayload: p.qrPayload,
+    bankName: p.bankName,
+    bankAccountName: p.bankAccountName,
+    bankAccountNo: p.bankAccountNo,
     note: p.note,
     createdAt: p.createdAt,
     student: {
       id: p.student?.id,
       fullName: p.student?.fullName || "—",
       phone: p.student?.phone,
+      email: p.student?.email,
+      code: p.student?.code || null,
+      parent: p.student?.parent || null,
     },
     class: p.class,
     course: p.course,
+    createdBy: p.createdBy,
+    lineItems: p.lineItems || [],
   }))
 
   return (
@@ -80,8 +111,10 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
       payments={validPayments as any}
       students={students}
       stats={stats}
+      siteSettings={siteSettings}
       filterSlot={
         <PaymentFilters
+          key="payment-filters"
           currentStatus={filters.status || ""}
           currentMethod={filters.method || ""}
           currentStudentId={filters.studentId || ""}

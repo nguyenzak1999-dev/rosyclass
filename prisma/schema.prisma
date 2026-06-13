@@ -173,6 +173,7 @@ model Parent {
 
 model Student {
   id           String        @id @default(uuid())
+  code         String?       @unique
   fullName     String
   phone        String?
   email        String?
@@ -221,6 +222,7 @@ model Teacher {
   classes   Class[]
   schedules ClassSchedule[]
   sessions  ClassSession[]
+  payrolls  TeacherPayroll[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -278,6 +280,8 @@ model Class {
 
   roomId String?
   room   Room?   @relation(fields: [roomId], references: [id])
+
+  tuitionFee Float? // Override course tuition fee
 
   students       ClassStudent[]
   schedules      ClassSchedule[]
@@ -380,6 +384,7 @@ model Attendance {
 
 model Payment {
   id              String        @id @default(uuid())
+  receiptCode     String?       @unique
   totalAmount     Float
   paidAmount      Float         @default(0)
   remainingAmount Float         @default(0)
@@ -387,6 +392,10 @@ model Payment {
   paymentDate     DateTime?
   dueDate         DateTime?
   status          PaymentStatus @default(UNPAID)
+  qrPayload       String?       @db.Text
+  bankName        String?
+  bankAccountName String?
+  bankAccountNo   String?
   note            String?       @db.Text
 
   studentId String
@@ -401,8 +410,26 @@ model Payment {
   createdById String
   createdBy   User   @relation("PaymentCreatedBy", fields: [createdById], references: [id])
 
+  lineItems PaymentLineItem[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PaymentLineItem {
+  id          String          @id @default(uuid())
+  description String
+  category    PaymentCategory @default(TUITION)
+  quantity    Int             @default(1)
+  unitAmount  Float
+  totalAmount Float
+
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([paymentId])
 }
 
 model PlacementTest {
@@ -701,6 +728,15 @@ enum PaymentMethod {
   OTHER
 }
 
+enum PaymentCategory {
+  TUITION
+  MATERIAL
+  TEST
+  MAKE_UP
+  DISCOUNT
+  OTHER
+}
+
 enum ScoreType {
   QUIZ
   MIDTERM
@@ -719,3 +755,44 @@ enum PaymentStatus {
   REFUNDED
   CANCELLED
 }
+
+enum PayrollStatus {
+  DRAFT
+  PAID
+}
+
+// ------------------------------------------------------
+
+model TeacherPayroll {
+  id           String        @id @default(uuid())
+  teacherId    String
+  teacher      Teacher       @relation(fields: [teacherId], references: [id])
+
+  month        Int           // Tháng tính lương (1-12)
+  year         Int           // Năm tính lương
+
+  totalHours   Float         // Tổng số giờ dạy đã hoàn thành
+  hourlyRate   Float         // Mức lương/giờ tại thời điểm chốt
+  baseAmount   Float         // totalHours * hourlyRate
+
+  bonusAmount  Float         @default(0) // Thưởng
+  bonusReason  String?       @db.Text
+
+  deductAmount Float         @default(0) // Khấu trừ
+  deductReason String?       @db.Text
+
+  totalAmount  Float         // Thực lãnh = baseAmount + bonusAmount - deductAmount
+
+  status       PayrollStatus @default(DRAFT)
+  paidAt       DateTime?
+  notes        String?       @db.Text
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([teacherId, month, year])
+  @@index([month, year])
+  @@index([teacherId, status])
+}
+
+// ------------------------------------------------------
