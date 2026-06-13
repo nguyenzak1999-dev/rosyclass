@@ -52,19 +52,23 @@ export async function calculateTeacherPayroll(
     const bonusAmount = overrides?.bonusAmount ?? 0
     const deductAmount = overrides?.deductAmount ?? 0
 
-    // Upsert phiếu lương (chỉ tạo/cập nhật nếu là DRAFT)
+    // Upsert phiếu lương
     const existing = await prisma.teacherPayroll.findUnique({
       where: { teacherId_month_year: { teacherId, month, year } },
     })
 
-    if (existing && existing.status === "PAID") {
-      return { success: false, error: "Phiếu lương tháng này đã được thanh toán, không thể tính lại." }
-    }
-
-    // Nếu đã có phiếu nháp: giữ nguyên bonus/deduct cũ trừ khi override chỉ định
     const finalBonus = overrides?.bonusAmount !== undefined ? bonusAmount : (existing?.bonusAmount ?? 0)
     const finalDeduct = overrides?.deductAmount !== undefined ? deductAmount : (existing?.deductAmount ?? 0)
     const totalAmount = parseFloat((baseAmount + finalBonus - finalDeduct).toFixed(0))
+
+    let historyLogs: any[] = Array.isArray(existing?.historyLogs) ? (existing.historyLogs as any[]) : []
+    if (existing && existing.status === "PAID") {
+      historyLogs.push({
+        date: new Date().toISOString(),
+        action: "Tính lại lương sau thanh toán",
+        details: `Cập nhật lại lương dựa trên giờ dạy mới. Tiền cũ: ${existing.totalAmount} đ`
+      })
+    }
 
     const payroll = await prisma.teacherPayroll.upsert({
       where: { teacherId_month_year: { teacherId, month, year } },
@@ -93,6 +97,7 @@ export async function calculateTeacherPayroll(
         deductReason: overrides?.deductReason ?? existing?.deductReason,
         notes: overrides?.notes ?? existing?.notes,
         totalAmount,
+        historyLogs,
       },
     })
 
@@ -147,12 +152,19 @@ export async function updatePayrollExtras(
   try {
     const payroll = await prisma.teacherPayroll.findUnique({ where: { id: payrollId } })
     if (!payroll) return { success: false, error: "Không tìm thấy phiếu lương" }
-    if (payroll.status === "PAID")
-      return { success: false, error: "Phiếu lương đã thanh toán, không thể chỉnh sửa" }
 
     const totalAmount = parseFloat(
       (payroll.baseAmount + data.bonusAmount - data.deductAmount).toFixed(0)
     )
+
+    let historyLogs: any[] = Array.isArray(payroll.historyLogs) ? (payroll.historyLogs as any[]) : []
+    if (payroll.status === "PAID") {
+      historyLogs.push({
+        date: new Date().toISOString(),
+        action: "Điều chỉnh thủ công sau thanh toán",
+        details: `Cập nhật Thưởng (${data.bonusAmount}) / Khấu trừ (${data.deductAmount}). Tiền cũ: ${payroll.totalAmount} đ`
+      })
+    }
 
     const updated = await prisma.teacherPayroll.update({
       where: { id: payrollId },
@@ -163,6 +175,7 @@ export async function updatePayrollExtras(
         deductReason: data.deductReason,
         notes: data.notes,
         totalAmount,
+        historyLogs,
       },
     })
 
@@ -189,6 +202,26 @@ export async function markPayrollAsPaid(payrollId: string) {
   } catch (error) {
     console.error("[markPayrollAsPaid]", error)
     return { success: false, error: "Lỗi khi xác nhận thanh toán" }
+  }
+}
+
+// ============================================================
+// Cập nhật thông tin tài khoản ngân hàng của giáo viên
+// ============================================================
+export async function updateTeacherBank(
+  teacherId: string, 
+  data: { bankName: string; bankAccountNo: string; bankAccountName: string }
+) {
+  try {
+    const updated = await prisma.teacher.update({
+      where: { id: teacherId },
+      data,
+    })
+    revalidatePath("/admin/payroll")
+    return { success: true, data: updated }
+  } catch (error) {
+    console.error("[updateTeacherBank]", error)
+    return { success: false, error: "Lỗi khi cập nhật tài khoản giáo viên" }
   }
 }
 
