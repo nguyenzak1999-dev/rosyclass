@@ -209,10 +209,13 @@ model Teacher {
   phone          String
   email          String?
   avatar         String?
-  bio            String?       @db.Text
-  specialties    String? // JSON or comma separated
-  certificates   String? // JSON or comma separated
-  hourlyRate     Float         @default(0)
+  bio             String?       @db.Text
+  specialties     String? // JSON or comma separated
+  certificates    String? // JSON or comma separated
+  bankName        String? // e.g. "MB"
+  bankAccountNo   String? // e.g. "0988888888"
+  bankAccountName String? // e.g. "NGUYEN VAN A"
+  hourlyRate      Float         @default(0)
   status         TeacherStatus @default(ACTIVE)
   showOnHomepage Boolean       @default(false)
 
@@ -786,6 +789,7 @@ model TeacherPayroll {
   status       PayrollStatus @default(DRAFT)
   paidAt       DateTime?
   notes        String?       @db.Text
+  historyLogs  Json?
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

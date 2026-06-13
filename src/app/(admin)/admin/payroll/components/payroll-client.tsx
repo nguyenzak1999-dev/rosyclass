@@ -20,6 +20,9 @@ interface TeacherWithPayroll {
   fullName: string
   hourlyRate: number
   avatar: string | null
+  bankName: string | null
+  bankAccountNo: string | null
+  bankAccountName: string | null
   payrolls: {
     id: string
     month: number
@@ -35,6 +38,7 @@ interface TeacherWithPayroll {
     status: "DRAFT" | "PAID"
     paidAt: Date | null
     notes: string | null
+    historyLogs?: any
   }[]
   sessions: { startTime: string; endTime: string }[]
 }
@@ -59,6 +63,7 @@ export function PayrollClient({
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
+  const [mode, setMode] = useState<"view" | "edit">("view")
 
   const selectedPayroll = selectedTeacherId
     ? teachers.find((t) => t.id === selectedTeacherId)?.payrolls[0] ?? null
@@ -151,15 +156,49 @@ export function PayrollClient({
     },
     {
       id: "actions",
-      cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setSelectedTeacherId(row.original.id)}
-        >
-          Chi tiết
-        </Button>
-      ),
+      cell: ({ row }) => {
+        const p = row.original.payrolls[0]
+        const isPaid = p?.status === "PAID"
+
+        return (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setMode("view")
+                setSelectedTeacherId(row.original.id)
+              }}
+            >
+              Xem phiếu
+            </Button>
+            {isPaid && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setMode("edit")
+                  setSelectedTeacherId(row.original.id)
+                }}
+              >
+                Sửa phiếu
+              </Button>
+            )}
+            {!isPaid && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setMode("edit")
+                  setSelectedTeacherId(row.original.id)
+                }}
+              >
+                Cập nhật
+              </Button>
+            )}
+          </div>
+        )
+      },
     },
   ]
 
@@ -269,6 +308,7 @@ export function PayrollClient({
           payroll={selectedPayroll}
           month={month}
           year={year}
+          mode={mode}
           sessionHours={getSessionHours(selectedTeacher)}
           open={!!selectedTeacherId}
           onClose={() => setSelectedTeacherId(null)}
