@@ -37,6 +37,7 @@ interface Payroll {
   notes: string | null
   status: "DRAFT" | "PAID"
   paidAt: Date | null
+  historyLogs?: any
 }
 
 interface PayrollDetailSheetProps {

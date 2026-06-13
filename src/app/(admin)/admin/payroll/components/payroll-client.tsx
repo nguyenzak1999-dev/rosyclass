@@ -38,6 +38,7 @@ interface TeacherWithPayroll {
     status: "DRAFT" | "PAID"
     paidAt: Date | null
     notes: string | null
+    historyLogs?: any
   }[]
   sessions: { startTime: string; endTime: string }[]
 }
