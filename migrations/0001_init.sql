@@ -437,8 +437,6 @@ CREATE TABLE "MediaFile" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "url" TEXT NOT NULL,
     "publicId" TEXT NOT NULL,
-    "storageKey" TEXT,
-    "cloudinaryUrl" TEXT,
     "name" TEXT NOT NULL,
     "alt" TEXT,
     "folder" TEXT NOT NULL DEFAULT 'general',
@@ -569,9 +567,6 @@ CREATE UNIQUE INDEX "BlogPost_slug_key" ON "BlogPost"("slug");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "MediaFile_publicId_key" ON "MediaFile"("publicId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "MediaFile_storageKey_key" ON "MediaFile"("storageKey");
 
 -- CreateIndex
 CREATE INDEX "TeacherPayroll_month_year_idx" ON "TeacherPayroll"("month", "year");

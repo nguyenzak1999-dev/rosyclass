@@ -63,11 +63,6 @@ for (const table of TABLES) {
       row.email = row.email.trim().toLowerCase()
       row.passwordHash = passwordByEmail.get(row.email) || row.passwordHash
     }
-    if (table === "MediaFile") {
-      // Ảnh cũ chỉ nằm trên Cloudinary
-      row.storageKey = null
-      row.cloudinaryUrl = row.url
-    }
     lines.push(insert(table, row))
   }
 

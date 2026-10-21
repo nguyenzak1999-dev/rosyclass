@@ -7,7 +7,7 @@
 - **Database**: Cloudflare D1 (SQLite)
 - **ORM**: Prisma + @prisma/adapter-d1
 - **Authentication**: bảng `User` + cookie phiên ký HMAC (`src/lib/auth`)
-- **Media Storage**: Cloudflare R2 (bản chính) + Cloudinary (bản sao song song)
+- **Media Storage**: Cloudinary (REST API có chữ ký)
 - **Form Handling**: React Hook Form + Zod
 - **Tables & Charts**: TanStack Table, Recharts
 

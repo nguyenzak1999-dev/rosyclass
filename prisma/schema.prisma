@@ -584,18 +584,16 @@ model Banner {
 }
 
 model MediaFile {
-  id            String  @id @default(uuid())
-  url           String // URL hiển thị: /media/<storageKey> (R2), hoặc Cloudinary nếu R2 lỗi
-  publicId      String  @unique // Cloudinary public_id, hoặc storageKey nếu Cloudinary lỗi
-  storageKey    String? @unique // Khoá object trong R2
-  cloudinaryUrl String? // Bản sao trên Cloudinary
-  name          String // Original file name
-  alt           String? // Alt text
-  folder        String  @default("general") // Thư mục / danh mục
-  format        String? // jpg, png, webp...
-  width         Int?
-  height        Int?
-  bytes         Int? // file size in bytes
+  id       String  @id @default(uuid())
+  url      String // Cloudinary secure_url
+  publicId String  @unique // Cloudinary public_id (for deletion)
+  name     String // Original file name
+  alt      String? // Alt text
+  folder   String  @default("general") // Cloudinary folder / category
+  format   String? // jpg, png, webp...
+  width    Int?
+  height   Int?
+  bytes    Int? // file size in bytes
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

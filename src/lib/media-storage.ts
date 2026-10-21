@@ -1,21 +1,8 @@
 import { env } from "cloudflare:workers"
 
-export const MEDIA_ROUTE_PREFIX = "/media/"
-
-const EXTENSIONS: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-  "image/svg+xml": "svg",
-  "image/avif": "avif",
-}
-
 export interface StoredMedia {
   url: string
   publicId: string
-  storageKey: string | null
-  cloudinaryUrl: string | null
   format: string | null
   width: number | null
   height: number | null
@@ -56,13 +43,12 @@ function getCloudinaryConfig() {
   return { cloudName, apiKey, apiSecret }
 }
 
-async function uploadToCloudinary(file: File, folder: string, publicId: string): Promise<CloudinaryUploadResult> {
+async function uploadToCloudinary(file: File, folder: string): Promise<CloudinaryUploadResult> {
   const config = getCloudinaryConfig()
   if (!config) throw new Error("Chưa cấu hình Cloudinary")
 
   const params = {
     folder: `rosyclass/${folder}`,
-    public_id: publicId,
     timestamp: String(Math.floor(Date.now() / 1000)),
   }
   const body = new FormData()
@@ -100,53 +86,20 @@ async function deleteFromCloudinary(publicId: string) {
   }
 }
 
-/**
- * Tải ảnh lên song song R2 (bản chính, phục vụ qua /media/...) và Cloudinary (bản sao).
- * Chỉ báo lỗi khi cả hai nơi đều thất bại.
- */
+// Cloudinary Node SDK không chạy được trên Workers nên gọi thẳng REST API có chữ ký
 export async function storeImage(file: File, rawFolder: string): Promise<StoredMedia> {
-  const folder = sanitizeFolder(rawFolder)
-  const id = crypto.randomUUID()
-  const extension = EXTENSIONS[file.type] || file.name.split(".").pop()?.toLowerCase() || "bin"
-  const storageKey = `rosyclass/${folder}/${id}.${extension}`
-
-  const [r2Result, cloudinaryResult] = await Promise.allSettled([
-    env.MEDIA.put(storageKey, await file.arrayBuffer(), {
-      httpMetadata: { contentType: file.type, cacheControl: "public, max-age=31536000, immutable" },
-      customMetadata: { originalName: file.name },
-    }),
-    uploadToCloudinary(file, folder, id),
-  ])
-
-  if (r2Result.status === "rejected") console.error("[MEDIA] R2 upload failed", r2Result.reason)
-  if (cloudinaryResult.status === "rejected") console.error("[MEDIA] Cloudinary upload failed", cloudinaryResult.reason)
-
-  const storedInR2 = r2Result.status === "fulfilled"
-  const cloudinary = cloudinaryResult.status === "fulfilled" ? cloudinaryResult.value : null
-
-  if (!storedInR2 && !cloudinary) {
-    throw new Error("Không thể tải ảnh lên R2 lẫn Cloudinary")
-  }
+  const result = await uploadToCloudinary(file, sanitizeFolder(rawFolder))
 
   return {
-    url: storedInR2 ? `${MEDIA_ROUTE_PREFIX}${storageKey}` : cloudinary!.secure_url,
-    publicId: cloudinary?.public_id || storageKey,
-    storageKey: storedInR2 ? storageKey : null,
-    cloudinaryUrl: cloudinary?.secure_url || null,
-    format: cloudinary?.format || extension,
-    width: cloudinary?.width ?? null,
-    height: cloudinary?.height ?? null,
+    url: result.secure_url,
+    publicId: result.public_id,
+    format: result.format ?? null,
+    width: result.width ?? null,
+    height: result.height ?? null,
     bytes: file.size,
   }
 }
 
-export async function deleteStoredImage(media: { publicId: string; storageKey: string | null; cloudinaryUrl: string | null }) {
-  const results = await Promise.allSettled([
-    media.storageKey ? env.MEDIA.delete(media.storageKey) : Promise.resolve(),
-    media.cloudinaryUrl ? deleteFromCloudinary(media.publicId) : Promise.resolve(),
-  ])
-
-  for (const result of results) {
-    if (result.status === "rejected") console.error("[MEDIA] delete failed", result.reason)
-  }
+export async function deleteStoredImage(media: { publicId: string }) {
+  await deleteFromCloudinary(media.publicId)
 }

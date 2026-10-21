@@ -7,7 +7,7 @@ Toàn bộ hệ thống chạy trên Cloudflare:
 | Hosting | Vercel (Next.js) | Cloudflare Workers qua [vinext](https://github.com/cloudflare/vinext) |
 | Cơ sở dữ liệu | Supabase Postgres | Cloudflare D1 (SQLite), Prisma + `@prisma/adapter-d1` |
 | Đăng nhập admin | Supabase Auth | Bảng `User` + cookie phiên ký HMAC (`src/lib/auth/session.ts`) |
-| Ảnh | Cloudinary | R2 (bản chính, phục vụ tại `/media/...`) **và** Cloudinary (bản sao, tải lên song song) |
+| Ảnh | Cloudinary (Node SDK) | Cloudinary (gọi REST API có chữ ký, vì SDK không chạy trên Workers) |
 | Cache ISR / `revalidatePath` | Vercel | Workers KV (`VINEXT_KV_CACHE`) |
 
 Cấu hình Worker nằm trong `cloudflare.config.ts`; migration D1 nằm trong `migrations/`.
@@ -15,16 +15,23 @@ Cấu hình Worker nằm trong `cloudflare.config.ts`; migration D1 nằm trong 
 ## 0. Yêu cầu
 
 - Node.js **≥ 22.18** (CLI `cf` yêu cầu). Kiểm tra: `node -v`.
-- Đăng nhập Cloudflare: `npx cf auth login` (hoặc đặt `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` khi chạy CI).
+- Đăng nhập Cloudflare (mở trình duyệt để xác nhận):
+
+  ```bash
+  npx cf auth login        # đăng nhập
+  npx cf auth list         # kiểm tra đã đăng nhập tài khoản nào
+  npx cf auth logout       # đăng xuất
+  ```
+
+  Khi chạy CI, thay bằng biến môi trường `CLOUDFLARE_API_TOKEN` (template *Edit Cloudflare Workers*) và `CLOUDFLARE_ACCOUNT_ID`.
 - Thứ tự làm: tạo tài nguyên → tạo bảng → chuyển dữ liệu → deploy → đặt secret.
 
 ## 1. Tạo tài nguyên
 
-Tạo D1 `rosyclass-db` và R2 bucket `rosyclass-media`, bằng Cloudflare Dashboard (*Storage & Databases*) hoặc CLI:
+Tạo D1 `rosyclass-db`, bằng Cloudflare Dashboard (*Storage & Databases*) hoặc CLI:
 
 ```bash
 npx cf d1 create --name rosyclass-db     # ghi lại database ID
-npx cf r2 buckets create --help          # xem cú pháp tạo bucket của phiên bản cf đang dùng
 ```
 
 Thêm ID của D1 vào `cloudflare.config.ts` để các lệnh migration dùng đúng database:
@@ -60,7 +67,7 @@ Script `scripts/export-supabase-to-d1.mjs`:
 
 - đọc mọi bảng của app và chuyển sang câu lệnh `INSERT` cho SQLite (thời gian giữ nguyên UTC);
 - ghép mật khẩu bcrypt từ `auth.users` của Supabase vào `User.passwordHash` theo email, nên **người dùng đăng nhập bằng mật khẩu cũ**. Ở lần đăng nhập đầu, mật khẩu được tự nâng cấp sang PBKDF2;
-- giữ URL Cloudinary của ảnh cũ (`MediaFile.cloudinaryUrl`). Ảnh mới sẽ nằm trên R2.
+- giữ nguyên URL Cloudinary của các ảnh đã tải lên.
 
 Tạo hoặc đổi mật khẩu một tài khoản quản trị (cần `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_DATABASE_ID`, `CLOUDFLARE_D1_TOKEN` trong `.env`; token cần quyền *D1 Edit*):
 
@@ -100,8 +107,8 @@ Cuối cùng vào Worker `rosyclass` → *Domains & Routes* để gắn `rosycla
 ## Chạy local
 
 ```bash
-cp .env.example .env    # điền AUTH_SECRET
-npm run dev             # http://localhost:5173, D1/R2/KV được giả lập cục bộ
+cp .env.example .env    # điền AUTH_SECRET và khoá Cloudinary để tải ảnh
+npm run dev             # http://localhost:5173, D1/KV được giả lập cục bộ
 ```
 
 Lần đầu chạy local cần tạo bảng trong D1 cục bộ: khi `npm run dev` đang chạy, gửi nội dung `migrations/0001_init.sql` tới endpoint giả lập:
