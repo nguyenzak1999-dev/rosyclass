@@ -2,9 +2,21 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Award, BookOpen, CalendarDays, Star } from "lucide-react"
+import { Award, BookOpen, CalendarDays, Heart, Sparkles, Star as StarIcon } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import {
+  EmptyState,
+  KidBadge,
+  KidButton,
+  KidCard,
+  RosyMascot,
+  SectionHeading,
+  Sparkle,
+  Star,
+  WaveDivider,
+  toneAt,
+  toneClasses,
+} from "@/components/kids"
 import { createPageMetadata, JsonLd } from "@/lib/seo"
 import { prisma } from "@/lib/prisma"
 
@@ -95,90 +107,121 @@ export default async function TeacherDetailPage(props: TeacherDetailPageProps) {
           },
         }}
       />
-      <main className="min-h-screen bg-[#fcf5eb]">
-        <section className="mx-auto grid max-w-[1100px] gap-10 px-4 pt-28 pb-16 sm:px-8 lg:grid-cols-[0.8fr_1fr] lg:items-center">
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[24px] border border-[#e9edef] bg-white">
-            {teacher.avatar ? (
-              <Image src={teacher.avatar} alt={teacher.fullName} fill sizes="(min-width: 1024px) 420px, 100vw" className="object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center px-8 text-center text-[#54656f]">
-                Chưa có ảnh giáo viên trong CMS.
+      <div className="min-h-screen bg-kid-cream">
+        <section className="relative overflow-hidden bg-kid-grape-soft">
+          <div aria-hidden="true" className="kid-dots pointer-events-none absolute inset-0 opacity-70" />
+          <Sparkle className="kid-spin-slow pointer-events-none absolute top-10 right-[8%] h-8 w-8 fill-kid-rose" />
+          <div className="relative mx-auto grid max-w-[1100px] items-center gap-12 px-4 pt-12 pb-24 sm:px-8 md:pt-16 lg:grid-cols-[0.8fr_1fr] lg:pb-28">
+            <div className="kid-rise relative mx-auto w-full max-w-[400px]">
+              <span aria-hidden="true" className="kid-border absolute inset-0 translate-x-3 translate-y-3 rotate-3 rounded-kid-lg bg-kid-sun" />
+              <div className="kid-border relative -rotate-2 rounded-kid-lg bg-white p-3">
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-3 left-1/2 z-10 h-7 w-20 -translate-x-1/2 -rotate-3 rounded-md border-2 border-kid-ink/30 bg-kid-mint-soft/90"
+                />
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[22px] border-[3px] border-kid-ink bg-kid-sky-soft">
+                  {teacher.avatar ? (
+                    <Image src={teacher.avatar} alt={teacher.fullName} fill sizes="(min-width: 1024px) 420px, 100vw" className="object-cover" />
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center text-kid-ink-soft">
+                      <RosyMascot mood="happy" className="h-24 w-24" />
+                      Chưa có ảnh giáo viên trong CMS.
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-          <div>
-            <p className="mb-4 inline-flex rounded-full border border-[#e9edef] bg-white px-4 py-1.5 text-[13px] font-medium text-[#54656f]">
-              Giáo viên RosyClass
-            </p>
-            <h1 className="text-[40px] leading-tight font-medium tracking-tight text-[#111b21] md:text-[56px]">
-              {teacher.fullName}
-            </h1>
-            {teacher.bio && <p className="mt-6 text-[18px] leading-relaxed text-[#54656f]">{teacher.bio}</p>}
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/dang-ky">
-                <Button className="h-12 rounded-full bg-[#25d366] px-6 font-medium text-[#111b21] hover:bg-[#111b21] hover:text-white">
+              <Star className="kid-float absolute -right-4 -bottom-5 h-14 w-14 rotate-12" />
+            </div>
+            <div className="kid-rise [--kid-delay:0.1s]">
+              <KidBadge tone="sun" className="kid-shadow-sm mb-5 -rotate-2 text-[15px]">
+                <Heart className="h-4 w-4" aria-hidden="true" />
+                Giáo viên RosyClass
+              </KidBadge>
+              <h1 className="text-[38px] leading-[1.08] font-extrabold break-words text-kid-ink md:text-[58px]">
+                {teacher.fullName}
+              </h1>
+              {teacher.bio && <p className="mt-6 text-[18px] leading-relaxed text-kid-ink-soft">{teacher.bio}</p>}
+              <div className="mt-8 flex flex-wrap gap-3">
+                <KidButton href="/dang-ky" tone="rose" size="lg" className="text-kid-ink">
                   Đăng ký học thử
-                </Button>
-              </Link>
-              <Link href="/giao-vien">
-                <Button variant="outline" className="h-12 rounded-full border-[#111b21] px-6 font-medium text-[#111b21]">
+                </KidButton>
+                <KidButton href="/giao-vien" tone="white" size="lg">
                   Xem đội ngũ
-                </Button>
-              </Link>
+                </KidButton>
+              </div>
             </div>
           </div>
+          <WaveDivider className="absolute inset-x-0 -bottom-px text-kid-cream" />
         </section>
 
-        <section className="bg-white py-20">
+        <section className="py-14 md:py-20">
           <div className="mx-auto grid max-w-[1100px] gap-8 px-4 sm:px-8 lg:grid-cols-2">
-            <div>
-              <h2 className="text-[30px] font-medium tracking-tight text-[#111b21]">Chuyên môn</h2>
-              <div className="mt-6 space-y-3">
+            <KidCard tone="sky" className="md:-rotate-1">
+              <h2 className="flex items-center gap-3 text-[28px] font-extrabold text-kid-ink">
+                <span aria-hidden="true" className="kid-border-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-kid-sun">
+                  <Sparkles className="h-5 w-5" strokeWidth={2.5} />
+                </span>
+                Chuyên môn
+              </h2>
+              <ul className="mt-6 space-y-3">
                 {specialties.length > 0 ? specialties.map((item) => (
-                  <div key={item} className="flex items-center rounded-[16px] border border-[#e9edef] p-4">
-                    <Star className="mr-3 h-5 w-5 text-[#25d366]" />
+                  <li key={item} className="kid-border-2 flex items-center gap-3 rounded-2xl bg-white p-4 font-semibold text-kid-ink">
+                    <StarIcon className="h-5 w-5 shrink-0 fill-kid-sun text-kid-ink" aria-hidden="true" />
                     <span>{item}</span>
-                  </div>
-                )) : <p className="text-[#54656f]">Chưa cập nhật chuyên môn trong CMS.</p>}
-              </div>
-            </div>
-            <div>
-              <h2 className="text-[30px] font-medium tracking-tight text-[#111b21]">Chứng chỉ</h2>
-              <div className="mt-6 space-y-3">
+                  </li>
+                )) : <li className="text-kid-ink-soft">Chưa cập nhật chuyên môn trong CMS.</li>}
+              </ul>
+            </KidCard>
+            <KidCard tone="mint" className="md:rotate-1">
+              <h2 className="flex items-center gap-3 text-[28px] font-extrabold text-kid-ink">
+                <span aria-hidden="true" className="kid-border-2 flex h-11 w-11 items-center justify-center rounded-2xl bg-kid-rose-soft">
+                  <Award className="h-5 w-5" strokeWidth={2.5} />
+                </span>
+                Chứng chỉ
+              </h2>
+              <ul className="mt-6 space-y-3">
                 {certificates.length > 0 ? certificates.map((item) => (
-                  <div key={item} className="flex items-center rounded-[16px] border border-[#e9edef] p-4">
-                    <Award className="mr-3 h-5 w-5 text-[#25d366]" />
+                  <li key={item} className="kid-border-2 flex items-center gap-3 rounded-2xl bg-white p-4 font-semibold text-kid-ink">
+                    <Award className="h-5 w-5 shrink-0 text-kid-grape" aria-hidden="true" />
                     <span>{item}</span>
-                  </div>
-                )) : <p className="text-[#54656f]">Chưa cập nhật chứng chỉ trong CMS.</p>}
-              </div>
-            </div>
+                  </li>
+                )) : <li className="text-kid-ink-soft">Chưa cập nhật chứng chỉ trong CMS.</li>}
+              </ul>
+            </KidCard>
           </div>
         </section>
 
-        <section className="py-20">
+        <section className="pb-20">
           <div className="mx-auto max-w-[1100px] px-4 sm:px-8">
-            <h2 className="text-[30px] font-medium tracking-tight text-[#111b21]">Lớp đang phụ trách</h2>
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {teacher.classes.length > 0 ? teacher.classes.map((classItem) => (
-                <Link key={classItem.id} href={`/khoa-hoc/${classItem.course.slug}`} className="rounded-[18px] border border-[#e9edef] bg-white p-5 transition-colors hover:border-[#25d366]">
+            <SectionHeading title="Lớp đang phụ trách" highlight="phụ trách" align="left" />
+            <div className="mt-8 grid gap-5 md:grid-cols-2">
+              {teacher.classes.length > 0 ? teacher.classes.map((classItem, i) => (
+                <Link
+                  key={classItem.id}
+                  href={`/khoa-hoc/${classItem.course.slug}`}
+                  className={`kid-border kid-shadow kid-pop kid-focus block rounded-kid p-5 ${toneClasses[toneAt(i)].soft}`}
+                >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="font-medium text-[#111b21]">{classItem.name}</p>
-                      <p className="mt-1 text-sm text-[#54656f]">{classItem.course.name}</p>
+                      <p className="font-kid-display text-[20px] font-extrabold text-kid-ink">{classItem.name}</p>
+                      <p className="mt-1 text-[15px] text-kid-ink-soft">{classItem.course.name}</p>
                     </div>
-                    <BookOpen className="h-5 w-5 shrink-0 text-[#25d366]" />
+                    <span aria-hidden="true" className="kid-border-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white">
+                      <BookOpen className="h-5 w-5 text-kid-ink" />
+                    </span>
                   </div>
-                  <p className="mt-4 flex items-center text-sm text-[#54656f]">
-                    <CalendarDays className="mr-2 h-4 w-4 text-[#25d366]" />
+                  <p className="mt-4 flex items-center text-[15px] font-semibold text-kid-ink">
+                    <CalendarDays className="mr-2 h-4 w-4" aria-hidden="true" />
                     {classItem.startDate ? classItem.startDate.toLocaleDateString("vi-VN") : "Chưa cập nhật ngày khai giảng"}
                   </p>
                 </Link>
-              )) : <p className="text-[#54656f]">Chưa có lớp đang mở của giáo viên này.</p>}
+              )) : (
+                <EmptyState className="md:col-span-2" title="Chưa có lớp đang mở của giáo viên này." />
+              )}
             </div>
           </div>
         </section>
-      </main>
+      </div>
     </>
   )
 }

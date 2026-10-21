@@ -1,6 +1,8 @@
 import Link from "next/link"
-import { ChevronDown, Download, MessageCircle, Music2, PlayCircle } from "lucide-react"
+import { ChevronDown, Clock, Mail, MessageCircle, Music2, Phone, PlayCircle, Sparkles } from "lucide-react"
 import type { SiteSettings } from "@/lib/site-settings"
+import { cn } from "@/lib/utils"
+import { Cloud, KidButton, RosyMascot, Sparkle, Star, WaveDivider, toneAt, toneClasses } from "@/components/kids"
 
 interface PublicFooterProps {
   settings: SiteSettings
@@ -42,25 +44,23 @@ const footerColumns = [
   },
 ]
 
+const headingColors = ["text-kid-sun", "text-kid-rose-soft", "text-kid-sky-soft", "text-kid-mint-soft"]
+
 function LogoMark({ settings }: PublicFooterProps) {
   return (
-    <Link href="/" className="flex items-center gap-3">
+    <Link href="/" aria-label={`${settings.siteName} - Trang chủ`} className="kid-wiggle kid-focus inline-flex rounded-2xl">
       {settings.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={settings.logoUrl}
-          alt={settings.siteName}
-          className="h-[80px] max-w-[380px] object-contain brightness-0 invert"
-        />
+        <span className="kid-border kid-shadow-sm inline-flex -rotate-2 items-center rounded-2xl bg-white px-3 py-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={settings.logoUrl} alt={settings.siteName} className="h-[56px] w-auto max-w-[220px] object-contain" />
+        </span>
       ) : (
-        <>
-          <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-[#f7fbf8] text-[15px] font-semibold leading-none text-[#f7fbf8] lg:text-[22px]">
+        <span className="flex items-center gap-3">
+          <span className="flex h-12 w-12 -rotate-6 items-center justify-center rounded-2xl border-[3px] border-white bg-kid-rose font-kid-display text-[26px] font-extrabold text-white">
             {settings.siteName.charAt(0)}
-          </div>
-          <span className="inline-block text-[20px] font-semibold tracking-tight text-[#f7fbf8] lg:text-[28px]">
-            {settings.siteName}
           </span>
-        </>
+          <span className="font-kid-display text-[28px] font-extrabold tracking-tight text-white">{settings.siteName}</span>
+        </span>
       )}
     </Link>
   )
@@ -69,17 +69,23 @@ function LogoMark({ settings }: PublicFooterProps) {
 function SocialLink({
   href,
   label,
+  index,
   children,
 }: {
   href?: string
   label: string
+  index: number
   children: React.ReactNode
 }) {
-  const className = "flex h-[62px] w-[62px] items-center justify-center rounded-full border border-[#f7fbf8]/85 text-[15px] font-semibold text-[#f7fbf8] transition-colors hover:border-[#25d366] hover:text-[#25d366] lg:h-[58px] lg:w-[58px] lg:text-[22px]"
+  const className = cn(
+    "kid-focus flex h-12 w-12 items-center justify-center rounded-2xl border-[3px] border-white font-kid-display text-[20px] font-extrabold transition-transform duration-200",
+    index % 2 === 0 ? "rotate-3" : "-rotate-3",
+    href ? cn(toneClasses[toneAt(index)].solid, "hover:-translate-y-1 hover:rotate-0") : "bg-white/10 text-white/60"
+  )
 
   if (!href) {
     return (
-      <span aria-label={label} className={className}>
+      <span role="img" aria-label={label} className={className}>
         {children}
       </span>
     )
@@ -94,18 +100,18 @@ function SocialLink({
 
 function SocialLinks({ settings, className = "" }: PublicFooterProps & { className?: string }) {
   return (
-    <div className={`flex items-center justify-center gap-6 text-[#f7fbf8] ${className}`}>
-      <SocialLink href={settings.tiktok} label="TikTok">
-        <Music2 className="h-5 w-5" />
+    <div className={cn("flex items-center gap-3", className)}>
+      <SocialLink href={settings.tiktok} label="TikTok" index={0}>
+        <Music2 className="h-5 w-5" aria-hidden="true" />
       </SocialLink>
-      <SocialLink href={settings.youtube} label="YouTube">
-        <PlayCircle className="h-5 w-5" />
+      <SocialLink href={settings.youtube} label="YouTube" index={1}>
+        <PlayCircle className="h-5 w-5" aria-hidden="true" />
       </SocialLink>
-      <SocialLink href={settings.zalo} label="Zalo">
-        <MessageCircle className="h-5 w-5" />
+      <SocialLink href={settings.zalo} label="Zalo" index={2}>
+        <MessageCircle className="h-5 w-5" aria-hidden="true" />
       </SocialLink>
-      <SocialLink href={settings.facebook} label="Facebook">
-        f
+      <SocialLink href={settings.facebook} label="Facebook" index={3}>
+        <span aria-hidden="true">f</span>
       </SocialLink>
     </div>
   )
@@ -125,76 +131,101 @@ export function PublicFooter({ settings }: PublicFooterProps) {
     },
   ]
 
+  const contactIcon = (href: string) => {
+    if (href.startsWith("tel:")) return <Phone className="h-4 w-4 shrink-0" aria-hidden="true" />
+    if (href.startsWith("mailto:")) return <Mail className="h-4 w-4 shrink-0" aria-hidden="true" />
+    return null
+  }
+
   return (
-    <footer className="mt-0 bg-[#111b21] text-[#f7fbf8]">
-      <div className="border-y border-[#d9fdd3]/20 py-8 lg:hidden">
-        <SocialLinks settings={settings} />
+    <footer className="relative mt-0 text-white">
+      {/* Sóng chuyển từ nền kem sang nền mực */}
+      <div className="relative bg-kid-cream">
+        <Cloud className="kid-float-slow pointer-events-none absolute -top-2 left-[8%] hidden h-12 w-24 md:block" />
+        <Star className="kid-float pointer-events-none absolute top-0 right-[10%] hidden h-9 w-9 -rotate-12 md:block" />
+        <WaveDivider className="text-kid-ink" />
       </div>
 
-      <div className="mx-auto max-w-[1206px] px-6 pb-10 pt-14 sm:px-8 lg:pb-12 lg:pt-28">
-        <div className="grid gap-12 lg:grid-cols-[240px_1fr] lg:gap-16">
-          <div className="flex flex-col items-start gap-8 lg:min-h-[220px] lg:justify-between">
-            <LogoMark settings={settings} />
+      <div className="relative overflow-hidden bg-kid-ink">
+        <Sparkle className="kid-spin-slow pointer-events-none absolute top-10 right-[6%] h-8 w-8 fill-kid-sun" />
+        <Sparkle className="pointer-events-none absolute bottom-24 left-[4%] hidden h-6 w-6 fill-kid-sky md:block" />
 
-            <Link
-              href="/kiem-tra-trinh-do"
-              className="hidden min-h-[60px] items-center gap-4 rounded-full bg-[#25d366] px-8 text-[18px] font-medium tracking-tight text-[#06140b] transition-colors hover:bg-[#d9fdd3] lg:inline-flex"
-            >
-              <span>Đăng ký test</span>
-              <Download className="h-5 w-5" strokeWidth={2.2} />
-            </Link>
-          </div>
+        <div className="mx-auto max-w-[1206px] px-5 pt-10 pb-10 sm:px-8 lg:pt-16 lg:pb-12">
+          <div className="grid gap-12 lg:grid-cols-[280px_1fr] lg:gap-16">
+            <div className="flex flex-col items-start gap-7">
+              <LogoMark settings={settings} />
 
-          <nav className="grid grid-cols-2 gap-x-8 gap-y-14 lg:grid-cols-4 lg:gap-12">
-            {contactLinks.map((column) => (
-              <div key={column.eyebrow}>
-                <h3 className="mb-7 text-[11px] font-semibold tracking-tight text-[#f7fbf8]/70 lg:mb-8 lg:text-[13px]">
-                  {column.eyebrow}
-                </h3>
-                <ul className="space-y-6">
-                  {column.links.map((link) => (
-                    <li key={`${column.eyebrow}-${link.label}`}>
-                      <Link
-                        href={link.href}
-                        className="inline-flex items-center text-[15px] font-semibold leading-tight tracking-tight text-[#f7fbf8] transition-colors hover:text-[#25d366] lg:whitespace-nowrap lg:text-[20px] lg:font-medium"
-                      >
-                        <span>{link.label}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+              {/* Sticker CTA kiểm tra trình độ */}
+              <div className="relative w-full max-w-[300px] rotate-[-1.5deg] rounded-kid border-[3px] border-white bg-kid-sun p-5 text-kid-ink shadow-[0_6px_0_0_rgba(255,255,255,0.35)]">
+                <RosyMascot mood="happy" className="absolute -top-12 -right-4 h-20 w-20 rotate-6" />
+                <p className="pr-12 font-kid-display text-[20px] leading-tight font-extrabold">Kiểm tra trình độ</p>
+                <KidButton href="/kiem-tra-trinh-do" tone="ink" size="sm" className="mt-4">
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  Đăng ký test
+                </KidButton>
               </div>
-            ))}
-          </nav>
-        </div>
-
-        <div className="mt-16 border-t border-[#d9fdd3]/20 pt-9 lg:mt-20">
-          {settings.address && (
-            <p className="mb-8 max-w-[560px] text-[11px] leading-5 tracking-tight text-[#f7fbf8]/70 lg:text-[15px] lg:leading-6">
-              {settings.address}
-            </p>
-          )}
-
-          <div className="grid gap-8 lg:grid-cols-[1fr_auto_260px] lg:items-center">
-            <div className="flex flex-wrap items-center gap-x-8 gap-y-3 text-[10px] font-medium leading-tight tracking-tight text-[#f7fbf8] lg:text-[14px]">
-              <span className="max-w-[220px] text-[#f7fbf8]">{settings.copyright}</span>
-              <Link href="/chinh-sach-bao-mat" className="transition-colors hover:text-[#25d366]">
-                Chính sách bảo mật
-              </Link>
-              <Link href="/khoa-hoc" className="transition-colors hover:text-[#25d366]">
-                Sitemap
-              </Link>
             </div>
 
-            <SocialLinks settings={settings} className="hidden lg:flex" />
+            <nav aria-label="Liên kết chân trang" className="grid grid-cols-1 gap-x-8 gap-y-10 min-[420px]:grid-cols-2 lg:grid-cols-4 lg:gap-10">
+              {contactLinks.map((column, columnIndex) => (
+                <div key={column.eyebrow} className="min-w-0">
+                  <h3 className={cn("mb-5 font-kid-display text-[18px] font-extrabold", headingColors[columnIndex % headingColors.length])}>
+                    {column.eyebrow}
+                  </h3>
+                  <ul className="space-y-3.5">
+                    {column.links.map((link) => (
+                      <li key={`${column.eyebrow}-${link.label}`}>
+                        <Link
+                          href={link.href}
+                          className="kid-focus group inline-flex max-w-full items-center gap-2 rounded-lg text-[16px] leading-snug font-semibold break-words text-white/90 transition-colors hover:text-kid-sun"
+                        >
+                          {contactIcon(link.href) ?? (
+                            link.href === "/lien-he" && link.label === settings.workingHours ? (
+                              <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+                            ) : (
+                              <span
+                                aria-hidden="true"
+                                className="h-2 w-2 shrink-0 rounded-full bg-white/40 transition-colors group-hover:bg-kid-sun"
+                              />
+                            )
+                          )}
+                          <span className="min-w-0">{link.label}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+          </div>
 
-            <button
-              type="button"
-              className="hidden h-[66px] w-full items-center justify-between rounded-full border-2 border-[#f7fbf8] px-8 text-left text-[18px] font-semibold tracking-tight text-[#f7fbf8] transition-colors hover:border-[#25d366] hover:text-[#25d366] lg:flex"
-            >
-              <span>Tiếng Việt</span>
-              <ChevronDown className="h-5 w-5" />
-            </button>
+          <div className="mt-12 border-t-[3px] border-dashed border-white/20 pt-8">
+            {settings.address && (
+              <p className="mb-6 max-w-[620px] text-[14px] leading-6 text-white/75 lg:text-[15px]">{settings.address}</p>
+            )}
+
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[14px] font-semibold text-white/80">
+                <span className="text-white/70">{settings.copyright}</span>
+                <Link href="/chinh-sach-bao-mat" className="kid-focus rounded transition-colors hover:text-kid-sun">
+                  Chính sách bảo mật
+                </Link>
+                <Link href="/khoa-hoc" className="kid-focus rounded transition-colors hover:text-kid-sun">
+                  Sitemap
+                </Link>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-5">
+                <SocialLinks settings={settings} />
+                <button
+                  type="button"
+                  className="kid-focus hidden h-12 items-center gap-3 rounded-full border-[3px] border-white px-5 font-kid-display text-[16px] font-bold text-white transition-colors hover:bg-white/10 lg:inline-flex"
+                >
+                  <span>Tiếng Việt</span>
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

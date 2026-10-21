@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import {
   BookOpen,
   ChartNoAxesColumnIncreasing,
-  CheckCircle2,
+  Check,
   ChevronLeft,
   ChevronRight,
   Gift,
@@ -16,8 +16,25 @@ import {
   Target,
   User,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import {
+  Confetti,
+  KidButton,
+  KidChoice,
+  KidField,
+  KidInput,
+  KidLabel,
+  KidSelect,
+  KidTextarea,
+  PageHero,
+  RosyMascot,
+  Star,
+  readableSolid,
+  toneAt,
+  toneClasses,
+} from "@/components/kids"
 import { submitRegistrationForm } from "./actions"
 
 const COURSE_OPTIONS = [
@@ -80,12 +97,6 @@ const BENEFITS = [
   },
 ]
 
-const inputCls =
-  "w-full h-14 px-4 rounded-2xl bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21] text-[15px] placeholder:text-[#aaa]"
-
-const selectCls =
-  "w-full h-14 px-4 rounded-2xl bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21] text-[15px] appearance-none"
-
 export function RegisterClient({ courses }: { courses: { id: string; name: string; level: string }[] }) {
   const [step, setStep] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -102,6 +113,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
     hearAboutUs: "",
     notes: "",
   })
+  const reduceMotion = useReducedMotion()
 
   const update = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -136,74 +148,39 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
     ? courses.map((c) => ({ value: c.name, label: c.name }))
     : COURSE_OPTIONS
 
+  const slide = reduceMotion
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
+    : { initial: { opacity: 0, x: 24 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -24 } }
+
   return (
     <div className="pb-24">
-      {/* Hero */}
-      <section className="bg-[#fcf5eb] py-16 md:py-24 border-b border-[#e9edef]">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-2xl"
-          >
-            <div className="inline-flex items-center gap-2 bg-white border border-[#e9edef] rounded-full px-4 py-2 mb-6 text-[14px] font-medium text-[#25d366] shadow-sm">
-              <Sparkles className="w-4 h-4" />
-              Đăng ký ngay — Tư vấn miễn phí
-            </div>
-            <h1 className="text-[40px] md:text-[56px] font-medium text-[#111b21] tracking-tight mb-6 leading-tight">
-              Đăng ký học thử
-            </h1>
-            <p className="text-[18px] text-[#54656f] leading-relaxed">
-              Điền thông tin bên dưới — đội ngũ tư vấn của RosyClass sẽ liên hệ để sắp xếp buổi học thử và xây dựng lộ trình phù hợp nhất cho bạn.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <PageHero
+        tone="rose"
+        align="left"
+        eyebrow="Đăng ký ngay — Tư vấn miễn phí"
+        eyebrowIcon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
+        title="Đăng ký học thử"
+        highlight="học thử"
+        description="Điền thông tin bên dưới — đội ngũ tư vấn của RosyClass sẽ liên hệ để sắp xếp buổi học thử và xây dựng lộ trình phù hợp nhất cho bạn."
+        aside={
+          <div className="hidden justify-center lg:flex">
+            <RosyMascot mood="wow" className="kid-float h-56 w-56" />
+          </div>
+        }
+      />
 
-      {/* Main */}
-      <section className="py-16">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">
-
-            {/* Left info */}
+      <section className="pt-10 md:pt-14">
+        <div className="mx-auto max-w-[1200px] px-4 sm:px-8">
+          <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-5">
+            {/* Right form (lên trước trên mobile để phụ huynh điền ngay) */}
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="lg:col-span-2 space-y-6"
+              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="lg:order-2 lg:col-span-3"
             >
-              <h2 className="text-[28px] font-medium text-[#111b21] tracking-tight">Tại sao chọn RosyClass?</h2>
-
-              {BENEFITS.map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.3 + i * 0.1 }}
-                  className="flex gap-4 p-5 bg-white rounded-[24px] border border-[#e9edef] shadow-sm hover:border-[#25d366]/40 transition-colors"
-                >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#e8f8ee] text-[#25d366]">
-                    <item.Icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="font-medium text-[#111b21] mb-1">{item.title}</p>
-                    <p className="text-[14px] text-[#54656f]">{item.desc}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-
-            {/* Right form */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="lg:col-span-3"
-            >
-              <div className="bg-white rounded-[32px] shadow-md border border-[#e9edef] p-8 md:p-10 relative overflow-hidden">
-                {/* Decorative blob */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#d9fdd3] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+              <div className="kid-border kid-shadow-lg relative overflow-hidden rounded-kid-lg bg-white p-6 sm:p-8 md:p-10">
+                <span aria-hidden="true" className="kid-dots pointer-events-none absolute inset-x-0 top-0 h-32 bg-kid-sun-soft" />
 
                 <AnimatePresence mode="wait">
                   {isSuccess ? (
@@ -211,291 +188,296 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                       key="success"
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="flex flex-col items-center justify-center text-center py-16 relative z-10"
+                      role="status"
+                      className="relative z-10 flex flex-col items-center justify-center py-14 text-center"
                     >
-                      <div className="w-24 h-24 bg-[#d9fdd3] rounded-full flex items-center justify-center mb-6 shadow-sm">
-                        <CheckCircle2 className="w-12 h-12 text-[#25d366]" />
-                      </div>
-                      <h3 className="text-[28px] font-medium text-[#111b21] mb-3">Đăng ký thành công!</h3>
-                      <p className="text-[#54656f] max-w-sm leading-relaxed">
-                        Cảm ơn bạn đã đăng ký. Đội ngũ tư vấn sẽ liên hệ lại trong vòng <strong>24 giờ</strong> để sắp xếp buổi học thử.
+                      <Confetti />
+                      <RosyMascot mood="happy" className="kid-float mb-6 h-32 w-32" />
+                      <h2 className="mb-3 text-[32px] font-extrabold text-kid-ink">Đăng ký thành công!</h2>
+                      <p className="max-w-sm leading-relaxed text-kid-ink-soft">
+                        Cảm ơn bạn đã đăng ký. Đội ngũ tư vấn sẽ liên hệ lại trong vòng <strong className="text-kid-ink">24 giờ</strong> để sắp xếp buổi học thử.
                       </p>
+                      <div className="mt-8 flex flex-wrap justify-center gap-3">
+                        <KidButton href="/kiem-tra-trinh-do" tone="sun">
+                          Kiểm tra trình độ
+                        </KidButton>
+                        <KidButton href="/khoa-hoc" tone="white">
+                          Khóa học
+                        </KidButton>
+                      </div>
                     </motion.div>
                   ) : (
                     <motion.div key="form" className="relative z-10">
                       {/* Step indicator */}
                       <div className="mb-8">
-                        <h3 className="text-[24px] font-medium text-[#111b21] mb-5">Điền thông tin đăng ký</h3>
-                        <div className="flex items-center gap-0">
-                          {steps.map((label, i) => (
-                            <div key={i} className="flex items-center flex-1">
-                              <div className="flex flex-col items-center">
-                                <div
-                                  className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold transition-all duration-300 ${
-                                    i < step
-                                      ? "bg-[#25d366] text-white"
-                                      : i === step
-                                      ? "bg-[#111b21] text-white"
-                                      : "bg-[#f0f2f5] text-[#aaa]"
-                                  }`}
-                                >
-                                  {i < step ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                        <h2 className="mb-6 text-[26px] font-extrabold text-kid-ink md:text-[30px]">Điền thông tin đăng ký</h2>
+                        <ol className="flex items-start" aria-label="Các bước đăng ký">
+                          {steps.map((label, i) => {
+                            const tone = toneAt(i * 2)
+                            const done = i < step
+                            const current = i === step
+                            return (
+                              <li key={i} className="flex flex-1 items-start" aria-current={current ? "step" : undefined}>
+                                <div className="flex min-w-0 flex-col items-center gap-1.5">
+                                  <span
+                                    className={cn(
+                                      "kid-border flex h-11 w-11 items-center justify-center rounded-full font-kid-display text-[18px] font-extrabold transition-all duration-300",
+                                      done ? readableSolid("mint") : current ? cn(readableSolid(tone), "kid-shadow-sm scale-110 -rotate-6") : "bg-white text-kid-ink-soft"
+                                    )}
+                                  >
+                                    {done ? <Check className="h-5 w-5" strokeWidth={3.5} aria-hidden="true" /> : i + 1}
+                                  </span>
+                                  <span
+                                    className={cn(
+                                      "max-w-[90px] text-center text-[12px] leading-tight font-bold sm:max-w-none sm:text-[13px]",
+                                      current ? "text-kid-ink" : "text-kid-ink-soft"
+                                    )}
+                                  >
+                                    {label}
+                                  </span>
                                 </div>
-                                <span className={`text-[11px] mt-1 whitespace-nowrap font-medium ${i === step ? "text-[#111b21]" : "text-[#aaa]"}`}>
-                                  {label}
-                                </span>
-                              </div>
-                              {i < steps.length - 1 && (
-                                <div className={`h-[2px] flex-1 mx-1 mb-4 rounded transition-all duration-300 ${i < step ? "bg-[#25d366]" : "bg-[#e9edef]"}`} />
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                                {i < steps.length - 1 && (
+                                  <span
+                                    aria-hidden="true"
+                                    className={cn(
+                                      "mx-1 mt-5 h-[5px] flex-1 rounded-full border-2 border-kid-ink transition-colors duration-300",
+                                      i < step ? "bg-kid-mint" : "bg-white"
+                                    )}
+                                  />
+                                )}
+                              </li>
+                            )
+                          })}
+                        </ol>
                       </div>
 
                       <AnimatePresence mode="wait">
                         {step === 0 && (
-                          <motion.div
-                            key="step0"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.25 }}
-                            className="space-y-5"
-                          >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                              <div className="space-y-2">
-                                <label className="block text-[14px] font-medium text-[#111b21]">
-                                  <User className="inline w-4 h-4 mr-1 text-[#25d366]" />
-                                  Họ và tên học viên <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                  className={inputCls}
+                          <motion.div key="step0" {...slide} transition={{ duration: 0.25 }} className="space-y-5">
+                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                              <KidField>
+                                <KidLabel htmlFor="reg-studentName" required icon={<User className="h-4 w-4 text-kid-rose" />}>
+                                  Họ và tên học viên
+                                </KidLabel>
+                                <KidInput
+                                  id="reg-studentName"
+                                  autoComplete="name"
+                                  aria-required="true"
                                   placeholder="Nguyễn Văn A"
                                   value={formData.studentName}
                                   onChange={(e) => update("studentName", e.target.value)}
                                 />
-                              </div>
-                              <div className="space-y-2">
-                                <label className="block text-[14px] font-medium text-[#111b21]">
-                                  <Phone className="inline w-4 h-4 mr-1 text-[#25d366]" />
-                                  Số điện thoại <span className="text-red-500">*</span>
-                                </label>
-                                <input
+                              </KidField>
+                              <KidField>
+                                <KidLabel htmlFor="reg-phone" required icon={<Phone className="h-4 w-4 text-kid-rose" />}>
+                                  Số điện thoại
+                                </KidLabel>
+                                <KidInput
+                                  id="reg-phone"
                                   type="tel"
-                                  className={inputCls}
+                                  autoComplete="tel"
+                                  aria-required="true"
                                   placeholder="09xx xxx xxx"
                                   value={formData.phone}
                                   onChange={(e) => update("phone", e.target.value)}
                                 />
-                              </div>
+                              </KidField>
                             </div>
-                            <div className="space-y-2">
-                              <label className="block text-[14px] font-medium text-[#111b21]">
-                                <Mail className="inline w-4 h-4 mr-1 text-[#25d366]" />
+                            <KidField>
+                              <KidLabel htmlFor="reg-email" icon={<Mail className="h-4 w-4 text-kid-rose" />}>
                                 Email (tùy chọn)
-                              </label>
-                              <input
+                              </KidLabel>
+                              <KidInput
+                                id="reg-email"
                                 type="email"
-                                className={inputCls}
+                                autoComplete="email"
                                 placeholder="example@email.com"
                                 value={formData.email}
                                 onChange={(e) => update("email", e.target.value)}
                               />
-                            </div>
+                            </KidField>
                           </motion.div>
                         )}
 
                         {step === 1 && (
-                          <motion.div
-                            key="step1"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.25 }}
-                            className="space-y-5"
-                          >
-                            <div className="space-y-2">
-                              <label className="block text-[14px] font-medium text-[#111b21]">
-                                <BookOpen className="inline w-4 h-4 mr-1 text-[#25d366]" />
+                          <motion.div key="step1" {...slide} transition={{ duration: 0.25 }} className="space-y-5">
+                            <KidField>
+                              <KidLabel htmlFor="reg-course" icon={<BookOpen className="h-4 w-4 text-kid-rose" />}>
                                 Chương trình quan tâm
-                              </label>
-                              <div className="relative">
-                                <select
-                                  className={selectCls}
-                                  value={formData.courseInterest}
-                                  onChange={(e) => update("courseInterest", e.target.value)}
-                                >
-                                  <option value="">-- Chọn chương trình --</option>
-                                  {courseList.map((c) => (
-                                    <option key={c.value} value={c.value}>{c.label}</option>
-                                  ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#54656f]">
-                                  <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="block text-[14px] font-medium text-[#111b21]">Trình độ hiện tại</label>
-                              <div className="relative">
-                                <select
-                                  className={selectCls}
-                                  value={formData.currentLevel}
-                                  onChange={(e) => update("currentLevel", e.target.value)}
-                                >
-                                  <option value="">-- Chọn trình độ --</option>
-                                  {LEVEL_OPTIONS.map((o) => (
-                                    <option key={o.value} value={o.value}>{o.label}</option>
-                                  ))}
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#54656f]">
-                                  <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="block text-[14px] font-medium text-[#111b21]">Mục tiêu học tập</label>
-                              <div className="grid grid-cols-2 gap-2">
-                                {GOAL_OPTIONS.map((g) => (
-                                  <button
-                                    type="button"
+                              </KidLabel>
+                              <KidSelect
+                                id="reg-course"
+                                value={formData.courseInterest}
+                                onChange={(e) => update("courseInterest", e.target.value)}
+                              >
+                                <option value="">-- Chọn chương trình --</option>
+                                {courseList.map((c) => (
+                                  <option key={c.value} value={c.value}>{c.label}</option>
+                                ))}
+                              </KidSelect>
+                            </KidField>
+                            <KidField>
+                              <KidLabel htmlFor="reg-level">Trình độ hiện tại</KidLabel>
+                              <KidSelect
+                                id="reg-level"
+                                value={formData.currentLevel}
+                                onChange={(e) => update("currentLevel", e.target.value)}
+                              >
+                                <option value="">-- Chọn trình độ --</option>
+                                {LEVEL_OPTIONS.map((o) => (
+                                  <option key={o.value} value={o.value}>{o.label}</option>
+                                ))}
+                              </KidSelect>
+                            </KidField>
+                            <fieldset className="space-y-2.5">
+                              <legend className="mb-2.5 font-kid-display text-[16px] font-bold text-kid-ink">Mục tiêu học tập</legend>
+                              <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
+                                {GOAL_OPTIONS.map((g, i) => (
+                                  <KidChoice
                                     key={g}
+                                    tone={toneAt(i)}
+                                    selected={formData.learningGoal === g}
                                     onClick={() => update("learningGoal", formData.learningGoal === g ? "" : g)}
-                                    className={`text-left px-3 py-2.5 rounded-xl border text-[13px] transition-all ${
-                                      formData.learningGoal === g
-                                        ? "border-[#25d366] bg-[#d9fdd3] text-[#111b21] font-medium"
-                                        : "border-[#e9edef] bg-[#f0f2f5] text-[#54656f] hover:border-[#25d366]/50"
-                                    }`}
                                   >
                                     {g}
-                                  </button>
+                                  </KidChoice>
                                 ))}
                               </div>
-                            </div>
+                            </fieldset>
                           </motion.div>
                         )}
 
                         {step === 2 && (
-                          <motion.div
-                            key="step2"
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.25 }}
-                            className="space-y-5"
-                          >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                              <div className="space-y-2">
-                                <label className="block text-[14px] font-medium text-[#111b21]">Tên phụ huynh (nếu có)</label>
-                                <input
-                                  className={inputCls}
+                          <motion.div key="step2" {...slide} transition={{ duration: 0.25 }} className="space-y-5">
+                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                              <KidField>
+                                <KidLabel htmlFor="reg-parentName">Tên phụ huynh (nếu có)</KidLabel>
+                                <KidInput
+                                  id="reg-parentName"
                                   placeholder="Nguyễn Thị B"
                                   value={formData.parentName}
                                   onChange={(e) => update("parentName", e.target.value)}
                                 />
-                              </div>
-                              <div className="space-y-2">
-                                <label className="block text-[14px] font-medium text-[#111b21]">SĐT phụ huynh</label>
-                                <input
+                              </KidField>
+                              <KidField>
+                                <KidLabel htmlFor="reg-parentPhone">SĐT phụ huynh</KidLabel>
+                                <KidInput
+                                  id="reg-parentPhone"
                                   type="tel"
-                                  className={inputCls}
                                   placeholder="09xx xxx xxx"
                                   value={formData.parentPhone}
                                   onChange={(e) => update("parentPhone", e.target.value)}
                                 />
-                              </div>
+                              </KidField>
                             </div>
-                            <div className="space-y-2">
-                              <label className="block text-[14px] font-medium text-[#111b21]">Bạn biết đến RosyClass qua đâu?</label>
-                              <div className="grid grid-cols-2 gap-2">
-                                {HEAR_ABOUT_OPTIONS.map((o) => (
-                                  <button
-                                    type="button"
+                            <fieldset>
+                              <legend className="mb-2.5 font-kid-display text-[16px] font-bold text-kid-ink">Bạn biết đến RosyClass qua đâu?</legend>
+                              <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
+                                {HEAR_ABOUT_OPTIONS.map((o, i) => (
+                                  <KidChoice
                                     key={o}
+                                    tone={toneAt(i + 2)}
+                                    selected={formData.hearAboutUs === o}
                                     onClick={() => update("hearAboutUs", formData.hearAboutUs === o ? "" : o)}
-                                    className={`text-left px-3 py-2.5 rounded-xl border text-[13px] transition-all ${
-                                      formData.hearAboutUs === o
-                                        ? "border-[#25d366] bg-[#d9fdd3] text-[#111b21] font-medium"
-                                        : "border-[#e9edef] bg-[#f0f2f5] text-[#54656f] hover:border-[#25d366]/50"
-                                    }`}
                                   >
                                     {o}
-                                  </button>
+                                  </KidChoice>
                                 ))}
                               </div>
-                            </div>
-                            <div className="space-y-2">
-                              <label className="block text-[14px] font-medium text-[#111b21]">Ghi chú thêm (tùy chọn)</label>
-                              <textarea
-                                className="w-full min-h-[100px] p-4 rounded-2xl bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21] text-[15px] resize-y placeholder:text-[#aaa]"
+                            </fieldset>
+                            <KidField>
+                              <KidLabel htmlFor="reg-notes">Ghi chú thêm (tùy chọn)</KidLabel>
+                              <KidTextarea
+                                id="reg-notes"
+                                className="min-h-[100px]"
                                 placeholder="Thời gian có thể học, yêu cầu đặc biệt..."
                                 value={formData.notes}
                                 onChange={(e) => update("notes", e.target.value)}
                               />
-                            </div>
+                            </KidField>
                           </motion.div>
                         )}
                       </AnimatePresence>
 
                       {/* Navigation buttons */}
-                      <div className="flex items-center justify-between mt-8 gap-4">
+                      <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
                         {step > 0 ? (
-                          <Button
-                            type="button"
-                            onClick={() => setStep((s) => s - 1)}
-                            className="flex items-center gap-2 bg-[#f0f2f5] text-[#111b21] hover:bg-[#e9edef] rounded-[50px] px-6 h-12 border-0 font-medium"
-                          >
-                            <ChevronLeft className="w-4 h-4" /> Quay lại
-                          </Button>
+                          <KidButton type="button" tone="white" onClick={() => setStep((s) => s - 1)}>
+                            <ChevronLeft className="h-5 w-5" strokeWidth={3} aria-hidden="true" /> Quay lại
+                          </KidButton>
                         ) : (
                           <div />
                         )}
 
                         {step < steps.length - 1 ? (
-                          <Button
-                            type="button"
-                            onClick={handleNext}
-                            className="group relative overflow-hidden flex items-center gap-2 bg-[#25d366] text-[#111b21] hover:text-white rounded-[50px] px-6 h-12 border-0 font-medium transition-colors duration-300"
-                          >
-                            <div className="absolute inset-0 bg-[#111b21] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0" />
-                            <span className="relative z-10 flex items-center gap-2">
-                              Tiếp theo <ChevronRight className="w-4 h-4" />
-                            </span>
-                          </Button>
+                          <KidButton type="button" tone="sun" onClick={handleNext}>
+                            Tiếp theo <ChevronRight className="h-5 w-5" strokeWidth={3} aria-hidden="true" />
+                          </KidButton>
                         ) : (
-                          <Button
-                            type="button"
-                            onClick={handleSubmit}
-                            disabled={isSubmitting}
-                            className="group relative overflow-hidden flex items-center gap-2 bg-[#25d366] text-[#111b21] hover:text-white rounded-[50px] px-8 h-12 border-0 font-medium transition-colors duration-300 disabled:opacity-50"
-                          >
-                            <div className="absolute inset-0 bg-[#111b21] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0" />
-                            <span className="relative z-10 flex items-center gap-2">
-                              {isSubmitting ? (
-                                <>
-                                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                                  </svg>
-                                  Đang gửi...
-                                </>
-                              ) : (
-                                <>Gửi đăng ký</>
-                              )}
-                            </span>
-                          </Button>
+                          <KidButton type="button" tone="rose" className="text-kid-ink" onClick={handleSubmit} disabled={isSubmitting}>
+                            {isSubmitting ? (
+                              <>
+                                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                </svg>
+                                Đang gửi...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-5 w-5" aria-hidden="true" />
+                                Gửi đăng ký
+                              </>
+                            )}
+                          </KidButton>
                         )}
                       </div>
 
-                      <p className="text-[12px] text-[#54656f] text-center mt-4">
+                      <p className="mt-5 text-center text-[13px] text-kid-ink-soft">
                         Thông tin của bạn được bảo mật theo{" "}
-                        <a href="/chinh-sach-bao-mat" className="text-[#25d366] hover:underline">Chính sách bảo mật</a>.
+                        <Link href="/chinh-sach-bao-mat" className="font-bold text-kid-ink underline decoration-kid-sun decoration-2 underline-offset-2">
+                          Chính sách bảo mật
+                        </Link>.
                       </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
+            </motion.div>
+
+            {/* Left info */}
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="space-y-5 lg:order-1 lg:col-span-2"
+            >
+              <h2 className="relative text-[28px] font-extrabold text-kid-ink md:text-[32px]">
+                Tại sao chọn RosyClass?
+                <Star className="ml-2 inline-block h-8 w-8 -translate-y-1 rotate-12" />
+              </h2>
+
+              {BENEFITS.map((item, i) => {
+                const tone = toneAt(i + 1)
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      "kid-border kid-shadow-sm kid-pop flex gap-4 rounded-kid p-5",
+                      toneClasses[tone].soft,
+                      i % 2 ? "rotate-[0.8deg]" : "-rotate-[0.8deg]"
+                    )}
+                  >
+                    <span aria-hidden="true" className={cn("kid-border-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl", readableSolid(tone))}>
+                      <item.Icon className="h-6 w-6" strokeWidth={2.5} />
+                    </span>
+                    <div>
+                      <h3 className="mb-1 text-[18px] font-extrabold text-kid-ink">{item.title}</h3>
+                      <p className="text-[15px] leading-relaxed text-kid-ink-soft">{item.desc}</p>
+                    </div>
+                  </div>
+                )
+              })}
             </motion.div>
           </div>
         </div>

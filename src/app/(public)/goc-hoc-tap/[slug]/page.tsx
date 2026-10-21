@@ -8,6 +8,7 @@ import { Calendar, ChevronLeft } from "lucide-react"
 import Link from "next/link"
 import { cache } from "react"
 import { formatBlogContent, stripBlogHtml } from "@/lib/blog-content"
+import { KidButton, Sparkle, Star, WaveDivider } from "@/components/kids"
 
 const getPublishedPost = cache(async (slug: string) => {
   return prisma.blogPost.findUnique({
@@ -48,7 +49,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   if (!post) notFound()
 
   return (
-    <div className="flex flex-col w-full min-h-screen pb-20">
+    <div className="flex min-h-screen w-full flex-col pb-20">
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -68,47 +69,66 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         }}
       />
       {/* Hero */}
-      <section className="pt-24 pb-16 bg-sunset-gradient">
-        <div className="max-w-[800px] px-4 sm:px-8 mx-auto text-center">
-          <Link href="/goc-hoc-tap" className="inline-flex items-center text-stone hover:text-midnight-ink text-[14px] font-medium mb-8 transition-colors">
-            <ChevronLeft className="w-4 h-4 mr-1" /> Quay lại Góc học tập
+      <section className="relative overflow-hidden bg-kid-sky-soft">
+        <div aria-hidden="true" className="kid-dots pointer-events-none absolute inset-0 opacity-70" />
+        <Star className="kid-float pointer-events-none absolute top-8 left-[6%] hidden h-10 w-10 rotate-12 sm:block" />
+        <Sparkle className="kid-spin-slow pointer-events-none absolute top-12 right-[8%] h-7 w-7 fill-kid-rose" />
+        <div className={`kid-rise relative mx-auto max-w-[860px] px-4 pt-10 text-center sm:px-8 md:pt-14 ${post.thumbnail ? "pb-28 md:pb-36" : "pb-20 md:pb-24"}`}>
+          <Link
+            href="/goc-hoc-tap"
+            className="kid-pop kid-border-2 kid-focus mb-8 inline-flex items-center rounded-full bg-white px-4 py-1.5 font-kid-display text-[15px] font-bold text-kid-ink shadow-[0_3px_0_0_var(--color-kid-ink)]"
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" strokeWidth={3} aria-hidden="true" /> Quay lại Góc học tập
           </Link>
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-midnight-ink mb-6 leading-tight">
+          <h1 className="mb-6 text-[32px] leading-[1.12] font-extrabold break-words text-kid-ink md:text-[50px]">
             {post.title}
           </h1>
-          <div className="flex items-center justify-center text-stone text-[14px] gap-4">
-            <span className="flex items-center">
-              <Calendar className="w-4 h-4 mr-1.5" />
+          <div className="flex items-center justify-center gap-4 text-[15px] text-kid-ink-soft">
+            <span className="kid-border-2 inline-flex items-center rounded-full bg-kid-sun-soft px-3 py-1 font-semibold text-kid-ink">
+              <Calendar className="mr-1.5 h-4 w-4" aria-hidden="true" />
               {format(new Date(post.publishedAt || post.createdAt), "dd MMMM, yyyy", { locale: vi })}
             </span>
           </div>
         </div>
+        <WaveDivider className="absolute inset-x-0 -bottom-px text-kid-cream" />
       </section>
 
       {/* Thumbnail */}
       {post.thumbnail && (
-        <div className="max-w-[900px] px-4 sm:px-8 mx-auto w-full -mt-8 mb-8">
+        <div className="relative z-10 mx-auto -mt-20 mb-6 w-full max-w-[920px] px-4 sm:px-8 md:-mt-28">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={post.thumbnail}
             alt={post.title}
-            className="w-full h-[400px] object-cover rounded-[32px] shadow-xl"
+            className="kid-border kid-shadow-lg h-[240px] w-full -rotate-1 rounded-kid-lg object-cover sm:h-[340px] md:h-[420px]"
           />
         </div>
       )}
 
       {/* Content */}
       <section className="py-8">
-        <div className="max-w-[800px] px-4 sm:px-8 mx-auto">
+        <div className="mx-auto max-w-[820px] px-4 sm:px-8">
           {post.excerpt && (
-            <p className="text-[18px] text-stone leading-relaxed mb-10 p-6 bg-cloud-veil rounded-2xl border-l-4 border-signal-blue">
+            <p className="kid-border kid-shadow-sm relative mb-10 rounded-kid bg-kid-sun-soft p-6 font-kid-display text-[19px] leading-relaxed font-semibold text-kid-ink md:text-[21px]">
+              <Sparkle className="absolute -top-3 -left-3 h-7 w-7 fill-kid-rose" />
               {post.excerpt}
             </p>
           )}
-          <div
-            className="max-w-none text-midnight-ink [&_a]:font-medium [&_a]:text-signal-blue [&_a]:underline [&_blockquote]:my-6 [&_blockquote]:rounded-2xl [&_blockquote]:bg-cloud-veil [&_blockquote]:px-5 [&_blockquote]:py-4 [&_blockquote]:italic [&_figcaption]:mt-2 [&_figcaption]:text-center [&_figcaption]:text-sm [&_figcaption]:text-stone [&_figure]:my-8 [&_h2]:mb-4 [&_h2]:mt-10 [&_h2]:text-3xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h3]:mb-3 [&_h3]:mt-8 [&_h3]:text-2xl [&_h3]:font-semibold [&_img]:mx-auto [&_img]:max-h-[560px] [&_img]:rounded-[24px] [&_img]:object-cover [&_li]:my-2 [&_ol]:my-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mb-5 [&_p]:text-[16px] [&_p]:leading-relaxed [&_p]:text-stone [&_ul]:my-6 [&_ul]:list-disc [&_ul]:pl-6"
-            dangerouslySetInnerHTML={{ __html: formatBlogContent(post.content) }}
-          />
+          <article className="kid-border kid-shadow rounded-kid-lg bg-white px-5 py-8 sm:px-8 md:px-12 md:py-12">
+            <div
+              className="kid-prose"
+              dangerouslySetInnerHTML={{ __html: formatBlogContent(post.content) }}
+            />
+          </article>
+          <div className="mt-12 flex flex-wrap justify-center gap-3">
+            <KidButton href="/goc-hoc-tap" tone="white">
+              <ChevronLeft className="h-5 w-5" strokeWidth={3} aria-hidden="true" />
+              Quay lại Góc học tập
+            </KidButton>
+            <KidButton href="/kiem-tra-trinh-do" tone="sun">
+              Kiểm tra trình độ
+            </KidButton>
+          </div>
         </div>
       </section>
     </div>

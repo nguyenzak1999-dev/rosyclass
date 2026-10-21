@@ -1,69 +1,88 @@
-"use client"
+import { Database, Eye, Lock, ShieldCheck, UserCheck } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { PageHero, readableSolid, toneAt } from "@/components/kids"
 
-import { motion } from "framer-motion"
-import { ShieldCheck } from "lucide-react"
+const sections = [
+  { id: "thu-thap", Icon: Database, title: "1. Thu thập thông tin" },
+  { id: "su-dung", Icon: Eye, title: "2. Sử dụng thông tin" },
+  { id: "bao-mat", Icon: Lock, title: "3. Bảo mật thông tin" },
+  { id: "quyen", Icon: UserCheck, title: "4. Quyền của người dùng" },
+]
+
+function SectionTitle({ index }: { index: number }) {
+  const section = sections[index]
+  return (
+    <h2 id={section.id} className="flex scroll-mt-28 items-center gap-3">
+      <span
+        aria-hidden="true"
+        className={cn("kid-border-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", readableSolid(toneAt(index)))}
+      >
+        <section.Icon className="h-5 w-5" strokeWidth={2.5} />
+      </span>
+      {section.title}
+    </h2>
+  )
+}
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="flex flex-col w-full min-h-screen pb-20">
-      <section className="pt-24 pb-20 bg-[#fcf5eb] overflow-hidden">
-        <div className="max-w-[1200px] px-4 sm:px-8 mx-auto relative z-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center rounded-full bg-white border border-[#e9edef] px-4 py-1.5 text-[14px] text-[#54656f] font-medium mb-6 shadow-sm"
-          >
-            <ShieldCheck className="w-4 h-4 mr-2 text-[#25d366]" /> Thông tin pháp lý
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-[40px] md:text-[56px] font-medium tracking-tight text-[#111b21] mb-6 leading-tight"
-          >
-            Chính sách bảo mật
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="max-w-2xl mx-auto text-[#54656f] text-[18px] leading-relaxed"
-          >
-            Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn một cách an toàn và minh bạch nhất.
-          </motion.p>
-        </div>
-      </section>
+    <div className="flex min-h-screen w-full flex-col pb-24">
+      <PageHero
+        tone="mint"
+        eyebrow="Thông tin pháp lý"
+        eyebrowIcon={<ShieldCheck className="h-4 w-4" aria-hidden="true" />}
+        title="Chính sách bảo mật"
+        highlight="bảo mật"
+        description="Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn một cách an toàn và minh bạch nhất."
+      />
 
-      <section className="py-24">
-        <div className="max-w-[800px] px-4 sm:px-8 mx-auto bg-white rounded-[24px] p-8 md:p-12 border border-[#e9edef] shadow-sm">
-          <div className="prose prose-stone max-w-none text-[#54656f] prose-h2:text-[#111b21] prose-h2:text-[24px] prose-h2:font-medium prose-h2:mb-4 prose-p:leading-relaxed prose-p:mb-6">
-            <h2>1. Thu thập thông tin</h2>
-            <p>
-              RosyClass thu thập các thông tin cá nhân cơ bản như họ tên, số điện thoại, và email khi bạn đăng ký nhận tư vấn, làm bài kiểm tra trình độ, hoặc tham gia khóa học tại trung tâm. 
-              Các thông tin này chỉ được sử dụng cho mục đích liên hệ và cải thiện chất lượng dịch vụ.
-            </p>
-            
-            <h2>2. Sử dụng thông tin</h2>
-            <p>
-              Thông tin của bạn được sử dụng để:
-            </p>
-            <ul className="list-disc pl-5 mb-6 space-y-2">
-              <li>Sắp xếp lịch học và lớp học phù hợp.</li>
-              <li>Cung cấp tài liệu và thông tin liên quan đến khóa học.</li>
-              <li>Gửi các thông báo về lịch học, học phí, và các sự kiện tại trung tâm.</li>
+      <section className="pt-8 md:pt-12">
+        <div className="mx-auto grid max-w-[1040px] gap-8 px-4 sm:px-8 lg:grid-cols-[240px_1fr]">
+          <nav aria-label="Mục lục" className="lg:sticky lg:top-28 lg:self-start">
+            <ul className="kid-border kid-shadow-sm flex flex-wrap gap-2 rounded-kid bg-kid-sun-soft p-4 lg:flex-col">
+              {sections.map((section) => (
+                <li key={section.id}>
+                  <a
+                    href={`#${section.id}`}
+                    className="kid-focus block rounded-xl px-3 py-2 text-[15px] font-bold text-kid-ink transition-colors hover:bg-white"
+                  >
+                    {section.title}
+                  </a>
+                </li>
+              ))}
             </ul>
+          </nav>
 
-            <h2>3. Bảo mật thông tin</h2>
-            <p>
-              Chúng tôi cam kết không bán, chia sẻ hay trao đổi thông tin cá nhân của học viên cho bất kỳ bên thứ ba nào, ngoại trừ các trường hợp theo yêu cầu của pháp luật. Dữ liệu của bạn được lưu trữ an toàn trên hệ thống máy chủ bảo mật.
-            </p>
+          <article className="kid-border kid-shadow rounded-kid-lg bg-white px-5 py-8 sm:px-8 md:px-12 md:py-12">
+            <div className="kid-prose kid-prose-icons">
+              <SectionTitle index={0} />
+              <p>
+                RosyClass thu thập các thông tin cá nhân cơ bản như họ tên, số điện thoại, và email khi bạn đăng ký nhận tư vấn, làm bài kiểm tra trình độ, hoặc tham gia khóa học tại trung tâm.
+                Các thông tin này chỉ được sử dụng cho mục đích liên hệ và cải thiện chất lượng dịch vụ.
+              </p>
 
-            <h2>4. Quyền của người dùng</h2>
-            <p>
-              Bạn có quyền yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân của mình khỏi hệ thống của RosyClass bất cứ lúc nào bằng cách liên hệ với bộ phận hỗ trợ của chúng tôi qua email: contact@rosyclass.edu.vn.
-            </p>
-          </div>
+              <SectionTitle index={1} />
+              <p>
+                Thông tin của bạn được sử dụng để:
+              </p>
+              <ul>
+                <li>Sắp xếp lịch học và lớp học phù hợp.</li>
+                <li>Cung cấp tài liệu và thông tin liên quan đến khóa học.</li>
+                <li>Gửi các thông báo về lịch học, học phí, và các sự kiện tại trung tâm.</li>
+              </ul>
+
+              <SectionTitle index={2} />
+              <p>
+                Chúng tôi cam kết không bán, chia sẻ hay trao đổi thông tin cá nhân của học viên cho bất kỳ bên thứ ba nào, ngoại trừ các trường hợp theo yêu cầu của pháp luật. Dữ liệu của bạn được lưu trữ an toàn trên hệ thống máy chủ bảo mật.
+              </p>
+
+              <SectionTitle index={3} />
+              <p>
+                Bạn có quyền yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân của mình khỏi hệ thống của RosyClass bất cứ lúc nào bằng cách liên hệ với bộ phận hỗ trợ của chúng tôi qua email:{" "}
+                <a href="mailto:contact@rosyclass.edu.vn">contact@rosyclass.edu.vn</a>.
+              </p>
+            </div>
+          </article>
         </div>
       </section>
     </div>

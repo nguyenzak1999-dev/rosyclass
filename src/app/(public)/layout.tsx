@@ -13,7 +13,7 @@ export default async function PublicLayout({
   const sameAs = [s.facebook, s.youtube, s.zalo, s.tiktok].filter(Boolean)
 
   return (
-    <div className="theme-client flex flex-col min-h-screen font-sans bg-background relative">
+    <div className="theme-client relative flex min-h-screen flex-col overflow-x-clip bg-kid-cream font-kid-body text-kid-ink">
       <JsonLd
         data={{
           "@context": "https://schema.org",
@@ -33,7 +33,9 @@ export default async function PublicLayout({
       />
       <PublicNavbar siteName={s.siteName} logoUrl={s.logoUrl} />
       
-      <main className="flex-1 pt-[80px]">{children}</main>
+      <main id="main-content" tabIndex={-1} className="flex-1 pt-[80px] focus:outline-none">
+        {children}
+      </main>
 
       <PublicFooter settings={s} />
     </div>
