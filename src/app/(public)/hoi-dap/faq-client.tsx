@@ -1,8 +1,10 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { HelpCircle, ChevronDown } from "lucide-react"
-import { useState } from "react"
+import { motion, useReducedMotion } from "framer-motion"
+import { HelpCircle, Plus } from "lucide-react"
+import { useId, useState } from "react"
+import { cn } from "@/lib/utils"
+import { EmptyState, KidButton, PageHero, RosyMascot, toneAt, toneClasses } from "@/components/kids"
 
 interface FAQ {
   q: string
@@ -11,73 +13,104 @@ interface FAQ {
 
 export default function FAQClient({ faqs }: { faqs: FAQ[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0)
+  const reduceMotion = useReducedMotion()
+  const baseId = useId()
 
   return (
-    <div className="flex flex-col w-full min-h-screen pb-20">
-      <section className="pt-24 pb-16 bg-[#fcf5eb] overflow-hidden">
-        <div className="max-w-[1200px] px-4 sm:px-8 mx-auto relative z-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center rounded-full bg-white border border-[#e9edef] px-4 py-1.5 text-[13px] text-[#54656f] font-medium mb-6 shadow-sm"
-          >
-            <HelpCircle className="w-4 h-4 mr-2 text-[#25d366]" /> Hỏi đáp
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-[40px] md:text-[56px] font-medium tracking-tight text-[#111b21] mb-6 leading-tight"
-          >
-            Câu hỏi thường gặp
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="max-w-2xl mx-auto text-[#54656f] text-[18px] leading-relaxed"
-          >
-            Mọi thắc mắc của bạn về khóa học, lộ trình và chính sách học phí đều được giải đáp tại đây.
-          </motion.p>
-        </div>
-      </section>
+    <div className="flex min-h-screen w-full flex-col pb-24">
+      <PageHero
+        tone="sun"
+        eyebrow="Hỏi đáp"
+        eyebrowIcon={<HelpCircle className="h-4 w-4" aria-hidden="true" />}
+        title="Câu hỏi thường gặp"
+        highlight="thường gặp"
+        description="Mọi thắc mắc của bạn về khóa học, lộ trình và chính sách học phí đều được giải đáp tại đây."
+      />
 
-      <section className="py-24">
-        <div className="max-w-[800px] px-4 sm:px-8 mx-auto">
+      <section className="pt-10 md:pt-14">
+        <div className="mx-auto max-w-[820px] px-4 sm:px-8">
           {faqs.length === 0 ? (
-            <div className="text-center text-stone py-20">Chưa có câu hỏi nào.</div>
+            <EmptyState title="Chưa có câu hỏi nào." />
           ) : (
-            <div className="space-y-4">
-              {faqs.map((faq, idx) => (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  key={idx}
-                  className={`border rounded-[16px] overflow-hidden transition-colors ${openIndex === idx ? 'border-[#25d366] bg-[#d9fdd3]/20' : 'border-[#e9edef] bg-white hover:border-[#25d366]/50'}`}
-                >
-                  <button
-                    className="w-full text-left px-6 py-5 flex items-center justify-between"
-                    onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
-                  >
-                    <span className="font-medium text-[#111b21] text-[16px] pr-4 leading-snug">{faq.q}</span>
-                    <ChevronDown className={`w-5 h-5 text-[#54656f] shrink-0 transition-transform duration-300 ${openIndex === idx ? 'rotate-180 text-[#25d366]' : ''}`} />
-                  </button>
+            <div className="space-y-5">
+              {faqs.map((faq, idx) => {
+                const open = openIndex === idx
+                const tone = toneAt(idx)
+                const buttonId = `${baseId}-q-${idx}`
+                const panelId = `${baseId}-a-${idx}`
+                return (
                   <motion.div
-                    initial={false}
-                    animate={{ height: openIndex === idx ? 'auto' : 0, opacity: openIndex === idx ? 1 : 0 }}
-                    className="overflow-hidden"
+                    initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: Math.min(idx, 6) * 0.05 }}
+                    key={idx}
+                    className={cn(
+                      "kid-border overflow-hidden rounded-kid transition-[background-color,box-shadow] duration-300",
+                      open ? cn(toneClasses[tone].soft, "kid-shadow") : "kid-shadow-sm bg-white"
+                    )}
                   >
-                    <div className="px-6 pb-5 pt-0 text-[#54656f] text-[15px] leading-relaxed">
-                      {faq.a}
-                    </div>
+                    <h2>
+                      <button
+                        id={buttonId}
+                        type="button"
+                        aria-expanded={open}
+                        aria-controls={panelId}
+                        className="kid-focus flex w-full items-center justify-between gap-4 rounded-kid px-5 py-5 text-left md:px-6"
+                        onClick={() => setOpenIndex(open ? null : idx)}
+                      >
+                        <span className="flex items-start gap-3">
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "kid-border-2 mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-kid-display text-[15px] font-extrabold",
+                              open ? "bg-white text-kid-ink" : cn(toneClasses[tone].soft, "text-kid-ink")
+                            )}
+                          >
+                            ?
+                          </span>
+                          <span className="font-kid-display text-[18px] leading-snug font-bold text-kid-ink md:text-[19px]">{faq.q}</span>
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "kid-border-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-transform duration-300",
+                            open ? "rotate-45 bg-kid-ink text-white" : "bg-kid-sun text-kid-ink"
+                          )}
+                        >
+                          <Plus className="h-5 w-5" strokeWidth={3} />
+                        </span>
+                      </button>
+                    </h2>
+                    <motion.div
+                      id={panelId}
+                      role="region"
+                      aria-labelledby={buttonId}
+                      aria-hidden={!open}
+                      initial={false}
+                      animate={{ height: open ? "auto" : 0, opacity: open ? 1 : 0 }}
+                      transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 30 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-6 pl-[64px] text-[16px] leading-relaxed whitespace-pre-line text-kid-ink md:px-6 md:pl-[68px]">
+                        {faq.a}
+                      </div>
+                    </motion.div>
                   </motion.div>
-                </motion.div>
-              ))}
+                )
+              })}
             </div>
           )}
+
+          <div className="kid-border kid-shadow relative mt-16 flex flex-col items-center gap-5 rounded-kid-lg bg-kid-grape-soft px-6 py-10 text-center sm:flex-row sm:text-left">
+            <RosyMascot mood="think" className="kid-float h-24 w-24 shrink-0" />
+            <div className="flex-1">
+              <p className="font-kid-display text-[24px] leading-tight font-extrabold text-kid-ink">Cần hỗ trợ?</p>
+            </div>
+            <KidButton href="/lien-he" tone="sun" size="lg">
+              Liên hệ tư vấn
+            </KidButton>
+          </div>
         </div>
       </section>
     </div>

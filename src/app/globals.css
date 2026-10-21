@@ -270,3 +270,110 @@
   .kid-wiggle:hover, .kid-float, .kid-float-slow, .kid-spin-slow { animation: none; }
   .kid-pop, .kid-pop:hover { transition: none; transform: none; }
 }
+
+/* ===== Public site kid extras (giao diện công khai) ===== */
+@layer utilities {
+  .kid-shadow-lg { box-shadow: 0 10px 0 0 var(--color-kid-ink); }
+  .kid-border-2 { border: 2px solid var(--color-kid-ink); }
+  .kid-rise { animation: kid-rise 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; animation-delay: var(--kid-delay, 0s); }
+  .kid-bounce-in { animation: kid-bounce-in 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .kid-stripes {
+    background-image: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.3) 0 10px, transparent 10px 20px);
+    background-size: 28px 28px;
+    animation: kid-stripes 1.2s linear infinite;
+  }
+  .kid-focus:focus-visible { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-kid-sun) 75%, transparent); }
+
+  /* Ô nhập liệu kiểu "sticker": viền mực dày, focus nổi bật */
+  .kid-field {
+    width: 100%;
+    border: 3px solid var(--color-kid-ink);
+    border-radius: 18px;
+    background: #fff;
+    color: var(--color-kid-ink);
+    font-size: 16px;
+    font-weight: 600;
+    box-shadow: 0 3px 0 0 var(--color-kid-ink);
+    transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+  }
+  .kid-field::placeholder { color: color-mix(in srgb, var(--color-kid-ink-soft) 75%, transparent); font-weight: 500; }
+  .kid-field:hover { background: var(--color-kid-cream); }
+  .kid-field:focus, .kid-field:focus-visible {
+    outline: none;
+    background: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 0 0 var(--color-kid-ink), 0 0 0 5px color-mix(in srgb, var(--color-kid-sun) 75%, transparent);
+  }
+  .kid-field[aria-invalid="true"] { border-color: #d92d5b; }
+
+  /* Nội dung bài viết: vui mắt nhưng vẫn dễ đọc */
+  .kid-prose { color: var(--color-kid-ink); font-size: 17px; line-height: 1.8; overflow-wrap: anywhere; }
+  .kid-prose > :first-child { margin-top: 0; }
+  .kid-prose p { margin: 0 0 1.25em; color: color-mix(in srgb, var(--color-kid-ink) 90%, transparent); }
+  .kid-prose h2, .kid-prose h3, .kid-prose h4 { font-family: var(--font-kid-display); font-weight: 800; color: var(--color-kid-ink); line-height: 1.2; }
+  .kid-prose h2 { margin: 2em 0 0.7em; font-size: 28px; padding-left: 18px; position: relative; }
+  .kid-prose h2::before { content: ""; position: absolute; left: 0; top: 0.15em; bottom: 0.15em; width: 8px; border-radius: 99px; background: var(--color-kid-rose); }
+  .kid-prose h3 { margin: 1.6em 0 0.6em; font-size: 23px; }
+  .kid-prose h4 { margin: 1.4em 0 0.5em; font-size: 19px; }
+  .kid-prose a { color: #c2185b; font-weight: 700; text-decoration: underline; text-decoration-color: var(--color-kid-sun); text-decoration-thickness: 3px; text-underline-offset: 3px; }
+  .kid-prose a:hover { background: var(--color-kid-sun-soft); }
+  .kid-prose strong { font-weight: 800; color: var(--color-kid-ink); }
+  .kid-prose ul, .kid-prose ol { margin: 1.25em 0; padding-left: 0; list-style: none; }
+  .kid-prose li { position: relative; margin: 0.55em 0; padding-left: 2em; }
+  .kid-prose ul > li::before { content: ""; position: absolute; left: 0.35em; top: 0.55em; width: 0.7em; height: 0.7em; border-radius: 99px; background: var(--color-kid-sun); border: 2px solid var(--color-kid-ink); }
+  .kid-prose ol { counter-reset: kid-ol; }
+  .kid-prose ol > li { counter-increment: kid-ol; }
+  .kid-prose ol > li::before { content: counter(kid-ol); position: absolute; left: 0; top: 0.2em; width: 1.5em; height: 1.5em; border-radius: 99px; background: var(--color-kid-sky-soft); border: 2px solid var(--color-kid-ink); font-family: var(--font-kid-display); font-weight: 800; font-size: 0.8em; line-height: 1.35em; text-align: center; }
+  .kid-prose blockquote { margin: 1.75em 0; padding: 1.1em 1.4em; border: 3px solid var(--color-kid-ink); border-radius: 24px; background: var(--color-kid-mint-soft); box-shadow: var(--shadow-kid-sm); font-style: italic; }
+  .kid-prose blockquote p:last-child { margin-bottom: 0; }
+  .kid-prose img { display: block; margin: 0 auto; max-width: 100%; height: auto; max-height: 560px; object-fit: cover; border: 3px solid var(--color-kid-ink); border-radius: 24px; box-shadow: var(--shadow-kid); }
+  .kid-prose figure { margin: 2em 0; }
+  .kid-prose figcaption { margin-top: 0.9em; text-align: center; font-size: 14px; color: var(--color-kid-ink-soft); }
+  .kid-prose hr { margin: 2.5em 0; border: 0; border-top: 3px dashed color-mix(in srgb, var(--color-kid-ink) 30%, transparent); }
+  .kid-prose table { width: 100%; display: block; overflow-x: auto; border-collapse: collapse; margin: 1.5em 0; font-size: 15px; }
+  .kid-prose th, .kid-prose td { border: 2px solid var(--color-kid-ink); padding: 0.5em 0.75em; }
+  .kid-prose th { background: var(--color-kid-sun-soft); }
+  .kid-prose code { background: var(--color-kid-grape-soft); border-radius: 8px; padding: 0.1em 0.4em; font-size: 0.9em; }
+  /* Biến thể: tiêu đề h2 đã có icon riêng nên bỏ vạch màu bên trái */
+  .kid-prose.kid-prose-icons h2 { padding-left: 0; }
+  .kid-prose.kid-prose-icons h2::before { display: none; }
+  @media (min-width: 768px) {
+    .kid-prose { font-size: 18px; }
+    .kid-prose h2 { font-size: 32px; }
+    .kid-prose h3 { font-size: 25px; }
+  }
+
+  .kid-confetti-piece {
+    position: absolute;
+    top: -24px;
+    border: 2px solid var(--color-kid-ink);
+    opacity: 0;
+    animation: kid-confetti 3.2s cubic-bezier(0.25, 0.6, 0.5, 1) forwards;
+    animation-delay: var(--kid-delay, 0s);
+  }
+
+  @keyframes kid-rise {
+    from { opacity: 0; transform: translateY(18px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes kid-bounce-in {
+    0% { opacity: 0; transform: scale(0.85); }
+    60% { opacity: 1; transform: scale(1.03); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes kid-stripes {
+    to { background-position: 28px 0; }
+  }
+  @keyframes kid-confetti {
+    0% { opacity: 0; transform: translateY(0) rotate(0deg); }
+    10% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(560px) rotate(720deg); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kid-rise, .kid-bounce-in, .kid-stripes { animation: none; }
+  .kid-confetti-piece { display: none; }
+  .kid-field, .kid-field:focus { transition: none; transform: none; }
+}

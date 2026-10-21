@@ -1,17 +1,35 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { motion } from "framer-motion"
-import { MapPin, Phone, Mail, Clock, CheckCircle2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { motion, useReducedMotion } from "framer-motion"
+import { MapPin, Phone, Mail, Clock, MessageCircleHeart, Send } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import {
+  Confetti,
+  KidButton,
+  KidField,
+  KidInput,
+  KidLabel,
+  KidSelect,
+  KidTextarea,
+  PageHero,
+  RosyMascot,
+  Star,
+  readableSolid,
+  toneAt,
+  toneClasses,
+} from "@/components/kids"
+import type { SiteSettings } from "@/lib/site-settings"
 import { submitContactForm } from "./actions"
 
-export function ContactClient({ settings }: { settings: any }) {
+export function ContactClient({ settings }: { settings: SiteSettings }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
   const formRef = useRef<HTMLFormElement>(null)
+  const reduceMotion = useReducedMotion()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,205 +59,231 @@ export function ContactClient({ settings }: { settings: any }) {
     }
   }
 
+  const infoCards = [
+    settings.address && {
+      key: "address",
+      Icon: MapPin,
+      title: "Địa chỉ",
+      content: <p className="text-[16px] text-kid-ink-soft">{settings.address}</p>,
+    },
+    settings.phone && {
+      key: "phone",
+      Icon: Phone,
+      title: "Hotline tư vấn",
+      content: (
+        <a
+          href={`tel:${settings.phone.replace(/\s/g, "")}`}
+          className="kid-focus rounded font-kid-display text-[20px] font-bold text-kid-ink underline decoration-kid-sun decoration-[3px] underline-offset-4 hover:decoration-kid-rose"
+        >
+          {settings.phone}
+        </a>
+      ),
+    },
+    settings.email && {
+      key: "email",
+      Icon: Mail,
+      title: "Email hỗ trợ",
+      content: (
+        <a
+          href={`mailto:${settings.email}`}
+          className="kid-focus rounded text-[16px] font-bold break-all text-kid-ink underline decoration-kid-sun decoration-[3px] underline-offset-4 hover:decoration-kid-rose"
+        >
+          {settings.email}
+        </a>
+      ),
+    },
+    settings.workingHours && {
+      key: "hours",
+      Icon: Clock,
+      title: "Giờ làm việc",
+      content: <p className="text-[16px] whitespace-pre-line text-kid-ink-soft">{settings.workingHours}</p>,
+    },
+  ].filter(Boolean) as { key: string; Icon: typeof MapPin; title: string; content: React.ReactNode }[]
+
   return (
     <div className="pb-24">
-      {/* Hero Header */}
-      <section className="bg-[#fcf5eb] py-16 md:py-24 border-b border-[#e9edef]">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-2xl"
-          >
-            <h1 className="text-[40px] md:text-[56px] font-medium text-[#111b21] tracking-tight mb-6 leading-tight">
-              Liên hệ với chúng tôi
-            </h1>
-            <p className="text-[18px] text-[#54656f] leading-relaxed">
-              Hãy để lại thông tin, đội ngũ tư vấn của {settings.siteName} sẽ liên hệ lại với bạn trong thời gian sớm nhất để hỗ trợ lộ trình học phù hợp.
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      <PageHero
+        tone="sky"
+        align="left"
+        eyebrow="Liên hệ"
+        eyebrowIcon={<MessageCircleHeart className="h-4 w-4" aria-hidden="true" />}
+        title="Liên hệ với chúng tôi"
+        highlight="chúng tôi"
+        description={`Hãy để lại thông tin, đội ngũ tư vấn của ${settings.siteName} sẽ liên hệ lại với bạn trong thời gian sớm nhất để hỗ trợ lộ trình học phù hợp.`}
+        aside={
+          <div className="hidden justify-center lg:flex">
+            <RosyMascot mood="happy" className="kid-float h-56 w-56" />
+          </div>
+        }
+      />
 
       {/* Main Content */}
-      <section className="py-16">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-            
+      <section className="pt-10 md:pt-14">
+        <div className="mx-auto max-w-[1200px] px-4 sm:px-8">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
             {/* Left: Contact Info */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="space-y-6"
             >
-              <h3 className="text-[32px] font-medium text-[#111b21] mb-8 tracking-tight">Thông tin liên hệ</h3>
-              
+              <h2 className="mb-7 text-[30px] font-extrabold text-kid-ink md:text-[34px]">Thông tin liên hệ</h2>
+
               <div className="space-y-4">
-                {settings.address && (
-                  <div className="flex flex-col p-6 rounded-[32px] bg-white border border-[#e9edef] shadow-sm hover:border-[#25d366]/50 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MapPin className="w-5 h-5 text-[#25d366]" />
-                      <h4 className="font-medium text-[#111b21] text-[18px]">Địa chỉ</h4>
+                {infoCards.map((card, i) => {
+                  const tone = toneAt(i + 1)
+                  return (
+                    <div
+                      key={card.key}
+                      className={cn(
+                        "kid-border kid-shadow-sm flex items-start gap-4 rounded-kid p-5",
+                        toneClasses[tone].soft,
+                        i % 2 ? "rotate-[0.6deg]" : "-rotate-[0.6deg]"
+                      )}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={cn("kid-border-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl", readableSolid(tone))}
+                      >
+                        <card.Icon className="h-5 w-5" strokeWidth={2.5} />
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="mb-1 text-[18px] font-extrabold text-kid-ink">{card.title}</h3>
+                        {card.content}
+                      </div>
                     </div>
-                    <p className="text-[#54656f] pl-7 text-[16px]">{settings.address}</p>
-                  </div>
-                )}
-
-                {settings.phone && (
-                  <div className="flex flex-col p-6 rounded-[32px] bg-white border border-[#e9edef] shadow-sm hover:border-[#25d366]/50 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Phone className="w-5 h-5 text-[#25d366]" />
-                      <h4 className="font-medium text-[#111b21] text-[18px]">Hotline tư vấn</h4>
-                    </div>
-                    <a href={`tel:${settings.phone.replace(/\s/g, "")}`} className="text-[#54656f] pl-7 hover:text-[#25d366] transition-colors inline-block text-[16px]">{settings.phone}</a>
-                  </div>
-                )}
-
-                {settings.email && (
-                  <div className="flex flex-col p-6 rounded-[32px] bg-white border border-[#e9edef] shadow-sm hover:border-[#25d366]/50 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Mail className="w-5 h-5 text-[#25d366]" />
-                      <h4 className="font-medium text-[#111b21] text-[18px]">Email hỗ trợ</h4>
-                    </div>
-                    <a href={`mailto:${settings.email}`} className="text-[#54656f] pl-7 hover:text-[#25d366] transition-colors inline-block text-[16px]">{settings.email}</a>
-                  </div>
-                )}
-
-                {settings.workingHours && (
-                  <div className="flex flex-col p-6 rounded-[32px] bg-white border border-[#e9edef] shadow-sm hover:border-[#25d366]/50 transition-colors">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="w-5 h-5 text-[#25d366]" />
-                      <h4 className="font-medium text-[#111b21] text-[18px]">Giờ làm việc</h4>
-                    </div>
-                    <p className="text-[#54656f] pl-7 whitespace-pre-line text-[16px]">{settings.workingHours}</p>
-                  </div>
-                )}
+                  )
+                })}
               </div>
             </motion.div>
 
             {/* Right: Contact Form */}
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
             >
-              <div className="bg-white p-8 md:p-10 rounded-[32px] shadow-md border border-[#e9edef] relative overflow-hidden">
-                {/* Decorative blob */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#d9fdd3] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-                
-                <h3 className="text-[28px] font-medium text-[#111b21] mb-6 tracking-tight relative z-10">Gửi lời nhắn cho chúng tôi</h3>
-                
+              <div className="kid-border kid-shadow-lg relative overflow-hidden rounded-kid-lg bg-white p-6 sm:p-8 md:p-10">
+                <span aria-hidden="true" className="kid-dots pointer-events-none absolute inset-x-0 top-0 h-28 bg-kid-rose-soft" />
+                <Star className="pointer-events-none absolute top-5 right-5 h-10 w-10 rotate-12" />
+
+                <h2 className="relative z-10 mb-6 pr-12 text-[26px] font-extrabold text-kid-ink md:text-[30px]">
+                  Gửi lời nhắn cho chúng tôi
+                </h2>
+
                 {isSuccess ? (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center justify-center text-center py-12 h-[450px]"
+                    role="status"
+                    className="relative z-10 flex min-h-[420px] flex-col items-center justify-center py-12 text-center"
                   >
-                    <div className="w-20 h-20 bg-[#d9fdd3] rounded-full flex items-center justify-center mb-6 shadow-sm">
-                      <CheckCircle2 className="w-10 h-10 text-[#25d366]" />
-                    </div>
-                    <h4 className="text-[24px] font-medium text-[#111b21] mb-2">Đã gửi thành công!</h4>
-                    <p className="text-[#54656f]">Cảm ơn bạn đã quan tâm. Đội ngũ tư vấn sẽ liên hệ lại qua số điện thoại bạn cung cấp.</p>
+                    <Confetti />
+                    <RosyMascot mood="happy" className="kid-float mb-5 h-28 w-28" />
+                    <h3 className="mb-2 text-[28px] font-extrabold text-kid-ink">Đã gửi thành công!</h3>
+                    <p className="max-w-sm text-kid-ink-soft">
+                      Cảm ơn bạn đã quan tâm. Đội ngũ tư vấn sẽ liên hệ lại qua số điện thoại bạn cung cấp.
+                    </p>
                   </motion.div>
                 ) : (
-                  <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label htmlFor="name" className="block text-[15px] font-medium text-[#111b21]">Họ và tên *</label>
-                        <input id="name" placeholder="Ví dụ: Nguyễn Văn A" required className="w-full h-[56px] px-[16px] rounded-[16px] bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21]" />
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="phone" className="block text-[15px] font-medium text-[#111b21]">Số điện thoại *</label>
-                        <input id="phone" type="tel" placeholder="09xxxx..." required className="w-full h-[56px] px-[16px] rounded-[16px] bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21]" />
-                      </div>
+                  <form ref={formRef} onSubmit={handleSubmit} className="relative z-10 space-y-5">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                      <KidField>
+                        <KidLabel htmlFor="name" required>
+                          Họ và tên
+                        </KidLabel>
+                        <KidInput id="name" autoComplete="name" placeholder="Ví dụ: Nguyễn Văn A" required />
+                      </KidField>
+                      <KidField>
+                        <KidLabel htmlFor="phone" required>
+                          Số điện thoại
+                        </KidLabel>
+                        <KidInput id="phone" type="tel" autoComplete="tel" placeholder="09xxxx..." required />
+                      </KidField>
                     </div>
 
-                    <div className="space-y-2">
-                      <label htmlFor="email" className="block text-[15px] font-medium text-[#111b21]">Email</label>
-                      <input id="email" type="email" placeholder="example@email.com" className="w-full h-[56px] px-[16px] rounded-[16px] bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21]" />
-                    </div>
+                    <KidField>
+                      <KidLabel htmlFor="email">Email</KidLabel>
+                      <KidInput id="email" type="email" autoComplete="email" placeholder="example@email.com" />
+                    </KidField>
 
-                    <div className="space-y-2">
-                      <label htmlFor="course" className="block text-[15px] font-medium text-[#111b21]">Chương trình quan tâm</label>
-                      <div className="relative">
-                        <select id="course" defaultValue="" className="w-full h-[56px] px-[16px] rounded-[16px] bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21] appearance-none">
-                          <option value="" disabled>Chọn chương trình...</option>
-                          <option value="kids">Tiếng Anh Trẻ Em (4-11 tuổi)</option>
-                          <option value="teens">Tiếng Anh Thiếu Niên (12-16 tuổi)</option>
-                          <option value="ielts">Luyện thi IELTS</option>
-                          <option value="communication">Tiếng Anh Giao Tiếp</option>
-                          <option value="other">Chương trình khác / Cần tư vấn thêm</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-[16px] text-[#54656f]">
-                          <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                        </div>
-                      </div>
-                    </div>
+                    <KidField>
+                      <KidLabel htmlFor="course">Chương trình quan tâm</KidLabel>
+                      <KidSelect id="course" defaultValue="">
+                        <option value="" disabled>
+                          Chọn chương trình...
+                        </option>
+                        <option value="kids">Tiếng Anh Trẻ Em (4-11 tuổi)</option>
+                        <option value="teens">Tiếng Anh Thiếu Niên (12-16 tuổi)</option>
+                        <option value="ielts">Luyện thi IELTS</option>
+                        <option value="communication">Tiếng Anh Giao Tiếp</option>
+                        <option value="other">Chương trình khác / Cần tư vấn thêm</option>
+                      </KidSelect>
+                    </KidField>
 
-                    <div className="space-y-2">
-                      <label htmlFor="message" className="block text-[15px] font-medium text-[#111b21]">Lời nhắn (Tùy chọn)</label>
-                      <textarea 
-                        id="message" 
-                        placeholder="Bạn có câu hỏi hoặc yêu cầu đặc biệt nào không?" 
-                        className="w-full min-h-[120px] p-[16px] rounded-[16px] bg-[#f0f2f5] border border-transparent outline-none focus:bg-white focus:border-[#25d366] focus:ring-2 focus:ring-[#d9fdd3] transition-all text-[#111b21] resize-y" 
-                      />
-                    </div>
+                    <KidField>
+                      <KidLabel htmlFor="message">Lời nhắn (Tùy chọn)</KidLabel>
+                      <KidTextarea id="message" placeholder="Bạn có câu hỏi hoặc yêu cầu đặc biệt nào không?" />
+                    </KidField>
 
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmitting}
-                      className="group relative overflow-hidden w-full bg-[#25d366] text-[#111b21] hover:text-white rounded-[50px] px-[24px] h-14 font-medium text-[16px] flex items-center justify-center shadow-sm border-0 transition-colors duration-300 disabled:opacity-50"
-                    >
-                      <div className="absolute inset-0 bg-[#111b21] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0" />
-                      <span className="relative z-10 flex items-center">
+                    <KidButton type="submit" disabled={isSubmitting} tone="rose" size="lg" className="w-full text-kid-ink h-auto min-h-14 py-3 whitespace-normal leading-tight">
                       {isSubmitting ? (
                         <>
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <svg className="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
                           </svg>
                           Đang gửi...
                         </>
                       ) : (
                         <>
+                          <Send className="h-5 w-5" aria-hidden="true" />
                           Gửi yêu cầu tư vấn
                         </>
                       )}
-                      </span>
-                    </Button>
-                    <p className="text-[13px] text-[#54656f] text-center">
-                      Thông tin của bạn sẽ được bảo mật tuyệt đối theo <a href="/chinh-sach-bao-mat" className="text-[#25d366] hover:underline">Chính sách bảo mật</a> của chúng tôi.
+                    </KidButton>
+                    <p className="text-center text-[13px] text-kid-ink-soft">
+                      Thông tin của bạn sẽ được bảo mật tuyệt đối theo{" "}
+                      <Link href="/chinh-sach-bao-mat" className="font-bold text-kid-ink underline decoration-kid-sun decoration-2 underline-offset-2">
+                        Chính sách bảo mật
+                      </Link>{" "}
+                      của chúng tôi.
                     </p>
                   </form>
                 )}
               </div>
             </motion.div>
-
           </div>
         </div>
       </section>
 
       {settings.googleMapEmbedUrl && (
-        <section className="max-w-[1200px] mx-auto px-4 sm:px-8 mt-8">
+        <section className="mx-auto mt-16 max-w-[1200px] px-4 sm:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="rounded-[24px] overflow-hidden shadow-sm h-[400px] md:h-[500px] border border-[#e9edef] bg-[#f0f2f5] relative"
+            className="relative"
           >
-            <iframe
-              src={settings.googleMapEmbedUrl}
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen={false}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="absolute inset-0 transition-all duration-700"
-            />
+            <span aria-hidden="true" className="kid-border absolute inset-0 translate-x-2 translate-y-3 rotate-1 rounded-kid-lg bg-kid-mint" />
+            <div className="kid-border relative h-[360px] overflow-hidden rounded-kid-lg bg-kid-sky-soft md:h-[480px]">
+              <iframe
+                src={settings.googleMapEmbedUrl}
+                title={`Bản đồ ${settings.siteName}`}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen={false}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="absolute inset-0"
+              />
+            </div>
           </motion.div>
         </section>
       )}

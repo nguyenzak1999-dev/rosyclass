@@ -2,21 +2,39 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import {
-  CheckCircle2,
+  ArrowRight,
+  Check,
+  ClipboardList,
+  GraduationCap,
   Mail,
   PenTool,
   Phone,
+  RotateCcw,
+  Sparkles,
   Trophy,
   User,
-  GraduationCap,
-  ArrowRight,
-  Sparkles,
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import {
+  Confetti,
+  EmptyState,
+  KidButton,
+  KidField,
+  KidInput,
+  KidLabel,
+  KidProgress,
+  PageHero,
+  RosyMascot,
+  Sparkle,
+  Star,
+  readableSolid,
+  toneAt,
+  toneClasses,
+} from "@/components/kids"
 import { submitPlacementTestLead } from "./actions"
 import { suggestLevel, formatScorePercent } from "@/lib/placement-test"
 
@@ -43,6 +61,8 @@ interface PlacementTestClientProps {
   suggestedCourses: SuggestedCourseView[]
 }
 
+const COURSE_CHOICES = ["Trẻ Em", "Thiếu Niên", "IELTS", "Giao Tiếp"]
+
 export default function PlacementTestClient({
   questions,
   suggestedCourses,
@@ -52,6 +72,8 @@ export default function PlacementTestClient({
   const [answers, setAnswers] = useState<number[]>([])
   const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Chỉ dùng cho hiển thị: khoá nút khi đang lưu kết quả câu cuối
+  const [isFinishing, setIsFinishing] = useState(false)
   const [leadId, setLeadId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     fullName: "",
@@ -59,6 +81,7 @@ export default function PlacementTestClient({
     email: "",
     courseInterest: "Trẻ Em",
   })
+  const reduceMotion = useReducedMotion()
 
   const hasQuestions = questions.length > 0
   const activeQuestion = questions[currentQuestion]
@@ -114,12 +137,14 @@ export default function PlacementTestClient({
     }
 
     const score = calculateScore(nextAnswers)
+    setIsFinishing(true)
     await submitPlacementTestLead({
       ...formData,
       leadId: leadId || undefined,
       score,
       totalQuestions: questions.length,
     })
+    setIsFinishing(false)
     setStep("result")
   }
 
@@ -158,113 +183,182 @@ export default function PlacementTestClient({
     }
   }
 
+  // Số sao (1–3) chỉ để hiển thị cho vui mắt
+  const percent = questions.length > 0 ? (currentScore / questions.length) * 100 : 0
+  const starCount = percent >= 80 ? 3 : percent >= 50 ? 2 : 1
+  const isLastQuestion = currentQuestion === questions.length - 1
+
   return (
-    <div className="flex min-h-screen w-full flex-col bg-[#fcf5eb] pb-20">
+    <div className="flex min-h-screen w-full flex-col bg-kid-cream pb-24">
       {step === "form" && (
-        <section className="overflow-hidden pt-24 pb-16">
-          <div className="relative z-10 mx-auto max-w-[1200px] px-4 text-center text-[#111b21] sm:px-8">
-            <div className="mb-6 inline-flex items-center rounded-full border border-[#e9edef] bg-white px-4 py-1.5 text-[13px] font-medium text-[#54656f] shadow-sm">
-              <PenTool className="mr-2 h-4 w-4 text-[#25d366]" /> Đánh giá năng lực
+        <PageHero
+          tone="sun"
+          align="left"
+          eyebrow="Đánh giá năng lực"
+          eyebrowIcon={<PenTool className="h-4 w-4" aria-hidden="true" />}
+          title="Kiểm tra trình độ miễn phí"
+          highlight="miễn phí"
+          description="Làm bài test ngắn để biết trình độ hiện tại và nhận tư vấn lộ trình học phù hợp từ RosyClass."
+          aside={
+            <div className="hidden justify-center lg:flex">
+              <div className="relative">
+                <RosyMascot mood="wow" className="kid-float h-56 w-56" />
+                <Sparkle className="kid-spin-slow absolute -top-2 -left-6 h-9 w-9 fill-kid-rose" />
+              </div>
             </div>
-            <h1 className="mb-6 text-[40px] leading-tight font-medium tracking-tight md:text-[56px]">
-              Kiểm tra trình độ miễn phí
-            </h1>
-            <p className="mx-auto max-w-2xl text-[18px] leading-relaxed text-[#54656f]">
-              Làm bài test ngắn để biết trình độ hiện tại và nhận tư vấn lộ trình học phù hợp từ RosyClass.
-            </p>
-          </div>
-        </section>
+          }
+        >
+          {hasQuestions ? (
+            <ol className="mt-1 flex flex-wrap gap-2.5" aria-label="Các bước">
+              {[
+                { Icon: User, label: "Điền thông tin" },
+                { Icon: ClipboardList, label: `${questions.length} câu hỏi` },
+                { Icon: Trophy, label: "Nhận kết quả" },
+              ].map((item, i) => (
+                <li
+                  key={item.label}
+                  className={cn(
+                    "kid-border-2 inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-[15px] font-bold text-kid-ink",
+                    i % 2 ? "rotate-1" : "-rotate-1"
+                  )}
+                >
+                  <span aria-hidden="true" className={cn("flex h-6 w-6 items-center justify-center rounded-full border-2 border-kid-ink", readableSolid(toneAt(i * 2)))}>
+                    <item.Icon className="h-3.5 w-3.5" strokeWidth={3} />
+                  </span>
+                  {item.label}
+                </li>
+              ))}
+            </ol>
+          ) : null}
+        </PageHero>
       )}
 
-      <section className={`relative z-20 ${step === "form" ? "py-10" : "pt-24 pb-10"}`}>
-        <div className="mx-auto max-w-[800px] px-4 sm:px-8">
+      <section className={cn("relative z-20", step === "form" ? "pt-6 md:pt-10" : "pt-10 md:pt-14")}>
+        <div className="mx-auto max-w-[820px] px-4 sm:px-8">
           {step === "form" && (
-            <div className="rounded-[24px] border border-[#e9edef] bg-white p-8 shadow-sm md:p-12">
-              <div className="mb-10 text-center">
-                <h2 className="mb-2 text-[28px] font-medium tracking-tight text-[#111b21]">Đăng ký ngay</h2>
-                <p className="text-[15px] text-[#54656f]">
+            <div className="kid-border kid-shadow-lg relative rounded-kid-lg bg-white p-6 sm:p-8 md:p-12">
+              <Star className="pointer-events-none absolute -top-6 -right-3 h-14 w-14 rotate-12" />
+              <div className="mb-8 text-center">
+                <h2 className="mb-2 text-[30px] font-extrabold text-kid-ink">Đăng ký ngay</h2>
+                <p className="text-[16px] text-kid-ink-soft">
                   Vui lòng điền thông tin bên dưới để bắt đầu bài kiểm tra.
                 </p>
               </div>
 
               {!hasQuestions ? (
-                <div className="rounded-2xl border border-dashed border-[#e9edef] bg-[#f0f2f5] px-6 py-10 text-center">
-                  <p className="text-[16px] font-medium text-[#111b21]">Chưa có bộ câu hỏi đang xuất bản.</p>
-                  <p className="mt-2 text-[14px] text-[#54656f]">
-                    Vui lòng quay lại sau khi trung tâm cập nhật câu hỏi trong CMS.
-                  </p>
-                </div>
+                <EmptyState
+                  tone="sky"
+                  title="Chưa có bộ câu hỏi đang xuất bản."
+                  description="Vui lòng quay lại sau khi trung tâm cập nhật câu hỏi trong CMS."
+                  action={
+                    <KidButton href="/lien-he" tone="sun">
+                      Liên hệ tư vấn
+                    </KidButton>
+                  }
+                />
               ) : (
                 <form className="space-y-6" onSubmit={handleStartTest}>
                   <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="flex items-center text-[14px] font-medium text-[#111b21]">
-                        <User className="mr-2 h-4 w-4 text-[#54656f]" /> Họ và tên
-                      </label>
-                      <input
+                    <KidField>
+                      <KidLabel htmlFor="pt-fullName" required icon={<User className="h-4 w-4 text-kid-rose" />}>
+                        Họ và tên
+                      </KidLabel>
+                      <KidInput
+                        id="pt-fullName"
                         required
+                        autoComplete="name"
                         value={formData.fullName}
                         onChange={(event) => setFormData({ ...formData, fullName: event.target.value })}
                         placeholder="Nhập họ tên của bạn"
-                        className="h-[56px] w-full rounded-2xl border border-transparent bg-[#f0f2f5] px-[16px] text-[#111b21] outline-none transition-all focus:border-[#25d366] focus:bg-white focus:ring-2 focus:ring-[#d9fdd3]"
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="flex items-center text-[14px] font-medium text-[#111b21]">
-                        <Phone className="mr-2 h-4 w-4 text-[#54656f]" /> Số điện thoại
-                      </label>
-                      <input
+                    </KidField>
+                    <KidField>
+                      <KidLabel htmlFor="pt-phone" required icon={<Phone className="h-4 w-4 text-kid-rose" />}>
+                        Số điện thoại
+                      </KidLabel>
+                      <KidInput
+                        id="pt-phone"
                         required
                         type="tel"
+                        autoComplete="tel"
                         value={formData.phone}
                         onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
                         placeholder="Nhập số điện thoại"
-                        className="h-[56px] w-full rounded-2xl border border-transparent bg-[#f0f2f5] px-[16px] text-[#111b21] outline-none transition-all focus:border-[#25d366] focus:bg-white focus:ring-2 focus:ring-[#d9fdd3]"
                       />
-                    </div>
+                    </KidField>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="flex items-center text-[14px] font-medium text-[#111b21]">
-                      <Mail className="mr-2 h-4 w-4 text-[#54656f]" /> Email
-                    </label>
-                    <input
+                  <KidField>
+                    <KidLabel htmlFor="pt-email" icon={<Mail className="h-4 w-4 text-kid-rose" />}>
+                      Email
+                    </KidLabel>
+                    <KidInput
+                      id="pt-email"
                       type="email"
+                      autoComplete="email"
                       value={formData.email}
                       onChange={(event) => setFormData({ ...formData, email: event.target.value })}
                       placeholder="Nhập địa chỉ email"
-                      className="h-[56px] w-full rounded-2xl border border-transparent bg-[#f0f2f5] px-[16px] text-[#111b21] outline-none transition-all focus:border-[#25d366] focus:bg-white focus:ring-2 focus:ring-[#d9fdd3]"
                     />
-                  </div>
+                  </KidField>
 
-                  <div className="space-y-2">
-                    <label className="block text-[14px] font-medium text-[#111b21]">Khóa học bạn quan tâm</label>
+                  <fieldset>
+                    <legend className="mb-3 font-kid-display text-[16px] font-bold text-kid-ink">Khóa học bạn quan tâm</legend>
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                      {["Trẻ Em", "Thiếu Niên", "IELTS", "Giao Tiếp"].map((course) => (
-                        <label key={course} className="relative cursor-pointer">
-                          <input
-                            type="radio"
-                            name="course"
-                            value={course}
-                            checked={formData.courseInterest === course}
-                            onChange={(event) => setFormData({ ...formData, courseInterest: event.target.value })}
-                            className="peer sr-only"
-                          />
-                          <div className="rounded-xl border border-[#e9edef] p-3 text-center text-[14px] font-medium text-[#54656f] transition-all hover:border-[#25d366]/50 peer-checked:border-[#25d366] peer-checked:bg-[#d9fdd3]/50 peer-checked:text-[#111b21]">
-                            {course}
-                          </div>
-                        </label>
-                      ))}
+                      {COURSE_CHOICES.map((course, i) => {
+                        const tone = toneAt(i)
+                        return (
+                          <label key={course} className="relative cursor-pointer">
+                            <input
+                              type="radio"
+                              name="course"
+                              value={course}
+                              checked={formData.courseInterest === course}
+                              onChange={(event) => setFormData({ ...formData, courseInterest: event.target.value })}
+                              className="peer sr-only"
+                            />
+                            <div
+                              className={cn(
+                                "kid-pop flex min-h-[64px] items-center justify-center rounded-2xl border-[3px] border-kid-ink bg-white p-3 text-center font-kid-display text-[17px] font-bold text-kid-ink shadow-[0_2px_0_0_var(--color-kid-ink)]",
+                                "peer-checked:-rotate-2 peer-checked:shadow-[0_4px_0_0_var(--color-kid-ink)] peer-focus-visible:ring-4 peer-focus-visible:ring-kid-sun/70",
+                                {
+                                  rose: "peer-checked:bg-kid-rose-soft",
+                                  sun: "peer-checked:bg-kid-sun-soft",
+                                  sky: "peer-checked:bg-kid-sky-soft",
+                                  mint: "peer-checked:bg-kid-mint-soft",
+                                  grape: "peer-checked:bg-kid-grape-soft",
+                                  orange: "peer-checked:bg-kid-orange-soft",
+                                }[tone]
+                              )}
+                            >
+                              {course}
+                            </div>
+                            <span
+                              aria-hidden="true"
+                              className="absolute -top-2 -right-2 hidden h-7 w-7 items-center justify-center rounded-full border-2 border-kid-ink bg-kid-mint text-kid-ink peer-checked:flex"
+                            >
+                              <Check className="h-4 w-4" strokeWidth={3.5} />
+                            </span>
+                          </label>
+                        )
+                      })}
                     </div>
-                  </div>
+                  </fieldset>
 
-                  <div className="pt-6">
-                    <Button type="submit" disabled={isSubmitting} className="h-14 w-full rounded-[50px] border-0 bg-[#25d366] text-[16px] font-medium text-[#111b21] shadow-sm hover:bg-[#111b21] hover:text-white">
-                      {isSubmitting ? "Đang xử lý..." : "Bắt đầu bài kiểm tra"}
-                    </Button>
-                    <p className="mt-4 text-center text-[13px] text-[#54656f]">
+                  <div className="pt-4">
+                    <KidButton type="submit" disabled={isSubmitting} tone="rose" size="lg" className="w-full text-kid-ink h-auto min-h-14 py-3 whitespace-normal leading-tight">
+                      {isSubmitting ? (
+                        "Đang xử lý..."
+                      ) : (
+                        <>
+                          <Sparkles className="h-5 w-5" aria-hidden="true" />
+                          Bắt đầu bài kiểm tra
+                        </>
+                      )}
+                    </KidButton>
+                    <p className="mt-4 text-center text-[13px] text-kid-ink-soft">
                       Bằng việc đăng ký, bạn đồng ý với{" "}
-                      <Link href="/chinh-sach-bao-mat" className="text-[#25d366] hover:underline">
+                      <Link href="/chinh-sach-bao-mat" className="font-bold text-kid-ink underline decoration-kid-sun decoration-2 underline-offset-2">
                         Chính sách bảo mật
                       </Link>{" "}
                       của chúng tôi.
@@ -276,75 +370,129 @@ export default function PlacementTestClient({
           )}
 
           {step === "test" && activeQuestion && (
-            <div className="rounded-[24px] border border-[#e9edef] bg-white p-8 shadow-sm md:p-12">
-              <div className="mb-8 flex items-center justify-between">
-                <div className="rounded-full bg-[#f0f2f5] px-4 py-1.5 text-[14px] font-medium text-[#111b21]">
-                  Câu hỏi {currentQuestion + 1} / {questions.length}
+            <div className="kid-border kid-shadow-lg relative overflow-hidden rounded-kid-lg bg-white">
+              {/* Thanh trên: tiến độ như màn chơi game */}
+              <div className="kid-dots relative border-b-[3px] border-kid-ink bg-kid-sky-soft px-5 pt-5 pb-7 sm:px-8 md:px-10">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                  <span className="kid-border-2 inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 font-kid-display text-[16px] font-extrabold text-kid-ink">
+                    Câu hỏi {currentQuestion + 1} / {questions.length}
+                  </span>
+                  {activeQuestion.type ? (
+                    <span className="kid-border-2 rounded-full bg-kid-grape px-3 py-1 text-[14px] font-bold text-white">{activeQuestion.type}</span>
+                  ) : null}
                 </div>
-                <div className="text-[14px] font-medium text-[#25d366]">{activeQuestion.type}</div>
-              </div>
-
-              <div className="relative mb-10 h-2 w-full overflow-hidden rounded-full bg-[#f0f2f5]">
-                <div
-                  className="absolute top-0 left-0 h-full rounded-full bg-[#25d366]"
-                  style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+                <KidProgress
+                  value={currentQuestion + 1}
+                  max={questions.length}
+                  tone="mint"
+                  label={`Câu hỏi ${currentQuestion + 1} / ${questions.length}`}
                 />
               </div>
 
-              <h3 className="mb-8 text-2xl leading-tight font-medium text-[#111b21] md:text-[28px]">
-                {activeQuestion.question}
-              </h3>
-
-              <div className="space-y-4">
-                {activeQuestion.options.map((option, index) => (
-                  <button
-                    key={`${activeQuestion.id}-${index}`}
-                    type="button"
-                    onClick={() => setSelectedOption(index)}
-                    className={`flex w-full items-center justify-between rounded-2xl border p-5 text-left transition-colors ${
-                      selectedOption === index
-                        ? "border-[#25d366] bg-[#d9fdd3]/20 shadow-sm"
-                        : "border-[#e9edef] hover:border-[#25d366]/50 hover:bg-[#f0f2f5]/50"
-                    }`}
+              <div className="p-5 sm:p-8 md:p-10">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={activeQuestion.id}
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 40, rotate: 1 }}
+                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1, x: 0, rotate: 0 }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -40, rotate: -1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 26 }}
                   >
-                    <span className={`text-[16px] font-medium ${selectedOption === index ? "text-[#111b21]" : "text-[#54656f]"}`}>
-                      {String.fromCharCode(65 + index)}. {option}
-                    </span>
-                    <div className={`flex h-6 w-6 items-center justify-center rounded-full border ${selectedOption === index ? "border-[#25d366] bg-[#25d366] text-white" : "border-[#e9edef]"}`}>
-                      {selectedOption === index && <CheckCircle2 className="h-4 w-4" />}
+                    <div className="mb-7 flex items-start gap-4">
+                      <RosyMascot mood="think" className="hidden h-16 w-16 shrink-0 sm:block" />
+                      <h2 id="pt-question" className="pt-1 text-[24px] leading-snug font-extrabold break-words text-kid-ink md:text-[30px]">
+                        {activeQuestion.question}
+                      </h2>
                     </div>
-                  </button>
-                ))}
-              </div>
 
-              <div className="mt-10 flex justify-end border-t border-[#e9edef] pt-8">
-                <Button
-                  onClick={handleNextQuestion}
-                  disabled={selectedOption === null}
-                  className="h-14 rounded-[50px] border-0 bg-[#25d366] px-[24px] text-[16px] font-medium text-[#111b21] shadow-sm hover:bg-[#111b21] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {currentQuestion === questions.length - 1 ? "Hoàn thành" : "Câu tiếp theo"}
-                </Button>
+                    <div role="group" aria-labelledby="pt-question" className="grid gap-4 sm:grid-cols-2">
+                      {activeQuestion.options.map((option, index) => {
+                        const tone = toneAt(index)
+                        const selected = selectedOption === index
+                        return (
+                          <button
+                            key={`${activeQuestion.id}-${index}`}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => setSelectedOption(index)}
+                            className={cn(
+                              "kid-pop kid-focus flex min-h-[72px] w-full items-center gap-4 rounded-kid border-[3px] border-kid-ink p-4 text-left",
+                              selected
+                                ? cn(toneClasses[tone].soft, "kid-shadow -translate-y-0.5")
+                                : "bg-white shadow-[0_3px_0_0_var(--color-kid-ink)] hover:bg-kid-cream"
+                            )}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={cn(
+                                "kid-border-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl font-kid-display text-[20px] font-extrabold transition-transform",
+                                readableSolid(tone),
+                                selected && "-rotate-6 scale-110"
+                              )}
+                            >
+                              {selected ? <Check className="h-6 w-6" strokeWidth={3.5} /> : String.fromCharCode(65 + index)}
+                            </span>
+                            <span className="min-w-0 flex-1 text-[17px] leading-snug font-bold break-words text-kid-ink md:text-[18px]">
+                              <span className="sr-only">{String.fromCharCode(65 + index)}. </span>
+                              {option}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+
+                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t-[3px] border-dashed border-kid-ink/15 pt-7">
+                  <p className="text-[15px] font-semibold text-kid-ink-soft" aria-live="polite">
+                    {selectedOption === null ? "Chọn một đáp án nhé!" : `Đã chọn: ${String.fromCharCode(65 + selectedOption)}`}
+                  </p>
+                  <KidButton
+                    type="button"
+                    tone={isLastQuestion ? "rose" : "mint"}
+                    size="lg"
+                    className="text-kid-ink"
+                    onClick={handleNextQuestion}
+                    disabled={selectedOption === null || isFinishing}
+                  >
+                    {isLastQuestion ? (isFinishing ? "Đang xử lý..." : "Hoàn thành") : "Câu tiếp theo"}
+                    {isLastQuestion ? <Trophy className="h-5 w-5" aria-hidden="true" /> : <ArrowRight className="h-5 w-5" aria-hidden="true" />}
+                  </KidButton>
+                </div>
               </div>
             </div>
           )}
 
           {step === "result" && (
-            <div className="space-y-6">
-              <div className="relative overflow-hidden rounded-[24px] border border-[#e9edef] bg-white p-8 text-center shadow-sm md:p-12">
+            <div className="space-y-8">
+              <div className="kid-border kid-shadow-lg kid-bounce-in relative overflow-hidden rounded-kid-lg bg-kid-sun-soft px-6 pt-10 pb-10 text-center sm:px-10 md:pt-12">
+                <div aria-hidden="true" className="kid-dots pointer-events-none absolute inset-0 opacity-60" />
+                <Confetti />
                 <div className="relative z-10">
-                  <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-[#25d366] text-white shadow-sm">
-                    <Trophy className="h-12 w-12" />
-                  </div>
-                  <h2 className="mb-4 text-[28px] font-medium tracking-tight text-[#111b21]">Hoàn thành bài kiểm tra!</h2>
-                  <p className="mb-8 text-[16px] text-[#54656f]">
+                  <RosyMascot mood="happy" className="kid-float mx-auto mb-4 h-32 w-32 md:h-36 md:w-36" />
+                  <h2 className="mb-3 text-[30px] leading-tight font-extrabold text-kid-ink md:text-[40px]">Hoàn thành bài kiểm tra!</h2>
+                  <p className="mx-auto mb-8 max-w-[520px] text-[16px] text-kid-ink-soft md:text-[17px]">
                     Cảm ơn bạn đã tham gia đánh giá năng lực. Dưới đây là kết quả sơ bộ của bạn.
                   </p>
-                  <div className="mx-auto mb-8 max-w-[400px] rounded-3xl border border-[#e9edef] bg-[#f0f2f5] p-8">
-                    <div className="mb-2 text-[64px] leading-none font-medium text-[#111b21]">
+
+                  <div className="mb-6 flex justify-center gap-2" aria-label={`${starCount} / 3 sao`} role="img">
+                    {[0, 1, 2].map((i) => (
+                      <Star
+                        key={i}
+                        className={cn(
+                          "h-12 w-12 md:h-14 md:w-14",
+                          i === 1 ? "-translate-y-2" : i === 0 ? "-rotate-12" : "rotate-12",
+                          i < starCount ? "fill-kid-sun" : "fill-white opacity-60"
+                        )}
+                      />
+                    ))}
+                  </div>
+
+                  <div className="kid-border kid-shadow mx-auto inline-flex -rotate-2 flex-col items-center rounded-kid-lg bg-white px-10 py-6">
+                    <div className="font-kid-display text-[64px] leading-none font-extrabold text-kid-ink md:text-[76px]">
                       {calculateScore()}/{questions.length}
                     </div>
-                    <div className="mt-2 text-[14px] font-medium tracking-wider text-[#54656f] uppercase">
+                    <div className="mt-2 text-[15px] font-bold tracking-wide text-kid-ink-soft">
                       Câu trả lời đúng · {formatScorePercent(currentScore, questions.length)}
                     </div>
                   </div>
@@ -353,17 +501,17 @@ export default function PlacementTestClient({
 
               {/* Suggested Level */}
               {suggestion && (
-                <div className="rounded-3xl border-2 border-[#25d366] bg-white p-6 md:p-8 shadow-sm">
+                <div className="kid-border kid-shadow rounded-kid-lg bg-white p-6 md:p-8">
                   <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#d9fdd3]/50">
-                      <Sparkles className="h-6 w-6 text-[#25d366]" />
+                    <div className="kid-border-2 flex h-14 w-14 flex-shrink-0 -rotate-6 items-center justify-center rounded-2xl bg-kid-grape text-white">
+                      <Sparkles className="h-7 w-7" aria-hidden="true" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-[14px] font-medium text-[#54656f]">Gợi ý trình độ của bạn</p>
-                      <h3 className={`mt-1 text-[24px] font-medium ${suggestion.color}`}>
+                      <p className="text-[15px] font-bold text-kid-ink-soft">Gợi ý trình độ của bạn</p>
+                      <h3 className={cn("mt-1 text-[26px] font-extrabold md:text-[30px]", suggestion.color)}>
                         {suggestion.label}
                       </h3>
-                      <p className="mt-2 text-[15px] text-[#54656f]">{suggestion.description}</p>
+                      <p className="mt-2 text-[16px] text-kid-ink-soft">{suggestion.description}</p>
                     </div>
                   </div>
                 </div>
@@ -372,34 +520,35 @@ export default function PlacementTestClient({
               {/* Recommended Courses */}
               {recommendedCourses.length > 0 && (
                 <div>
-                  <h3 className="mb-4 flex items-center gap-2 text-[20px] font-medium text-[#111b21]">
-                    <GraduationCap className="h-5 w-5" />
+                  <h3 className="mb-5 flex items-center gap-2 text-[24px] font-extrabold text-kid-ink">
+                    <GraduationCap className="h-6 w-6" aria-hidden="true" />
                     Khóa học phù hợp với bạn
                   </h3>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    {recommendedCourses.map((course) => {
+                  <div className="grid gap-5 md:grid-cols-3">
+                    {recommendedCourses.map((course, i) => {
                       const price = course.salePrice || course.tuitionFee
+                      const tone = toneAt(i + 1)
                       return (
                         <Link
                           key={course.id}
                           href={`/khoa-hoc/${course.slug}`}
-                          className="group rounded-2xl border border-[#e9edef] bg-white p-5 transition-all hover:border-[#25d366] hover:shadow-md"
+                          className={cn("kid-border kid-shadow kid-pop kid-focus group flex flex-col rounded-kid p-5", toneClasses[tone].soft)}
                         >
-                          <Badge variant="outline" className="mb-2 text-xs">
+                          <span className="kid-border-2 mb-3 self-start rounded-full bg-white px-2.5 py-0.5 text-[12px] font-bold text-kid-ink">
                             {course.level}
-                          </Badge>
-                          <h4 className="mb-2 line-clamp-2 text-[16px] font-medium text-[#111b21]">
+                          </span>
+                          <h4 className="mb-2 line-clamp-2 font-kid-display text-[18px] font-extrabold text-kid-ink">
                             {course.name}
                           </h4>
-                          <p className="text-[14px] font-medium text-[#25d366]">
+                          <p className="text-[16px] font-extrabold text-kid-ink">
                             {new Intl.NumberFormat("vi-VN", {
                               style: "currency",
                               currency: "VND",
                               maximumFractionDigits: 0,
                             }).format(price)}
                           </p>
-                          <p className="mt-2 flex items-center gap-1 text-[13px] text-[#54656f] group-hover:text-[#25d366]">
-                            Xem chi tiết <ArrowRight className="h-3 w-3" />
+                          <p className="mt-3 flex items-center gap-1 text-[14px] font-bold text-kid-ink underline decoration-kid-sun decoration-2 underline-offset-4">
+                            Xem chi tiết <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                           </p>
                         </Link>
                       )
@@ -409,25 +558,22 @@ export default function PlacementTestClient({
               )}
 
               {recommendedCourses.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-[#e9edef] bg-[#f0f2f5] p-6 text-center text-sm text-[#54656f]">
-                  Hiện chưa có khóa học phù hợp được mở bán. Vui lòng liên hệ trung tâm để được tư vấn.
-                </div>
+                <EmptyState
+                  tone="sky"
+                  mood="think"
+                  className="py-8"
+                  title="Hiện chưa có khóa học phù hợp được mở bán. Vui lòng liên hệ trung tâm để được tư vấn."
+                />
               )}
 
-              <div className="grid gap-3 md:grid-cols-2 max-w-[600px] mx-auto">
-                <Link
-                  href="/lien-he"
-                  className="flex h-14 items-center justify-center rounded-[50px] bg-[#25d366] px-[24px] text-[16px] font-medium text-[#111b21] shadow-sm transition-colors hover:bg-[#111b21] hover:text-white"
-                >
+              <div className="mx-auto grid max-w-[640px] gap-3 md:grid-cols-2">
+                <KidButton href="/lien-he" tone="rose" size="lg" className="w-full text-kid-ink h-auto min-h-14 py-3 whitespace-normal leading-tight">
                   Nhận tư vấn lộ trình học
-                </Link>
-                <Button
-                  variant="outline"
-                  onClick={resetTest}
-                  className="h-14 rounded-[50px] border border-[#111b21] bg-white font-medium text-[#111b21] hover:bg-[#f0f2f5]"
-                >
+                </KidButton>
+                <KidButton type="button" tone="white" size="lg" onClick={resetTest} className="w-full h-auto min-h-14 py-3 whitespace-normal leading-tight">
+                  <RotateCcw className="h-5 w-5" aria-hidden="true" />
                   Làm lại từ đầu
-                </Button>
+                </KidButton>
               </div>
             </div>
           )}

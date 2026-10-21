@@ -1,141 +1,219 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { AnimatedButton } from "@/components/ui/animated-button"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { BookOpen, CalendarDays, Lightbulb, Menu, Phone, Smile, Sparkles, Users, X } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { KidButton, Sparkle, Star, toneAt, toneClasses } from "@/components/kids"
+
+const navLinks = [
+  { name: "Khóa học", href: "/khoa-hoc", Icon: BookOpen },
+  { name: "Lịch khai giảng", href: "/lich-khai-giang", Icon: CalendarDays },
+  { name: "Giáo viên", href: "/giao-vien", Icon: Users },
+  { name: "Về chúng tôi", href: "/ve-chung-toi", Icon: Smile },
+  { name: "Góc học tập", href: "/goc-hoc-tap", Icon: Lightbulb },
+  { name: "Liên hệ", href: "/lien-he", Icon: Phone },
+]
+
+// Màu hover cho từng pill (liệt kê đủ để Tailwind không purge)
+const hoverSoft: Record<string, string> = {
+  rose: "hover:bg-kid-rose-soft",
+  sun: "hover:bg-kid-sun-soft",
+  sky: "hover:bg-kid-sky-soft",
+  mint: "hover:bg-kid-mint-soft",
+  grape: "hover:bg-kid-grape-soft",
+  orange: "hover:bg-kid-orange-soft",
+}
+
+function Logo({ siteName, logoUrl }: { siteName: string; logoUrl: string }) {
+  return (
+    <Link
+      href="/"
+      aria-label={`${siteName} - Trang chủ`}
+      className="kid-wiggle kid-focus group flex shrink-0 items-center gap-2 rounded-2xl"
+    >
+      {logoUrl ? (
+        <span className="kid-border kid-shadow-sm inline-flex -rotate-2 items-center rounded-2xl bg-white px-2.5 py-1 transition-transform group-hover:rotate-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoUrl} alt={siteName} className="h-[44px] w-auto max-w-[150px] object-contain md:h-[50px] md:max-w-[180px]" />
+        </span>
+      ) : (
+        <>
+          <span className="kid-border kid-shadow-sm flex h-11 w-11 -rotate-6 items-center justify-center rounded-2xl bg-kid-rose font-kid-display text-[24px] font-extrabold text-white transition-transform group-hover:rotate-3">
+            {siteName.charAt(0)}
+          </span>
+          <span className="font-kid-display text-[24px] leading-none font-extrabold tracking-tight text-kid-ink">
+            {siteName.slice(0, 1)}
+            <span className="text-kid-rose">{siteName.slice(1)}</span>
+          </span>
+        </>
+      )}
+    </Link>
+  )
+}
 
 export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteName?: string; logoUrl?: string }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const reduceMotion = useReducedMotion()
 
-  const navLinks = [
-    { name: "Khóa học", href: "/khoa-hoc" },
-    { name: "Lịch khai giảng", href: "/lich-khai-giang" },
-    { name: "Giáo viên", href: "/giao-vien" },
-    { name: "Về chúng tôi", href: "/ve-chung-toi" },
-    { name: "Góc học tập", href: "/goc-hoc-tap" },
-    { name: "Liên hệ", href: "/lien-he" },
-  ]
+  const isActive = (href: string) => pathname === href || Boolean(pathname?.startsWith(href + "/"))
+
+  // Đóng menu bằng phím Esc và khoá cuộn trang khi menu đang mở
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false)
+    }
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    window.addEventListener("keydown", onKey)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener("keydown", onKey)
+    }
+  }, [mobileMenuOpen])
 
   return (
-    <header className="fixed top-0 inset-x-0 z-[999] bg-[#fcf5eb] transition-all duration-300">
-      <div className="w-full px-4 md:px-12 mx-auto">
-        <div className="flex items-center justify-between relative z-[999] h-[80px]">
-          {/* Left: Logo */}
-          <Link href="/" className="flex items-center space-x-2 group shrink-0">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt={siteName} className="h-[72px] object-contain" />
-            ) : (
-              <>
-                <div className="w-8 h-8 rounded-lg bg-[#25d366] flex items-center justify-center text-pure-white font-medium text-lg rotate-3 group-hover:-rotate-3 transition-transform">
-                  {siteName.charAt(0)}
-                </div>
-                <span className="font-medium inline-block text-[20px] text-[#1c1e21] tracking-tight">
-                  {siteName.replace(/^(.)/, '') ? siteName.slice(0, 1) : ''}<span className="text-[#1c1e21]">{siteName.slice(1)}</span>
-                </span>
-              </>
-            )}
-          </Link>
+    <header className="fixed inset-x-0 top-0 z-[999]">
+      <a
+        href="#main-content"
+        className="sr-only rounded-full bg-kid-ink px-4 py-2 font-bold text-white focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[1001]"
+      >
+        Bỏ qua điều hướng
+      </a>
 
-          {/* Center: Desktop Navigation */}
-          <div className="hidden lg:flex flex-1 px-8">
-            <nav className="flex items-center justify-between w-full max-w-[700px] mx-auto">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href || pathname?.startsWith(link.href + "/")
+      <div className="relative z-[1000] border-b-[3px] border-kid-ink bg-kid-cream/95 backdrop-blur supports-[backdrop-filter]:bg-kid-cream/85">
+        <div className="mx-auto flex h-[80px] w-full max-w-[1440px] items-center justify-between gap-3 px-4 md:px-8">
+          <Logo siteName={siteName} logoUrl={logoUrl} />
+
+          {/* Điều hướng desktop: các pill nhiều màu */}
+          <nav aria-label="Điều hướng chính" className="hidden flex-1 justify-center xl:flex">
+            <ul className="flex items-center gap-1.5">
+              {navLinks.map((link, i) => {
+                const tone = toneAt(i)
+                const active = isActive(link.href)
                 return (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className={`text-[15px] tracking-tight transition-colors flex items-center gap-1 ${isActive
-                      ? "text-[#25d366] font-medium"
-                      : "text-[#111b21] font-normal hover:text-[#25d366]"
-                      }`}
-                  >
-                    {link.name}
-                  </Link>
-                )
-              })}
-            </nav>
-          </div>
-
-          {/* Right: Action Buttons */}
-          <div className="flex items-center space-x-4 shrink-0">
-            <nav className="hidden md:flex items-center space-x-4">
-              <AnimatedButton href="/dang-ky" variant="outline" size="sm">
-                Đăng ký
-                <svg width="6" height="10" viewBox="0 0 10 18" fill="none"><path d="M0.879395 13.0463L6.41356 7.5L0.879395 1.95375L2.58314 0.25L9.83315 7.5L2.58314 14.75L0.879395 13.0463Z" fill="currentColor"></path></svg>
-              </AnimatedButton>
-              <AnimatedButton href="/kiem-tra-trinh-do" variant="primary" size="sm">
-                Kiểm tra trình độ
-              </AnimatedButton>
-            </nav>
-
-            <Button
-              variant="ghost"
-              type="button"
-              aria-label={mobileMenuOpen ? "Đóng menu" : "Mở menu"}
-              aria-expanded={mobileMenuOpen}
-              className="lg:hidden p-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors bg-[#25d366] text-[#ffffff] hover:bg-[#25d366]/90"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {mobileMenuOpen ? (
-                  <>
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </>
-                ) : (
-                  <>
-                    <line x1="4" x2="20" y1="12" y2="12" />
-                    <line x1="4" x2="20" y1="6" y2="6" />
-                    <line x1="4" x2="20" y1="18" y2="18" />
-                  </>
-                )}
-              </svg>
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile Menu Backdrop */}
-        {mobileMenuOpen && (
-          <div
-            onClick={() => setMobileMenuOpen(false)}
-            className="fixed inset-0 h-screen bg-midnight-ink/40 backdrop-blur-sm z-40 lg:hidden"
-          />
-        )}
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="absolute top-[calc(100%+8px)] left-4 right-4 z-50 flex flex-col gap-4 overflow-hidden rounded-[24px] bg-[#ffffff] p-5 shadow-xl lg:hidden">
-              <div className="flex flex-col space-y-2">
-                {navLinks.map((link) => {
-                  const isActive = pathname === link.href || pathname?.startsWith(link.href + "/")
-                  return (
+                  <li key={link.href}>
                     <Link
-                      key={link.name}
                       href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`rounded-2xl px-4 py-3 text-[15px] font-medium tracking-tight transition-colors ${isActive ? "bg-[#25d366]/10 text-[#25d366]" : "text-[#111b21] hover:bg-[#f0f4f9]"
-                        }`}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "kid-focus inline-flex h-11 items-center rounded-full border-[3px] px-3 font-kid-display text-[16px] font-bold whitespace-nowrap transition-[background-color,transform,box-shadow] duration-200",
+                        active
+                          ? cn(toneClasses[tone].soft, "kid-shadow-sm -rotate-2 border-kid-ink text-kid-ink")
+                          : cn("border-transparent text-kid-ink hover:-translate-y-0.5 hover:border-kid-ink", hoverSoft[tone])
+                      )}
                     >
                       {link.name}
                     </Link>
-                  )
-                })}
-                <Link
-                  href="/kiem-tra-trinh-do"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="mt-2 flex items-center justify-center gap-2 rounded-full bg-[#25d366] px-4 py-3 text-[15px] font-semibold tracking-tight text-[#111b21] transition-colors hover:bg-[#20bd5a]"
-                >
-                  <span>Kiểm tra trình độ</span>
-                </Link>
-              </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </nav>
+
+          <div className="flex shrink-0 items-center gap-2.5">
+            <div className="hidden items-center gap-2.5 sm:flex">
+              <KidButton href="/dang-ky" tone="white" size="sm" className="hidden md:inline-flex xl:hidden 2xl:inline-flex">
+                Đăng ký
+              </KidButton>
+              <KidButton href="/kiem-tra-trinh-do" tone="rose" size="sm" className="text-kid-ink">
+                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                Kiểm tra trình độ
+              </KidButton>
+            </div>
+
+            <button
+              type="button"
+              aria-label={mobileMenuOpen ? "Đóng menu" : "Mở menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="public-mobile-menu"
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className={cn(
+                "kid-pop kid-border kid-shadow-sm kid-focus flex h-12 w-12 items-center justify-center rounded-2xl xl:hidden",
+                mobileMenuOpen ? "bg-kid-ink text-white" : "bg-kid-sun text-kid-ink"
+              )}
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" strokeWidth={3} /> : <Menu className="h-6 w-6" strokeWidth={3} />}
+            </button>
           </div>
-        )}
+        </div>
       </div>
+
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div
+              key="backdrop"
+              aria-hidden="true"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 z-[998] bg-kid-ink/45 backdrop-blur-[2px] xl:hidden"
+            />
+            <motion.div
+              key="sheet"
+              id="public-mobile-menu"
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -24, rotate: -2, scale: 0.96 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, rotate: 0, scale: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -16, scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 420, damping: 28 }}
+              // Bấm vào bất kỳ link nào trong sheet thì đóng menu
+              onClick={(event) => {
+                if ((event.target as HTMLElement).closest("a")) setMobileMenuOpen(false)
+              }}
+              className="kid-border kid-shadow-lg absolute inset-x-3 top-[92px] z-[999] max-h-[calc(100dvh-110px)] overflow-y-auto rounded-kid-lg bg-white p-4 sm:inset-x-auto sm:right-6 sm:w-[400px] xl:hidden"
+            >
+              <Star className="pointer-events-none absolute -top-1 right-6 h-9 w-9 rotate-12" />
+              <Sparkle className="pointer-events-none absolute top-14 right-4 h-5 w-5 fill-kid-sky" />
+
+              <nav aria-label="Điều hướng di động">
+                <ul className="grid gap-2.5">
+                  {navLinks.map((link, i) => {
+                    const tone = toneAt(i)
+                    const active = isActive(link.href)
+                    return (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          aria-current={active ? "page" : undefined}
+                          className={cn(
+                            "kid-pop kid-focus flex items-center gap-3 rounded-2xl border-[3px] border-kid-ink px-3 py-2.5 font-kid-display text-[18px] font-bold text-kid-ink",
+                            active ? cn(toneClasses[tone].soft, "kid-shadow-sm") : "bg-white shadow-[0_2px_0_0_var(--color-kid-ink)]"
+                          )}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border-2 border-kid-ink", toneClasses[tone].solid)}
+                          >
+                            <link.Icon className="h-5 w-5" strokeWidth={2.5} />
+                          </span>
+                          <span className="flex-1">{link.name}</span>
+                          {active ? <span className="h-3 w-3 rounded-full border-2 border-kid-ink bg-kid-sun" aria-hidden="true" /> : null}
+                        </Link>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </nav>
+
+              <div className="mt-4 grid gap-2.5 border-t-[3px] border-dashed border-kid-ink/20 pt-4">
+                <KidButton href="/kiem-tra-trinh-do" tone="rose" size="md" className="w-full text-kid-ink">
+                  <Sparkles className="h-5 w-5" aria-hidden="true" />
+                  Kiểm tra trình độ
+                </KidButton>
+                <KidButton href="/dang-ky" tone="sun" size="md" className="w-full">
+                  Đăng ký
+                </KidButton>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   )
 }
