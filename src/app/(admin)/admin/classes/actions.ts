@@ -54,14 +54,23 @@ export async function upsertClass(data: ClassFormValues) {
         })
 
         if (studentIds.length > 0) {
-          await tx.classStudent.createMany({
-            data: studentIds.map((studentId) => ({
-              classId,
-              studentId,
-              status: "ACTIVE" as const
-            })),
-            skipDuplicates: true
+          // SQLite/D1 không hỗ trợ skipDuplicates, nên tự lọc học viên đã có trong lớp
+          const existing = await tx.classStudent.findMany({
+            where: { classId, studentId: { in: studentIds } },
+            select: { studentId: true }
           })
+          const existingIds = new Set(existing.map((item) => item.studentId))
+          const newStudentIds = studentIds.filter((studentId) => !existingIds.has(studentId))
+
+          if (newStudentIds.length > 0) {
+            await tx.classStudent.createMany({
+              data: newStudentIds.map((studentId) => ({
+                classId,
+                studentId,
+                status: "ACTIVE" as const
+              }))
+            })
+          }
         }
       })
     }
@@ -297,7 +306,7 @@ export async function deleteClassSchedule(scheduleId: string) {
  * Logic:
  * 1. Lấy tất cả ClassSchedule của class
  * 2. Lặp từng ngày trong range, nếu trùng dayOfWeek thì tạo ClassSession
- * 3. Dùng createMany + skipDuplicates để chống trùng (dựa vào @@unique)
+ * 3. Lọc các buổi đã tồn tại (theo @@unique) rồi createMany phần còn lại
  * 4. Nếu replaceExisting=true: xoá SCHEDULED sessions trong range trước (giữ sessions có attendance)
  *
  * Trả về số buổi đã tạo.
@@ -379,10 +388,23 @@ export async function generateSessions(data: GenerateSessionsFormValues) {
       return { success: true, data: { count: 0 } }
     }
 
-    const result = await prisma.classSession.createMany({
-      data: toCreate,
-      skipDuplicates: true // chống trùng nhờ @@unique
+    // SQLite/D1 không hỗ trợ skipDuplicates: bỏ các buổi trùng @@unique([classId, sessionDate, startTime])
+    const existingSessions = await prisma.classSession.findMany({
+      where: { classId: cls.id, sessionDate: { gte: from, lte: to } },
+      select: { sessionDate: true, startTime: true }
     })
+    const sessionKey = (sessionDate: Date, startTime: string) => `${sessionDate.getTime()}|${startTime}`
+    const existingKeys = new Set(existingSessions.map((s) => sessionKey(s.sessionDate, s.startTime)))
+    const uniqueToCreate = toCreate.filter((session) => {
+      const key = sessionKey(session.sessionDate, session.startTime)
+      if (existingKeys.has(key)) return false
+      existingKeys.add(key)
+      return true
+    })
+
+    const result = uniqueToCreate.length > 0
+      ? await prisma.classSession.createMany({ data: uniqueToCreate })
+      : { count: 0 }
 
     revalidatePath(`/admin/classes/${parsed.classId}`)
     revalidatePath(`/admin/schedules`)

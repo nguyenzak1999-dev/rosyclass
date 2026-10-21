@@ -14,6 +14,16 @@ export default defineConfig({
     env: {
       ASSETS: bindings.assets(),
       VINEXT_KV_CACHE: bindings.kv(),
+      DB: bindings.d1({ name: "rosyclass-db" }),
+      MEDIA: bindings.r2({ name: "rosyclass-media" }),
+
+      // Ký cookie phiên đăng nhập admin
+      AUTH_SECRET: bindings.secret(),
+      // Cloudinary nhận bản sao song song của mọi ảnh tải lên
+      CLOUDINARY_API_KEY: bindings.secret(),
+      CLOUDINARY_API_SECRET: bindings.secret(),
+      RESEND_API_KEY: bindings.secret(),
+      TELEGRAM_BOT_TOKEN: bindings.secret(),
     },
   }),
 });

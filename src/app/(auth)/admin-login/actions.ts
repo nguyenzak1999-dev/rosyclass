@@ -2,38 +2,49 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { prisma } from "@/lib/prisma"
+import { hashPassword, isBcryptHash, verifyPassword } from "@/lib/auth/password"
+import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth/session"
+
+const INVALID_CREDENTIALS = "Email hoặc mật khẩu không chính xác."
 
 export async function login(formData: FormData) {
-  const email = formData.get("email") as string
-  const password = formData.get("password") as string
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const email = String(formData.get("email") || "").trim().toLowerCase()
+  const password = String(formData.get("password") || "")
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error) {
-    return { error: error.message }
+  if (!email || !password) {
+    return { error: INVALID_CREDENTIALS }
   }
 
   const adminUser = await prisma.user.findUnique({
     where: {
-      email: data.user.email || email,
+      email,
     },
     select: {
+      id: true,
       status: true,
+      passwordHash: true,
     },
   })
 
-  if (!adminUser || adminUser.status !== "ACTIVE") {
-    await supabase.auth.signOut()
+  if (!adminUser || !(await verifyPassword(password, adminUser.passwordHash))) {
+    return { error: INVALID_CREDENTIALS }
+  }
+
+  if (adminUser.status !== "ACTIVE") {
     return { error: "Tài khoản chưa được cấp quyền truy cập hệ thống quản trị." }
   }
+
+  let passwordHash = adminUser.passwordHash
+  // Mật khẩu bcrypt chuyển từ Supabase được nâng cấp sang PBKDF2 ở lần đăng nhập đầu tiên
+  if (isBcryptHash(passwordHash)) {
+    passwordHash = await hashPassword(password)
+    await prisma.user.update({ where: { id: adminUser.id }, data: { passwordHash } })
+  }
+
+  const cookieStore = await cookies()
+  cookieStore.set(SESSION_COOKIE, await createSessionToken(adminUser.id, passwordHash), sessionCookieOptions)
 
   revalidatePath("/", "layout")
   redirect("/admin/dashboard")

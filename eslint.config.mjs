@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // vinext / Cloudflare build output và worktree của agent
+    "dist/**",
+    ".vinext/**",
+    ".cloudflare/**",
+    ".claude/**",
   ]),
 ]);
 

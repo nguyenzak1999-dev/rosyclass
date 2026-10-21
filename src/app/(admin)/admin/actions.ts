@@ -1,12 +1,11 @@
 "use server"
 
-import { createClient } from "@/utils/supabase/server"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { SESSION_COOKIE } from "@/lib/auth/session"
 
 export async function logout() {
   const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
-  await supabase.auth.signOut()
+  cookieStore.delete(SESSION_COOKIE)
   redirect("/admin-login")
 }

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 // ------------------------------------------------------
@@ -121,7 +121,7 @@ model Lead {
   source       String?
   status       LeadStatus @default(NEW)
   followUpDate DateTime?
-  notes        String?    @db.Text
+  notes        String?
 
   interestedCourseId String?
   interestedCourse   Course? @relation(fields: [interestedCourseId], references: [id])
@@ -138,7 +138,7 @@ model Lead {
 
 model LeadNote {
   id      String @id @default(uuid())
-  content String @db.Text
+  content String
 
   leadId String
   lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
@@ -160,7 +160,7 @@ model Parent {
   email        String?
   relationship String?
   address      String?
-  notes        String? @db.Text
+  notes        String?
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
@@ -185,7 +185,7 @@ model Student {
   status       StudentStatus @default(ACTIVE)
   source       String?
   joinedAt     DateTime      @default(now())
-  notes        String?       @db.Text
+  notes        String?
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
@@ -204,20 +204,20 @@ model Student {
 }
 
 model Teacher {
-  id             String        @id @default(uuid())
-  fullName       String
-  phone          String
-  email          String?
-  avatar         String?
-  bio             String?       @db.Text
+  id              String        @id @default(uuid())
+  fullName        String
+  phone           String
+  email           String?
+  avatar          String?
+  bio             String?
   specialties     String? // JSON or comma separated
   certificates    String? // JSON or comma separated
   bankName        String? // e.g. "MB"
   bankAccountNo   String? // e.g. "0988888888"
   bankAccountName String? // e.g. "NGUYEN VAN A"
   hourlyRate      Float         @default(0)
-  status         TeacherStatus @default(ACTIVE)
-  showOnHomepage Boolean       @default(false)
+  status          TeacherStatus @default(ACTIVE)
+  showOnHomepage  Boolean       @default(false)
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
@@ -240,9 +240,9 @@ model Course {
   name                   String
   slug                   String       @unique
   level                  CourseLevel
-  description            String?      @db.Text
+  description            String?
   targetAudience         String?
-  learningOutcomes       String?      @db.Text
+  learningOutcomes       String?
   totalSessions          Int          @default(0)
   sessionDurationMinutes Int          @default(90)
   tuitionFee             Float        @default(0)
@@ -267,7 +267,7 @@ model Class {
   startDate       DateTime?
   expectedEndDate DateTime?
   status          ClassStatus @default(UPCOMING)
-  notes           String?     @db.Text
+  notes           String?
 
   courseId String
   course   Course @relation(fields: [courseId], references: [id])
@@ -338,7 +338,7 @@ model ClassSession {
   endTime     String // format "HH:mm"
   status      SessionStatus @default(SCHEDULED)
   topic       String?
-  notes       String?       @db.Text
+  notes       String?
 
   classId String
   class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
@@ -367,7 +367,7 @@ model ClassSession {
 model Attendance {
   id     String           @id @default(uuid())
   status AttendanceStatus
-  note   String?          @db.Text
+  note   String?
 
   sessionId String
   session   ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
@@ -395,11 +395,11 @@ model Payment {
   paymentDate     DateTime?
   dueDate         DateTime?
   status          PaymentStatus @default(UNPAID)
-  qrPayload       String?       @db.Text
+  qrPayload       String?
   bankName        String?
   bankAccountName String?
   bankAccountNo   String?
-  note            String?       @db.Text
+  note            String?
 
   studentId String
   student   Student @relation(fields: [studentId], references: [id])
@@ -444,7 +444,7 @@ model PlacementTest {
   speakingScore  Float?
   totalScore     Float?
   levelResult    String?
-  teacherComment String?  @db.Text
+  teacherComment String?
 
   leadId String?
   lead   Lead?   @relation(fields: [leadId], references: [id])
@@ -465,8 +465,8 @@ model PlacementTest {
 model PlacementQuestion {
   id           String       @id @default(uuid())
   type         String
-  question     String       @db.Text
-  options      String       @db.Text // JSON array of answer choices
+  question     String
+  options      String // JSON array of answer choices
   correctIndex Int
   order        Int          @default(0)
   level        CourseLevel?
@@ -485,7 +485,7 @@ model Score {
   type     ScoreType
   value    Float
   maxValue Float     @default(10)
-  note     String?   @db.Text
+  note     String?
   date     DateTime  @default(now())
 
   studentId String
@@ -509,7 +509,7 @@ model Score {
 
 model ClassNote {
   id        String   @id @default(uuid())
-  content   String   @db.Text
+  content   String
   createdAt DateTime @default(now())
 
   classId String
@@ -532,7 +532,7 @@ model Page {
   id             String       @id @default(uuid())
   title          String
   slug           String       @unique
-  content        String       @db.Text
+  content        String
   seoTitle       String?
   seoDescription String?
   status         EntityStatus @default(ACTIVE)
@@ -543,8 +543,8 @@ model Page {
 
 model Faq {
   id       String       @id @default(uuid())
-  question String       @db.Text
-  answer   String       @db.Text
+  question String
+  answer   String
   category String?
   position Int          @default(0)
   status   EntityStatus @default(ACTIVE)
@@ -557,8 +557,8 @@ model BlogPost {
   id             String       @id @default(uuid())
   title          String
   slug           String       @unique
-  excerpt        String?      @db.Text
-  content        String       @db.Text
+  excerpt        String?
+  content        String
   thumbnail      String?
   status         EntityStatus @default(DRAFT)
   publishedAt    DateTime?
@@ -584,16 +584,18 @@ model Banner {
 }
 
 model MediaFile {
-  id       String  @id @default(uuid())
-  url      String // Cloudinary secure_url
-  publicId String  @unique // Cloudinary public_id (for deletion)
-  name     String // Original file name
-  alt      String? // Alt text
-  folder   String  @default("general") // Cloudinary folder / category
-  format   String? // jpg, png, webp...
-  width    Int?
-  height   Int?
-  bytes    Int? // file size in bytes
+  id            String  @id @default(uuid())
+  url           String // URL hiển thị: /media/<storageKey> (R2), hoặc Cloudinary nếu R2 lỗi
+  publicId      String  @unique // Cloudinary public_id, hoặc storageKey nếu Cloudinary lỗi
+  storageKey    String? @unique // Khoá object trong R2
+  cloudinaryUrl String? // Bản sao trên Cloudinary
+  name          String // Original file name
+  alt           String? // Alt text
+  folder        String  @default("general") // Thư mục / danh mục
+  format        String? // jpg, png, webp...
+  width         Int?
+  height        Int?
+  bytes         Int? // file size in bytes
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -603,7 +605,7 @@ model Testimonial {
   id          String  @id @default(uuid())
   authorName  String
   authorTitle String?
-  content     String  @db.Text
+  content     String
   avatar      String?
   rating      Int     @default(5)
   isPublished Boolean @default(false)
@@ -615,7 +617,7 @@ model Testimonial {
 model Notification {
   id      String  @id @default(uuid())
   title   String
-  message String  @db.Text
+  message String
   isRead  Boolean @default(false)
   link    String?
 
@@ -630,7 +632,7 @@ model ActivityLog {
   action     String
   entityType String
   entityId   String?
-  details    String? @db.Text // Can be JSON string
+  details    String? // Can be JSON string
 
   userId String?
   user   User?   @relation(fields: [userId], references: [id])
@@ -767,32 +769,32 @@ enum PayrollStatus {
 // ------------------------------------------------------
 
 model TeacherPayroll {
-  id           String        @id @default(uuid())
-  teacherId    String
-  teacher      Teacher       @relation(fields: [teacherId], references: [id])
+  id        String  @id @default(uuid())
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id])
 
-  month        Int           // Tháng tính lương (1-12)
-  year         Int           // Năm tính lương
+  month Int // Tháng tính lương (1-12)
+  year  Int // Năm tính lương
 
-  totalHours   Float         // Tổng số giờ dạy đã hoàn thành
-  hourlyRate   Float         // Mức lương/giờ tại thời điểm chốt
-  baseAmount   Float         // totalHours * hourlyRate
+  totalHours Float // Tổng số giờ dạy đã hoàn thành
+  hourlyRate Float // Mức lương/giờ tại thời điểm chốt
+  baseAmount Float // totalHours * hourlyRate
 
-  bonusAmount  Float         @default(0) // Thưởng
-  bonusReason  String?       @db.Text
+  bonusAmount Float   @default(0) // Thưởng
+  bonusReason String?
 
-  deductAmount Float         @default(0) // Khấu trừ
-  deductReason String?       @db.Text
+  deductAmount Float   @default(0) // Khấu trừ
+  deductReason String?
 
-  totalAmount  Float         // Thực lãnh = baseAmount + bonusAmount - deductAmount
+  totalAmount Float // Thực lãnh = baseAmount + bonusAmount - deductAmount
 
-  status       PayrollStatus @default(DRAFT)
-  paidAt       DateTime?
-  notes        String?       @db.Text
-  historyLogs  Json?
+  status      PayrollStatus @default(DRAFT)
+  paidAt      DateTime?
+  notes       String?
+  historyLogs Json?
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([teacherId, month, year])
   @@index([month, year])

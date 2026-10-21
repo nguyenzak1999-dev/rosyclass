@@ -1,14 +1,9 @@
-import { PrismaClient } from "@prisma/client"
-import { PrismaPg } from "@prisma/adapter-pg"
-import { Pool } from "pg"
+import { createScriptPrisma } from "./script-client"
 
 import { PERMISSIONS } from "../src/lib/auth/permission-definitions"
 import { DEFAULT_SITE_SETTINGS, SITE_SETTINGS_SLUG } from "../src/lib/site-settings"
 
-const connectionString = `${process.env.DATABASE_URL}`
-const pool = new Pool({ connectionString })
-const adapter = new PrismaPg(pool)
-const prisma = new PrismaClient({ adapter })
+const prisma = createScriptPrisma()
 
 function removeDiacritics(str: string): string {
   return str
@@ -115,23 +110,23 @@ async function main() {
   const accountantRole = roles[3]
   const teacherRole = roles[4]
 
-  await prisma.permission.createMany({
-    data: Object.values(PERMISSIONS).map((code) => ({
-      code,
-      module: code.split(".")[0],
-      description: code
-    })),
-    skipDuplicates: true
-  })
+  // SQLite/D1 không hỗ trợ skipDuplicates nên dùng upsert để seed chạy lại được
+  for (const code of Object.values(PERMISSIONS)) {
+    await prisma.permission.upsert({
+      where: { code },
+      update: {},
+      create: { code, module: code.split(".")[0], description: code }
+    })
+  }
 
   const permissions = await prisma.permission.findMany()
-  await prisma.rolePermission.createMany({
-    data: permissions.map((permission) => ({
-      roleId: superAdminRole.id,
-      permissionId: permission.id
-    })),
-    skipDuplicates: true
-  })
+  for (const permission of permissions) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: superAdminRole.id, permissionId: permission.id } },
+      update: {},
+      create: { roleId: superAdminRole.id, permissionId: permission.id }
+    })
+  }
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@rosyclass.edu.vn" },

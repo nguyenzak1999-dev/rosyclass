@@ -3,29 +3,33 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "vite dev",
+    "build": "vite build",
+    "start": "vite preview",
+    "deploy": "vinext-cloudflare deploy",
     "lint": "eslint",
-    "postinstall": "prisma generate",
-    "dev:vinext": "vite dev --port 3001",
-    "build:vinext": "vite build",
-    "start:vinext": "vite preview",
-    "deploy:vinext": "vinext-cloudflare deploy"
+    "typecheck": "tsc --noEmit",
+    "cf:types": "cf workers types",
+    "db:diff": "prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script",
+    "db:migrate:local": "cf d1 migrations apply rosyclass-db --local",
+    "db:migrate:remote": "cf d1 migrations apply rosyclass-db",
+    "db:export-supabase": "node scripts/export-supabase-to-d1.mjs",
+    "admin:set-password": "tsx scripts/set-password.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.4.0",
-    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/adapter-d1": "^7.8.0",
     "@prisma/client": "^7.8.0",
-    "@supabase/ssr": "^0.10.3",
-    "@supabase/supabase-js": "^2.107.0",
     "@tanstack/react-table": "^8.21.3",
-    "@types/pg": "^8.20.0",
     "@vinext/cloudflare": "^1.2.0",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
-    "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "framer-motion": "^12.40.0",
@@ -35,7 +39,6 @@
     "next": "16.2.7",
     "next-cloudinary": "^6.17.5",
     "next-themes": "^0.4.6",
-    "pg": "^8.21.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-hook-form": "^7.77.0",
@@ -51,8 +54,9 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^2.0.0-beta.v.3",
-    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.1.2",
@@ -61,10 +65,11 @@
     "colorjs.io": "^0.6.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
+    "pg": "^8.23.1",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "prisma": "^7.8.0",
-    "tailwindcss": "^4",
+    "tailwindcss": "^4.3.3",
     "tsx": "^4.22.4",
     "typescript": "^5",
     "vite": "^8.3.0"
@@ -72,5 +77,8 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  }
 }

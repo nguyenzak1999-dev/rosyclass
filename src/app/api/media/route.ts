@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     const where: Prisma.MediaFileWhereInput = {}
     if (folder) where.folder = folder
     if (search) {
-      where.name = { contains: search, mode: "insensitive" }
+      // LIKE của SQLite đã không phân biệt hoa thường với ký tự ASCII
+      where.name = { contains: search }
     }
 
     const [files, total] = await Promise.all([

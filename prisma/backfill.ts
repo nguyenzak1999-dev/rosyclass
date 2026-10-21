@@ -1,11 +1,6 @@
-import { PrismaClient } from "@prisma/client"
-import { Pool } from "pg"
-import { PrismaPg } from "@prisma/adapter-pg"
+import { createScriptPrisma } from "./script-client"
 
-const dbUrl = process.env.DATABASE_URL || ""
-const pool = new Pool({ connectionString: dbUrl })
-const adapter = new PrismaPg(pool)
-const prisma = new PrismaClient({ adapter })
+const prisma = createScriptPrisma()
 
 async function main() {
   const students = await prisma.student.findMany({
@@ -61,5 +56,4 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect()
-    await pool.end()
   })

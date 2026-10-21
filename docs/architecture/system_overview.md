@@ -1,13 +1,13 @@
 # System Architecture: RosyClass
 
 ## 1. Tech Stack
-- **Frontend Framework**: Next.js (App Router)
+- **Frontend Framework**: Next.js (App Router), chạy trên Cloudflare Workers qua vinext
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS + Shadcn UI
-- **Database**: PostgreSQL (via Supabase)
-- **ORM**: Prisma
-- **Authentication**: Supabase Auth
-- **Media Storage**: Cloudinary
+- **Database**: Cloudflare D1 (SQLite)
+- **ORM**: Prisma + @prisma/adapter-d1
+- **Authentication**: bảng `User` + cookie phiên ký HMAC (`src/lib/auth`)
+- **Media Storage**: Cloudflare R2 (bản chính) + Cloudinary (bản sao song song)
 - **Form Handling**: React Hook Form + Zod
 - **Tables & Charts**: TanStack Table, Recharts
 
@@ -25,8 +25,8 @@
 - `/src/app/(admin)`: Protected Admin CRM/CMS dashboard.
 - `/src/components/ui`: Shadcn UI primitives.
 - `/src/components/shared`: Reusable components across the app.
-- `/src/lib`: Utilities (Prisma client, Supabase client, utils).
-- `/prisma`: Database schema and migrations.
+- `/src/lib`: Utilities (Prisma client, auth, media storage, utils).
+- `/prisma`: Database schema; `/migrations`: migration SQL cho D1. Triển khai: xem `docs/deploy-cloudflare.md`.
 
 ## 4. Next Steps
 - Translate Prisma Schema from MVP spec.

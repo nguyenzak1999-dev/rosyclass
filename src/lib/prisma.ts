@@ -1,18 +1,11 @@
 import { PrismaClient } from '@prisma/client'
-import { Pool } from 'pg'
-import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaD1 } from '@prisma/adapter-d1'
+import { env } from 'cloudflare:workers'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
-const dbUrl = process.env.DATABASE_URL || ""
-
-const pool = new Pool({ 
-  connectionString: dbUrl,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined
-})
-const adapter = new PrismaPg(pool)
-
+// Binding D1 dùng lại an toàn giữa các request, nên giữ một PrismaClient cho cả isolate
 export const prisma =
-  globalForPrisma.prisma || new PrismaClient({ adapter })
+  globalForPrisma.prisma || new PrismaClient({ adapter: new PrismaD1(env.DB) })
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
+globalForPrisma.prisma = prisma

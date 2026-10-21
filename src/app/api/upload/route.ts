@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { v2 as cloudinary } from "cloudinary"
 import { getCurrentAdminUser, hasPermission, PERMISSIONS } from "@/lib/auth/permissions"
 import { prisma } from "@/lib/prisma"
+import { deleteStoredImage, storeImage } from "@/lib/media-storage"
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Có lỗi xảy ra"
 }
-
-cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-})
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,31 +32,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File quá lớn, tối đa 10MB" }, { status: 400 })
     }
 
-    // Convert file to base64
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`
+    const stored = await storeImage(file, folder)
 
-    // Upload to Cloudinary
-    const result = await cloudinary.uploader.upload(base64, {
-      folder: `rosyclass/${folder}`,
-      resource_type: "image",
-      transformation: [
-        { quality: "auto:good", fetch_format: "auto" }
-      ],
-    })
-
-    // Save to DB
     const media = await prisma.mediaFile.create({
       data: {
-        url: result.secure_url,
-        publicId: result.public_id,
+        ...stored,
         name: file.name,
         folder,
-        format: result.format,
-        width: result.width,
-        height: result.height,
-        bytes: result.bytes,
       }
     })
 
@@ -92,8 +68,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Không tìm thấy file" }, { status: 404 })
     }
 
-    // Delete from Cloudinary
-    await cloudinary.uploader.destroy(media.publicId)
+    await deleteStoredImage(media)
 
     // Delete from DB
     await prisma.mediaFile.delete({ where: { id } })

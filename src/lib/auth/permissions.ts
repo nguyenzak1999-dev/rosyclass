@@ -3,7 +3,7 @@ import "server-only"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
-import { createClient } from "@/utils/supabase/server"
+import { passwordFingerprint, readSessionToken, SESSION_COOKIE } from "@/lib/auth/session"
 import { hasPermission, PERMISSIONS, type AdminUser, type PermissionCode } from "@/lib/auth/permission-definitions"
 
 const allPermissions = Object.values(PERMISSIONS)
@@ -62,16 +62,13 @@ export class AuthorizationError extends Error {
 
 export async function getCurrentAdminUser(): Promise<AdminUser | null> {
   const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser()
+  const session = await readSessionToken(cookieStore.get(SESSION_COOKIE)?.value)
 
-  if (!authUser?.email) return null
+  if (!session) return null
 
   const user = await prisma.user.findUnique({
     where: {
-      email: authUser.email,
+      id: session.uid,
     },
     include: {
       role: {
@@ -87,6 +84,7 @@ export async function getCurrentAdminUser(): Promise<AdminUser | null> {
   })
 
   if (!user || user.status !== "ACTIVE") return null
+  if (session.pv !== (await passwordFingerprint(user.passwordHash))) return null
 
   const dbPermissions = user.role.permissions
     .map(({ permission }) => permission.code)
