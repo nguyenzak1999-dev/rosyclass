@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
+import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { BookOpen, CalendarDays, Lightbulb, Menu, Phone, Smile, Sparkles, Users, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { KidButton, Sparkle, Star, toneAt, toneClasses } from "@/components/kids"

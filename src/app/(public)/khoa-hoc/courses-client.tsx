@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, useReducedMotion } from "framer-motion"
+import { motion, useReducedMotion } from "motion/react"
 import { ArrowRight, BookOpen, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { EmptyState, KidButton, PageHero, inkTextOn, toneAt, toneClasses } from "@/components/kids"

@@ -16,7 +16,7 @@ import {
   type ConvertLeadToStudentFormValues,
   type RecordTestResultFormValues,
 } from "@/lib/schemas/lead"
-import { notifyAdmins } from "@/app/(admin)/admin/notifications/actions"
+import { notifyAdmins } from "@/lib/admin-notifications"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage } from "@/lib/errors"
 

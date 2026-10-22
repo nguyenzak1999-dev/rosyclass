@@ -1,7 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
-import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
+import { AuthorizationError, hasPermission, PERMISSIONS, requireAdminUser, requirePermission } from "@/lib/auth/permissions"
 import {
   paymentSchema,
   recordPaymentSchema,
@@ -10,7 +10,7 @@ import {
 } from "@/lib/schemas/payment"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage } from "@/lib/errors"
-import { notifyAdmins } from "@/app/(admin)/admin/notifications/actions"
+import { notifyAdmins } from "@/lib/admin-notifications"
 
 function removeDiacritics(str: string): string {
   return str
@@ -56,7 +56,7 @@ export async function upsertPayment(data: PaymentFormValues) {
       })
       const existing = await prisma.payment.findUnique({
         where: { id: parsedData.id },
-        select: { receiptCode: true }
+        select: { receiptCode: true, status: true, classId: true, courseId: true }
       })
       const receiptCode = existing?.receiptCode || await generateReceiptCode()
       const qrPayload = buildQrPayload(receiptCode, parsedData.totalAmount, student)
@@ -65,6 +65,11 @@ export async function upsertPayment(data: PaymentFormValues) {
         where: { id: parsedData.id }, 
         data: {
           ...payload,
+          // Form sửa không gửi lớp/khoá: giữ nguyên thay vì xoá (báo cáo doanh thu theo lớp/khoá cần chúng)
+          classId: parsedData.classId ?? existing?.classId ?? null,
+          courseId: parsedData.courseId ?? existing?.courseId ?? null,
+          // Phiếu đã hoàn tiền / đã huỷ không tự quay lại thành đã thu khi sửa ghi chú hay số tiền
+          status: existing && ["REFUNDED", "CANCELLED"].includes(existing.status) ? existing.status : payload.status,
           qrPayload
         } 
       })
@@ -194,7 +199,13 @@ export async function createPaymentForStudent(
   createPayment: boolean = true
 ): Promise<{ id: string; totalAmount: number } | null> {
   try {
-    const actorId = createdById ?? (await requirePermission(PERMISSIONS.paymentsWrite)).id
+    // Luôn xác thực người gọi; createdById từ client không được dùng để bỏ qua kiểm tra quyền
+    const actor = await requireAdminUser()
+    if (!hasPermission(actor, PERMISSIONS.classesWrite) && !hasPermission(actor, PERMISSIONS.paymentsWrite)) {
+      throw new AuthorizationError()
+    }
+    const actorId = actor.id
+    void createdById
     const cls = await prisma.class.findUnique({
       where: { id: classId },
       select: {

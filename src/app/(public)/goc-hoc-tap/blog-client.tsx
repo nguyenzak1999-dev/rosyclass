@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, useReducedMotion } from "framer-motion"
+import { motion, useReducedMotion } from "motion/react"
 import { ArrowRight, BookOpen, Calendar } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"

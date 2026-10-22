@@ -1,18 +1,10 @@
 "use client"
 
-import { useRef } from "react"
+import { motion, useReducedMotion } from "motion/react"
 import { Users, Star as StarIcon, Award, Heart, ArrowRight } from "lucide-react"
 import Link from "next/link"
-import gsap from "gsap"
-import { useGSAP } from "@gsap/react"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { cn } from "@/lib/utils"
 import { EmptyState, KidButton, PageHero, RosyMascot, toneAt, toneClasses } from "@/components/kids"
-
-// Chỉ đăng ký trên trình duyệt: ScrollTrigger làm hỏng render phía server trên Workers
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger, useGSAP)
-}
 
 // Ảnh giáo viên như ảnh polaroid dán nghiêng
 const tilts = ["-rotate-2", "rotate-2", "-rotate-1", "rotate-1"]
@@ -27,30 +19,10 @@ export interface TeacherCardData {
 }
 
 export default function TeachersClient({ teachers }: { teachers: TeacherCardData[] }) {
-  const container = useRef<HTMLDivElement>(null)
-
-  useGSAP(() => {
-    const mm = gsap.matchMedia()
-    mm.add("(prefers-reduced-motion: no-preference)", () => {
-      gsap.from(".teacher-card", {
-        opacity: 0,
-        y: 50,
-        scale: 0.9,
-        stagger: 0.1,
-        duration: 0.7,
-        ease: "back.out(1.7)",
-        scrollTrigger: {
-          trigger: ".teachers-grid",
-          start: "top 85%",
-        },
-        clearProps: "all",
-      })
-    })
-    return () => mm.revert()
-  }, { scope: container })
+  const reduceMotion = useReducedMotion()
 
   return (
-    <div ref={container} className="flex min-h-screen w-full flex-col pb-24">
+    <div className="flex min-h-screen w-full flex-col pb-24">
       <PageHero
         tone="grape"
         eyebrow="Đội ngũ giáo viên"
@@ -65,7 +37,7 @@ export default function TeachersClient({ teachers }: { teachers: TeacherCardData
           {teachers.length === 0 ? (
             <EmptyState title="Đội ngũ giáo viên đang được cập nhật" />
           ) : (
-            <div className="teachers-grid grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
               {teachers.map((teacher, idx) => {
                 const tone = toneAt(idx)
                 const certifications: string[] = teacher.certificates
@@ -73,7 +45,13 @@ export default function TeachersClient({ teachers }: { teachers: TeacherCardData
                   : []
 
                 return (
-                  <article key={teacher.id} className="teacher-card">
+                  <motion.article
+                    initial={reduceMotion ? false : { opacity: 0, y: 50, scale: 0.9 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    viewport={{ once: true, margin: "0px 0px -15% 0px" }}
+                    transition={{ type: "spring", bounce: 0.45, duration: 0.7, delay: (idx % 4) * 0.1 }}
+                    key={teacher.id}
+                  >
                     <div className="kid-border kid-shadow kid-pop group flex h-full flex-col rounded-kid bg-white p-4">
                       <div className={cn("relative", tilts[idx % tilts.length])}>
                         <span
@@ -132,7 +110,7 @@ export default function TeachersClient({ teachers }: { teachers: TeacherCardData
                         </Link>
                       </div>
                     </div>
-                  </article>
+                  </motion.article>
                 )
               })}
             </div>

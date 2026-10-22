@@ -3,36 +3,15 @@
 import { revalidatePath } from "next/cache"
 
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
-import { getSiteSettings } from "@/lib/get-site-settings"
 import { sendLeadNotification, type LeadNotificationChannel } from "@/lib/lead-notifications"
-import { prisma } from "@/lib/prisma"
-import { SITE_SETTINGS_SLUG, type LeadFormKey, type LeadNotificationSettings } from "@/lib/site-settings"
+import { updateStoredSiteSettings } from "@/lib/site-settings-store"
+import { type LeadFormKey, type LeadNotificationSettings } from "@/lib/site-settings"
 
 export async function saveLeadNotificationSettings(data: LeadNotificationSettings) {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
-    const currentSettings = await getSiteSettings()
-    const content = JSON.stringify({
-      ...currentSettings,
-      leadNotificationSettings: data,
-    })
+    await updateStoredSiteSettings({ leadNotificationSettings: data })
 
-    await prisma.page.upsert({
-      where: { slug: SITE_SETTINGS_SLUG },
-      update: {
-        title: "Site Settings",
-        content,
-        status: "ACTIVE",
-      },
-      create: {
-        title: "Site Settings",
-        slug: SITE_SETTINGS_SLUG,
-        content,
-        status: "ACTIVE",
-      },
-    })
-
-    revalidatePath("/")
     revalidatePath("/admin/cms/notifications")
     return { success: true }
   } catch (error) {

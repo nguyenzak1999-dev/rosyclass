@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { classSchema, type ClassFormValues } from "@/lib/schemas/class"
 import * as z from "zod"
-import { notifyAdmins } from "@/app/(admin)/admin/notifications/actions"
+import { notifyAdmins } from "@/lib/admin-notifications"
 import { createPaymentForStudent } from "@/app/(admin)/admin/payments/actions"
 import {
   cancelSessionSchema,

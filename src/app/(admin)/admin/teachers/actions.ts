@@ -7,10 +7,35 @@ import { revalidatePath } from "next/cache"
 import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 import type { Prisma } from "@/generated/prisma/client"
 
+// Vai trò quản trị: chỉ SUPER_ADMIN được gán hoặc chỉnh tài khoản mang các vai trò này
+const PRIVILEGED_ROLES = ["SUPER_ADMIN", "ADMIN"]
+
+/** Chặn leo thang đặc quyền: trả về thông báo lỗi nếu người thao tác không được đụng tới tài khoản này */
+async function privilegeError(actor: { id: string; roleCode: string }, targetUserId: string | undefined, nextRoleCode?: string) {
+  const actorIsSuper = actor.roleCode === "SUPER_ADMIN"
+  if (nextRoleCode && PRIVILEGED_ROLES.includes(nextRoleCode) && !actorIsSuper) {
+    return "Chỉ Super Admin mới gán được vai trò quản trị"
+  }
+  if (!targetUserId) return null
+
+  const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, role: { select: { code: true } } } })
+  if (!target) return null
+  if (PRIVILEGED_ROLES.includes(target.role.code) && !actorIsSuper) {
+    return "Chỉ Super Admin mới chỉnh được tài khoản quản trị"
+  }
+  if (target.id === actor.id && nextRoleCode && nextRoleCode !== target.role.code) {
+    return "Không thể tự đổi vai trò của chính mình"
+  }
+  return null
+}
+
 export async function upsertTeacher(data: TeacherFormValues) {
   try {
-    await requirePermission(PERMISSIONS.teachersWrite)
+    const actor = await requirePermission(PERMISSIONS.teachersWrite)
     const parsedData = teacherSchema.parse(data)
+
+    const denied = await privilegeError(actor, parsedData.id, parsedData.roleCode)
+    if (denied) return { success: false, error: denied }
 
     // Find role
     const role = await prisma.role.findUnique({
@@ -101,7 +126,10 @@ export async function upsertTeacher(data: TeacherFormValues) {
 
 export async function deleteTeacher(userId: string) {
   try {
-    await requirePermission(PERMISSIONS.teachersWrite)
+    const actor = await requirePermission(PERMISSIONS.teachersWrite)
+    if (userId === actor.id) return { success: false, error: "Không thể tự xoá tài khoản của chính mình" }
+    const denied = await privilegeError(actor, userId)
+    if (denied) return { success: false, error: denied }
 
     // Delete Teacher profile first if exists
     const teacher = await prisma.teacher.findUnique({

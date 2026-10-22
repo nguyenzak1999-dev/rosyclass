@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { revalidatePath } from "next/cache"
 import { calculateSessionHours, getMonthRange } from "@/lib/payroll-utils"
 
@@ -22,6 +23,7 @@ export async function calculateTeacherPayroll(
     notes?: string
   }
 ) {
+  await requirePermission(PERMISSIONS.paymentsWrite)
   try {
     const teacher = await prisma.teacher.findUnique({
       where: { id: teacherId },
@@ -114,6 +116,7 @@ export async function calculateTeacherPayroll(
 // Tính lương hàng loạt cho tất cả giáo viên trong 1 tháng
 // ============================================================
 export async function calculateAllPayrolls(month: number, year: number) {
+  await requirePermission(PERMISSIONS.paymentsWrite)
   try {
     const teachers = await prisma.teacher.findMany({
       where: { status: "ACTIVE" },
@@ -149,6 +152,7 @@ export async function updatePayrollExtras(
     notes?: string
   }
 ) {
+  await requirePermission(PERMISSIONS.paymentsWrite)
   try {
     const payroll = await prisma.teacherPayroll.findUnique({ where: { id: payrollId } })
     if (!payroll) return { success: false, error: "Không tìm thấy phiếu lương" }
@@ -191,6 +195,7 @@ export async function updatePayrollExtras(
 // Xác nhận đã thanh toán
 // ============================================================
 export async function markPayrollAsPaid(payrollId: string) {
+  await requirePermission(PERMISSIONS.paymentsWrite)
   try {
     const updated = await prisma.teacherPayroll.update({
       where: { id: payrollId },
@@ -212,6 +217,7 @@ export async function updateTeacherBank(
   teacherId: string, 
   data: { bankName: string; bankAccountNo: string; bankAccountName: string }
 ) {
+  await requirePermission(PERMISSIONS.paymentsWrite)
   try {
     const updated = await prisma.teacher.update({
       where: { id: teacherId },
@@ -229,6 +235,7 @@ export async function updateTeacherBank(
 // Lấy danh sách phiếu lương theo tháng/năm
 // ============================================================
 export async function getPayrollsByMonth(month: number, year: number) {
+  await requirePermission(PERMISSIONS.paymentsRead)
   return prisma.teacherPayroll.findMany({
     where: { month, year },
     include: {
@@ -242,6 +249,7 @@ export async function getPayrollsByMonth(month: number, year: number) {
 // Lấy chi tiết phiếu lương + danh sách buổi học
 // ============================================================
 export async function getPayrollDetail(payrollId: string) {
+  await requirePermission(PERMISSIONS.paymentsRead)
   const payroll = await prisma.teacherPayroll.findUnique({
     where: { id: payrollId },
     include: {

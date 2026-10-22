@@ -35,8 +35,11 @@ export default async function TeachersPage() {
       }
     });
 
-    formattedTeachers = teachers.map(user => ({
-      id: user.id,
+    // Trang chi tiết /giao-vien/[id] tìm theo id hồ sơ Teacher, không phải id tài khoản User
+    formattedTeachers = teachers
+      .filter((user) => user.teacherProfile && user.teacherProfile.status === "ACTIVE")
+      .map(user => ({
+      id: user.teacherProfile!.id,
       fullName: user.fullName,
       avatar: user.teacherProfile?.avatar || user.avatar || null,
       bio: user.teacherProfile?.bio || "Giáo viên tận tâm, đồng hành cùng các bé",

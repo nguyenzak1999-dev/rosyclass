@@ -17,14 +17,14 @@
     "db:bootstrap": "tsx scripts/bootstrap-d1.ts",
     "admin:create": "tsx scripts/create-admin.ts",
     "db:seed-kids": "tsx scripts/seed-kids-content.ts",
-    "db:seed-curriculum": "tsx scripts/seed-curriculum.ts"
+    "db:seed-curriculum": "tsx scripts/seed-curriculum.ts",
+    "db:seed-demo-class": "tsx scripts/seed-demo-class.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.4.0",
     "@prisma/adapter-d1": "^7.8.0",
     "@prisma/client": "^7.8.0",
@@ -36,10 +36,9 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
-    "framer-motion": "^12.40.0",
     "glob": "^13.0.6",
-    "gsap": "^3.15.0",
     "lucide-react": "^1.17.0",
+    "motion": "^12.43.0",
     "next": "16.2.7",
     "next-cloudinary": "^6.17.5",
     "next-themes": "^0.4.6",
@@ -55,6 +54,7 @@
     "tw-animate-css": "^1.4.0",
     "vinext": "^1.3.0",
     "xlsx": "^0.18.5",
+    "xss": "^1.0.15",
     "zod": "^4.4.3"
   },
   "devDependencies": {

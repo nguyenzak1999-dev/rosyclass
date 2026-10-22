@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react"
 import Link from "next/link"
-import { motion, useReducedMotion } from "framer-motion"
+import { motion, useReducedMotion } from "motion/react"
 import { MapPin, Phone, Mail, Clock, MessageCircleHeart, Send } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"

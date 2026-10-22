@@ -10,7 +10,17 @@ export default async function TeachersPage() {
         }
       }
     },
-    include: {
+    // select thay cho include: không gửi passwordHash xuống trình duyệt
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+      phone: true,
+      avatar: true,
+      status: true,
+      roleId: true,
+      createdAt: true,
+      updatedAt: true,
       role: true,
       teacherProfile: { select: { id: true, bio: true, specialties: true, certificates: true, avatar: true, showOnHomepage: true, hourlyRate: true } }
     },

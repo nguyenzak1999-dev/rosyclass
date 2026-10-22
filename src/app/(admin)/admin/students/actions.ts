@@ -8,6 +8,7 @@ import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 import type { Prisma } from "@/generated/prisma/client"
 
 export async function generateStudentCode() {
+  await requirePermission(PERMISSIONS.studentsWrite)
   const lastStudent = await prisma.student.findFirst({
     where: {
       code: {

@@ -35,7 +35,8 @@ export default async function LeadsPage({ searchParams }: PageProps) {
       orderBy: { createdAt: "desc" },
       include: {
         interestedCourse: true,
-        assignedTo: true,
+        // Không gửi cả bản ghi User (có passwordHash) xuống trình duyệt
+        assignedTo: { select: { id: true, fullName: true, email: true } },
       },
     }),
     prisma.user.findMany({
