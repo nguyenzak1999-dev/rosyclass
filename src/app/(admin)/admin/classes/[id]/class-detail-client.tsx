@@ -4,12 +4,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
-import { Users, Calendar, Settings, UserMinus, Award, ClipboardList } from "lucide-react"
+import { Users, Calendar, Settings, UserMinus, Award, ClipboardList, Box } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import { AddStudentDialog } from "./components/add-student-dialog"
 import { ClassScheduleTab } from "./components/class-schedule-tab"
 import { ClassScoresTab } from "./components/class-scores-tab"
+import { Classroom3DTab } from "./components/classroom-3d/classroom-3d-tab"
+import type { ClassroomData } from "./components/classroom-3d/seats"
 import { removeStudentFromClass } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -19,13 +21,15 @@ export default function ClassDetailClient({
   allStudents,
   teachers,
   rooms,
-  scores = []
+  scores = [],
+  classroom
 }: {
   classData: any
   allStudents: any[]
   teachers: { id: string; fullName: string }[]
   rooms: { id: string; name: string; capacity: number }[]
   scores?: any[]
+  classroom: ClassroomData
 }) {
   const router = useRouter()
 
@@ -90,6 +94,9 @@ export default function ClassDetailClient({
         <TabsTrigger value="students" className="gap-2">
           <Users className="h-4 w-4" /> Học viên
         </TabsTrigger>
+        <TabsTrigger value="classroom-3d" className="gap-2">
+          <Box className="h-4 w-4" /> Lớp học 3D
+        </TabsTrigger>
         <TabsTrigger value="overview" className="gap-2">
           <Settings className="h-4 w-4" /> Tổng quan
         </TabsTrigger>
@@ -128,6 +135,10 @@ export default function ClassDetailClient({
             />
           </CardContent>
         </Card>
+      </TabsContent>
+
+      <TabsContent value="classroom-3d">
+        <Classroom3DTab classroom={classroom} />
       </TabsContent>
 
       <TabsContent value="overview">
