@@ -13,6 +13,11 @@ export interface SiteSettings {
   workingHours: string
   googleMapEmbedUrl?: string
 
+  // Thông tin pháp lý (hiển thị ở footer theo quy định với website thương mại)
+  legalName?: string
+  taxCode?: string
+  legalRepresentative?: string
+
   // Cấu hình tài khoản nhận học phí (VietQR)
   paymentBankCode?: string
   paymentBankAccountNo?: string
@@ -207,11 +212,15 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   logoUrl: "",
   faviconUrl: "",
 
-  address: "123 Nguyễn Văn Linh, Đà Nẵng",
+  address: "Số 22A, ngõ 5, đường Dương Xá, xã Dương Xá, huyện Gia Lâm, TP. Hà Nội, Việt Nam",
   phone: "1900 1234",
   email: "contact@rosyclass.edu.vn",
   workingHours: "Thứ 2 – Chủ Nhật: 7:00 – 21:00",
   googleMapEmbedUrl: "",
+
+  legalName: "Hộ Kinh Doanh Rosy Class",
+  taxCode: "001093004500",
+  legalRepresentative: "Phùng Tuấn Anh",
 
   // Cấu hình tài khoản nhận học phí (VietQR)
   paymentBankCode: "MB",
@@ -227,7 +236,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   seoDescription: "Học tiếng Anh tại RosyClass với đội ngũ giáo viên bản ngữ, giáo trình Cambridge chuẩn quốc tế.",
   ogImage: "",
 
-  copyright: "© 2026 RosyClass English Center. All rights reserved.",
+  copyright: "© 2026 Hộ Kinh Doanh Rosy Class. Bảo lưu mọi quyền.",
 
   heroBadge: "Trung tâm tiếng Anh số 1",
   heroTitle: "Giao tiếp",

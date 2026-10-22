@@ -20,6 +20,8 @@ export default async function PublicLayout({
           "@type": "EducationalOrganization",
           "@id": `${siteUrl}/#organization`,
           name: s.siteName,
+          legalName: s.legalName || undefined,
+          taxID: s.taxCode || undefined,
           url: siteUrl,
           logo: absoluteUrl(s.logoUrl || s.faviconUrl || "/english-center-hero.png"),
           image: absoluteUrl(s.ogImage || s.heroImageUrl || "/english-center-hero.png"),

@@ -1,12 +1,14 @@
-import { Database, Eye, Lock, ShieldCheck, UserCheck } from "lucide-react"
+import { Building2, Database, Eye, Lock, ShieldCheck, UserCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PageHero, readableSolid, toneAt } from "@/components/kids"
+import { getSiteSettings } from "@/lib/get-site-settings"
 
 const sections = [
   { id: "thu-thap", Icon: Database, title: "1. Thu thập thông tin" },
   { id: "su-dung", Icon: Eye, title: "2. Sử dụng thông tin" },
   { id: "bao-mat", Icon: Lock, title: "3. Bảo mật thông tin" },
   { id: "quyen", Icon: UserCheck, title: "4. Quyền của người dùng" },
+  { id: "don-vi", Icon: Building2, title: "5. Đơn vị chủ quản" },
 ]
 
 function SectionTitle({ index }: { index: number }) {
@@ -24,7 +26,9 @@ function SectionTitle({ index }: { index: number }) {
   )
 }
 
-export default function PrivacyPolicyPage() {
+export default async function PrivacyPolicyPage() {
+  const settings = await getSiteSettings()
+
   return (
     <div className="flex min-h-screen w-full flex-col pb-24">
       <PageHero
@@ -79,8 +83,19 @@ export default function PrivacyPolicyPage() {
               <SectionTitle index={3} />
               <p>
                 Bạn có quyền yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân của mình khỏi hệ thống của RosyClass bất cứ lúc nào bằng cách liên hệ với bộ phận hỗ trợ của chúng tôi qua email:{" "}
-                <a href="mailto:contact@rosyclass.edu.vn">contact@rosyclass.edu.vn</a>.
+                <a href={`mailto:${settings.email}`}>{settings.email}</a>.
               </p>
+            </div>
+
+            <div>
+              <SectionTitle index={4} />
+              <ul>
+                {settings.legalName ? <li>Tên đăng ký: {settings.legalName}</li> : null}
+                {settings.taxCode ? <li>Mã số thuế: {settings.taxCode}</li> : null}
+                {settings.legalRepresentative ? <li>Người đại diện: {settings.legalRepresentative}</li> : null}
+                {settings.address ? <li>Địa chỉ: {settings.address}</li> : null}
+                {settings.phone ? <li>Điện thoại: {settings.phone}</li> : null}
+              </ul>
             </div>
           </article>
         </div>

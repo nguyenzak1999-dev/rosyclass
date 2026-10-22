@@ -200,9 +200,12 @@ export function PublicFooter({ settings }: PublicFooterProps) {
           </div>
 
           <div className="mt-12 border-t-[3px] border-dashed border-white/20 pt-8">
-            {settings.address && (
-              <p className="mb-6 max-w-[620px] text-[14px] leading-6 text-white/75 lg:text-[15px]">{settings.address}</p>
-            )}
+            <div className="mb-6 max-w-[720px] space-y-1 text-[14px] leading-6 text-white/75 lg:text-[15px]">
+              {settings.legalName ? <p className="font-bold text-white/90">{settings.legalName}</p> : null}
+              {settings.taxCode ? <p>Mã số thuế: {settings.taxCode}</p> : null}
+              {settings.legalRepresentative ? <p>Người đại diện: {settings.legalRepresentative}</p> : null}
+              {settings.address ? <p>Địa chỉ: {settings.address}</p> : null}
+            </div>
 
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[14px] font-semibold text-white/80">

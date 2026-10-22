@@ -8,7 +8,8 @@ export default defineConfig({
     entrypoint: "vinext/server/fetch-handler",
     compatibilityDate: "2026-10-21",
     compatibilityFlags: ["nodejs_compat"],
-    domains: ["rosyclass.edu.vn", "www.rosyclass.edu.vn", "admin.rosyclass.edu.vn"],
+    // Thêm "rosyclass.edu.vn" và "www.rosyclass.edu.vn" sau khi xoá các bản ghi A trỏ về Vercel
+    domains: ["admin.rosyclass.edu.vn"],
     assets: {
       htmlHandling: "none",
       notFoundHandling: "none",

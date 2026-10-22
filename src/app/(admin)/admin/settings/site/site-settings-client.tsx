@@ -112,7 +112,19 @@ export default function SiteSettingsClient({ settings }: { settings: SiteSetting
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Địa chỉ</Label>
-            <Input {...register("address")} placeholder="123 Nguyễn Văn Linh, Đà Nẵng" />
+            <Input {...register("address")} placeholder="Số 22A, ngõ 5, đường Dương Xá, xã Dương Xá, huyện Gia Lâm, TP. Hà Nội, Việt Nam" />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Tên đăng ký kinh doanh</Label>
+            <Input {...register("legalName")} placeholder="Hộ Kinh Doanh Rosy Class" />
+          </div>
+          <div className="space-y-2">
+            <Label>Mã số thuế</Label>
+            <Input {...register("taxCode")} placeholder="001093004500" />
+          </div>
+          <div className="space-y-2">
+            <Label>Người đại diện</Label>
+            <Input {...register("legalRepresentative")} placeholder="Phùng Tuấn Anh" />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>Giờ hoạt động</Label>
