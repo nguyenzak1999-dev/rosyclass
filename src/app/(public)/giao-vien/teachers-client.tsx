@@ -9,7 +9,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { cn } from "@/lib/utils"
 import { EmptyState, KidButton, PageHero, RosyMascot, toneAt, toneClasses } from "@/components/kids"
 
-gsap.registerPlugin(ScrollTrigger, useGSAP)
+// Chỉ đăng ký trên trình duyệt: ScrollTrigger làm hỏng render phía server trên Workers
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger, useGSAP)
+}
 
 // Ảnh giáo viên như ảnh polaroid dán nghiêng
 const tilts = ["-rotate-2", "rotate-2", "-rotate-1", "rotate-1"]
