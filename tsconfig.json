@@ -38,7 +38,6 @@
   ],
   "exclude": [
     "node_modules",
-    "prisma/legacy-postgres-migrations",
     ".claude",
     ".cloudflare",
     "dist"

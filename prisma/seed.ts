@@ -137,7 +137,7 @@ async function main() {
     create: {
       email: "admin@rosyclass.edu.vn",
       fullName: "Rosy Admin",
-      passwordHash: "dummy_hash_for_supabase_auth",
+      passwordHash: "chua_dat_mat_khau",
       roleId: superAdminRole.id,
       phone: "0988888888"
     }
@@ -148,7 +148,7 @@ async function main() {
     data: {
       email: "consultant@rosyclass.edu.vn",
       fullName: "Nguyễn Tư Vấn",
-      passwordHash: "dummy_hash_for_supabase_auth",
+      passwordHash: "chua_dat_mat_khau",
       roleId: consultantRole.id,
       phone: "0912345678"
     }
@@ -158,7 +158,7 @@ async function main() {
     data: {
       email: "accountant@rosyclass.edu.vn",
       fullName: "Trần Kế Toán",
-      passwordHash: "dummy_hash_for_supabase_auth",
+      passwordHash: "chua_dat_mat_khau",
       roleId: accountantRole.id,
       phone: "0987654321"
     }
@@ -249,7 +249,7 @@ async function main() {
       data: {
         email: "minhanh@rosyclass.edu.vn",
         fullName: "Nguyễn Minh Anh",
-        passwordHash: "dummy_hash_for_supabase_auth",
+        passwordHash: "chua_dat_mat_khau",
         roleId: teacherRole.id,
         phone: "0977777771"
       }
@@ -258,7 +258,7 @@ async function main() {
       data: {
         email: "quocbao@rosyclass.edu.vn",
         fullName: "Trần Quốc Bảo",
-        passwordHash: "dummy_hash_for_supabase_auth",
+        passwordHash: "chua_dat_mat_khau",
         roleId: teacherRole.id,
         phone: "0977777772"
       }
@@ -267,7 +267,7 @@ async function main() {
       data: {
         email: "lemai@rosyclass.edu.vn",
         fullName: "Lê Thị Mai",
-        passwordHash: "dummy_hash_for_supabase_auth",
+        passwordHash: "chua_dat_mat_khau",
         roleId: teacherRole.id,
         phone: "0977777773"
       }
@@ -276,7 +276,7 @@ async function main() {
       data: {
         email: "john@rosyclass.edu.vn",
         fullName: "John Smith",
-        passwordHash: "dummy_hash_for_supabase_auth",
+        passwordHash: "chua_dat_mat_khau",
         roleId: teacherRole.id,
         phone: "0977777774"
       }

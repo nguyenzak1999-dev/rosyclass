@@ -5,7 +5,7 @@ Toàn bộ hệ thống chạy trên Cloudflare:
 | Thành phần | Trước đây | Bây giờ |
 | --- | --- | --- |
 | Hosting | Vercel (Next.js) | Cloudflare Workers qua [vinext](https://github.com/cloudflare/vinext) |
-| Cơ sở dữ liệu | Supabase Postgres | Cloudflare D1 (SQLite), Prisma + `@prisma/adapter-d1` |
+| Cơ sở dữ liệu | Supabase Postgres | Cloudflare D1 (SQLite), Prisma + `@prisma/adapter-d1`, bắt đầu với database mới |
 | Đăng nhập admin | Supabase Auth | Bảng `User` + cookie phiên ký HMAC (`src/lib/auth/session.ts`) |
 | Ảnh | Cloudinary (Node SDK) | Cloudinary (gọi REST API có chữ ký, vì SDK không chạy trên Workers) |
 | Cache ISR / `revalidatePath` | Vercel | Workers KV (`VINEXT_KV_CACHE`) |
@@ -24,7 +24,7 @@ Cấu hình Worker nằm trong `cloudflare.config.ts`; migration D1 nằm trong 
   ```
 
   Khi chạy CI, thay bằng biến môi trường `CLOUDFLARE_API_TOKEN` (template *Edit Cloudflare Workers*) và `CLOUDFLARE_ACCOUNT_ID`.
-- Thứ tự làm: tạo tài nguyên → tạo bảng → chuyển dữ liệu → deploy → đặt secret.
+- Thứ tự làm: tạo tài nguyên → tạo bảng → dữ liệu nền và admin → deploy → đặt secret.
 
 ## 1. Tạo tài nguyên
 
@@ -54,26 +54,21 @@ Khi đổi `prisma/schema.prisma` về sau, tạo migration mới bằng cách s
 npx prisma migrate diff --from-local-d1 --to-schema prisma/schema.prisma --script --output migrations/0002_ten.sql
 ```
 
-## 3. Chuyển dữ liệu từ Supabase
+## 3. Dữ liệu nền và tài khoản admin
+
+Hệ thống bắt đầu với database trống (không chuyển dữ liệu từ Supabase). Nạp vai trò, quyền và cấu hình website mặc định; lệnh chạy lại nhiều lần vẫn an toàn:
 
 ```bash
-SUPABASE_DATABASE_URL="postgresql://postgres:<mật khẩu>@db.<project>.supabase.co:5432/postgres" \
-  npm run db:export-supabase
-npx wrangler d1 execute rosyclass-db --remote --file=.cloudflare/d1-data.sql
-rm .cloudflare/d1-data.sql   # file chứa dữ liệu cá nhân và hash mật khẩu
+npm run db:bootstrap
 ```
 
-Script `scripts/export-supabase-to-d1.mjs`:
-
-- đọc mọi bảng của app và chuyển sang câu lệnh `INSERT` cho SQLite (thời gian giữ nguyên UTC);
-- ghép mật khẩu bcrypt từ `auth.users` của Supabase vào `User.passwordHash` theo email, nên **người dùng đăng nhập bằng mật khẩu cũ**. Ở lần đăng nhập đầu, mật khẩu được tự nâng cấp sang PBKDF2;
-- giữ nguyên URL Cloudinary của các ảnh đã tải lên.
-
-Tạo hoặc đổi mật khẩu một tài khoản quản trị (cần `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_DATABASE_ID`, `CLOUDFLARE_D1_TOKEN` trong `.env`; token cần quyền *D1 Edit*):
+Tạo tài khoản quản trị đầu tiên, hoặc đổi mật khẩu cho tài khoản đã có. Mật khẩu được hỏi khi chạy và không hiện lúc gõ:
 
 ```bash
-npm run admin:set-password -- admin@rosyclass.edu.vn "MatKhauManh123" "Quản trị viên"
+npm run admin:create -- admin@rosyclass.edu.vn "Họ tên"
 ```
+
+Hai lệnh trên chạy SQL trên D1 thật bằng phiên `npx cf auth login`, không cần token riêng.
 
 ## 4. Biến môi trường, deploy và secret
 
@@ -124,4 +119,4 @@ python3 -c "import json;print(json.dumps({'sql':open('migrations/0001_init.sql')
 - **D1 không hỗ trợ transaction.** Các `prisma.$transaction(...)` (ghi danh, thu học phí, chuyển lead thành học viên...) vẫn chạy nhưng từng câu lệnh độc lập; nếu một bước lỗi giữa chừng, các bước trước không được hoàn tác.
 - Tìm kiếm `contains` trên SQLite chỉ không phân biệt hoa/thường với chữ không dấu.
 - `next/image` không tự resize ảnh khi chạy vinext. Ảnh trên Cloudinary vẫn có thể dùng tham số biến đổi của Cloudinary.
-- Tài khoản tạo mới trong trang quản trị (ví dụ giáo viên) chưa có mật khẩu đăng nhập. Đặt mật khẩu bằng `npm run admin:set-password`.
+- Tài khoản tạo mới trong trang quản trị (ví dụ giáo viên) chưa có mật khẩu đăng nhập. Đặt mật khẩu bằng `npm run admin:create -- <email>`.
