@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import type { Testimonial } from "@prisma/client"
+import type { Testimonial } from "@/generated/prisma/client"
 import { Trash2, Star } from "lucide-react"
 import { toast } from "sonner"
 import { useState } from "react"

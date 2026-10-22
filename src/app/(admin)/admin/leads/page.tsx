@@ -3,7 +3,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { columns } from "./components/columns"
 import { LeadDialog } from "./components/lead-dialog"
 import { LeadFilters } from "./components/lead-filters"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 export const dynamic = "force-dynamic"
 

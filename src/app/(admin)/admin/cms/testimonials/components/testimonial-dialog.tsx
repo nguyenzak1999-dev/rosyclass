@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import type { Testimonial } from "@prisma/client"
+import type { Testimonial } from "@/generated/prisma/client"
 import { Pencil, Plus } from "lucide-react"
 import { toast } from "sonner"
 

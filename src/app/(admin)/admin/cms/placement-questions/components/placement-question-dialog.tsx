@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
-import type { PlacementQuestion } from "@prisma/client"
+import type { PlacementQuestion } from "@/generated/prisma/client"
 import { Pencil, Plus } from "lucide-react"
 import { toast } from "sonner"
 

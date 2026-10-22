@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import type { Faq } from "@prisma/client"
+import type { Faq } from "@/generated/prisma/client"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useState } from "react"

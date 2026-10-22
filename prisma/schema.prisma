@@ -1,5 +1,18 @@
+// Client cho Worker: runtime "cloudflare" import query compiler (WASM) như một module,
+// vì Workers production không cho biên dịch WASM lúc chạy
 generator client {
-  provider = "prisma-client-js"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  runtime      = "cloudflare"
+  moduleFormat = "esm"
+}
+
+// Client cho script chạy bằng Node (seed, backfill, set-password)
+generator scripts {
+  provider     = "prisma-client"
+  output       = "../prisma/generated/node"
+  runtime      = "nodejs"
+  moduleFormat = "esm"
 }
 
 datasource db {

@@ -5,7 +5,7 @@ import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { teacherSchema, type TeacherFormValues } from "@/lib/schemas/teacher"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
-import type { Prisma } from "@prisma/client"
+import type { Prisma } from "@/generated/prisma/client"
 
 export async function upsertTeacher(data: TeacherFormValues) {
   try {

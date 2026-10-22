@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { columns } from "./components/columns"
 import { PlacementQuestionDialog } from "./components/placement-question-dialog"
 import { PlacementQuestionFilters } from "./components/placement-question-filters"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 export const dynamic = "force-dynamic"
 

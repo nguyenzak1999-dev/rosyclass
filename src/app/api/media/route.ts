@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import type { Prisma } from "@prisma/client"
+import type { Prisma } from "@/generated/prisma/client"
 import { getCurrentAdminUser, hasPermission, PERMISSIONS } from "@/lib/auth/permissions"
 import { prisma } from "@/lib/prisma"
 

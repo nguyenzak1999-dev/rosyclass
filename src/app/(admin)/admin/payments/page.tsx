@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { PaymentsClient } from "./components/payments-client"
 import { PaymentFilters } from "./components/payment-filters"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 import { getSiteSettings } from "@/lib/get-site-settings"
 
 export const dynamic = "force-dynamic"

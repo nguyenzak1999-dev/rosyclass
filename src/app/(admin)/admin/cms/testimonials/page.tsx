@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { columns } from "./components/columns"
 import { TestimonialDialog } from "./components/testimonial-dialog"
 import { TestimonialFilters } from "./components/testimonial-filters"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 import { Star } from "lucide-react"
 
 export const dynamic = "force-dynamic"

@@ -14,15 +14,12 @@ export default defineConfig({
     env: {
       ASSETS: bindings.assets(),
       VINEXT_KV_CACHE: bindings.kv(),
-      DB: bindings.d1({ name: "rosyclass-db" }),
+      DB: bindings.d1({ name: "rosyclass-db", id: "41752056-3142-4beb-be13-d74175a7698a" }),
 
       // Ký cookie phiên đăng nhập admin
       AUTH_SECRET: bindings.secret(),
-      // Cloudinary lưu toàn bộ ảnh tải lên
-      CLOUDINARY_API_KEY: bindings.secret(),
-      CLOUDINARY_API_SECRET: bindings.secret(),
-      RESEND_API_KEY: bindings.secret(),
-      TELEGRAM_BOT_TOKEN: bindings.secret(),
+      // Không khai báo ở đây để deploy không bắt buộc; đặt trong Dashboard → Variables and Secrets:
+      // CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, RESEND_API_KEY, TELEGRAM_BOT_TOKEN
     },
   }),
 });

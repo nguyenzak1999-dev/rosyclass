@@ -36,7 +36,7 @@ async function signCloudinaryParams(params: Record<string, string>, apiSecret: s
 }
 
 function getCloudinaryConfig() {
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  const cloudName = env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
   const apiKey = env.CLOUDINARY_API_KEY
   const apiSecret = env.CLOUDINARY_API_SECRET
   if (!cloudName || !apiKey || !apiSecret) return null

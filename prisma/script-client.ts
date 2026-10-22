@@ -1,5 +1,5 @@
 import "dotenv/config"
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient } from "./generated/node/client"
 import { PrismaD1 } from "@prisma/adapter-d1"
 
 // Script chạy bằng Node (seed, backfill) không có binding D1, nên kết nối qua D1 HTTP API.

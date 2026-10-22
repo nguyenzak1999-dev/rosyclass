@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, CalendarDays } from "lucide-react"
 import { ScheduleFilters } from "./components/schedule-filters"
 import Link from "next/link"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 import { addDays, startOfMonth, endOfMonth, subMonths, startOfDay } from "date-fns"
 import { SchedulesClient } from "./components/schedules-client"
 

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { ClassesClient } from "./components/classes-client"
 import { ClassFilters } from "./components/class-filters"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 export const dynamic = "force-dynamic"
 

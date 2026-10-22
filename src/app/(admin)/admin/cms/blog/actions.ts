@@ -6,7 +6,7 @@ import { blogPostSchema, type BlogPostFormValues } from "@/lib/schemas/blog-post
 import { revalidatePath } from "next/cache"
 import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 import { formatBlogContent } from "@/lib/blog-content"
-import type { Prisma } from "@prisma/client"
+import type { Prisma } from "@/generated/prisma/client"
 
 export async function upsertBlogPost(data: BlogPostFormValues) {
   try {

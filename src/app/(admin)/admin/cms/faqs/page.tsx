@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { FaqDialog } from "./components/faq-dialog"
 import { FaqFilters } from "./components/faq-filters"
 import { columns } from "./components/columns"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 export const dynamic = "force-dynamic"
 

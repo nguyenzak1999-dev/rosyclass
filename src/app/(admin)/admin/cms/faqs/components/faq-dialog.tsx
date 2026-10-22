@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { Pencil, Plus } from "lucide-react"
-import type { Faq } from "@prisma/client"
+import type { Faq } from "@/generated/prisma/client"
 
 import { Button } from "@/components/ui/button"
 import {

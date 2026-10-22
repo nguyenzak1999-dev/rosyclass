@@ -4,7 +4,7 @@ import { columns } from "./components/columns"
 import { CourseDialog } from "./components/course-dialog"
 import { ExportExcelButton } from "./components/export-excel-button"
 import { CourseFilters } from "./components/course-filters"
-import { Prisma } from "@prisma/client"
+import { Prisma } from "@/generated/prisma/client"
 
 export const dynamic = "force-dynamic"
 
