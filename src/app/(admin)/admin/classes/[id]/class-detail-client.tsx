@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
-import { Users, Calendar, Settings, UserMinus, Award, ClipboardList, Box } from "lucide-react"
+import { Users, Calendar, Settings, UserMinus, Award, ClipboardList, Box, NotebookPen, Sparkles, FileBarChart } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import { AddStudentDialog } from "./components/add-student-dialog"
@@ -12,6 +12,9 @@ import { ClassScheduleTab } from "./components/class-schedule-tab"
 import { ClassScoresTab } from "./components/class-scores-tab"
 import { Classroom3DTab } from "./components/classroom-3d/classroom-3d-tab"
 import type { ClassroomData } from "./components/classroom-3d/seats"
+import { ClassHomeworkTab, type ClassHomework } from "./components/class-homework-tab"
+import { ClassSkillsTab, type SkillAssessmentRow } from "./components/class-skills-tab"
+import { ClassReportsTab, type ClassReport } from "./components/class-reports-tab"
 import { removeStudentFromClass } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -23,7 +26,8 @@ export default function ClassDetailClient({
   teachers,
   rooms,
   scores = [],
-  classroom
+  classroom,
+  learning
 }: {
   classData: any
   allStudents: any[]
@@ -31,6 +35,15 @@ export default function ClassDetailClient({
   rooms: { id: string; name: string; capacity: number }[]
   scores?: any[]
   classroom: ClassroomData
+  learning: {
+    canWrite: boolean
+    homework: ClassHomework[]
+    homeworkSessions: { id: string; label: string }[]
+    skillAssessments: SkillAssessmentRow[]
+    units: { id: string; order: number; title: string }[]
+    defaultUnitId: string | null
+    reports: ClassReport[]
+  }
 }) {
   const router = useRouter()
 
@@ -40,6 +53,10 @@ export default function ClassDetailClient({
     classStudentStatus: cs.status,
     joinedAt: cs.joinedAt
   }))
+  const activeStudents = (classStudents as Array<{ id: string; fullName: string; classStudentStatus: string }>)
+    .filter((s) => s.classStudentStatus === "ACTIVE")
+    .map((s) => ({ id: s.id, fullName: s.fullName }))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName, "vi"))
 
   const handleRemoveStudent = async (studentId: string) => {
     if (!confirm("Bạn có chắc muốn xóa học viên này khỏi lớp?")) return
@@ -91,7 +108,7 @@ export default function ClassDetailClient({
 
   return (
     <Tabs defaultValue="students" className="space-y-4">
-      <TabsList>
+      <TabsList className="max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto">
         <TabsTrigger value="students" className="gap-2">
           <Users className="h-4 w-4" /> Học viên
         </TabsTrigger>
@@ -103,6 +120,15 @@ export default function ClassDetailClient({
         </TabsTrigger>
         <TabsTrigger value="schedule" className="gap-2">
           <Calendar className="h-4 w-4" /> Lịch học
+        </TabsTrigger>
+        <TabsTrigger value="homework" className="gap-2">
+          <NotebookPen className="h-4 w-4" /> Bài tập
+        </TabsTrigger>
+        <TabsTrigger value="skills" className="gap-2">
+          <Sparkles className="h-4 w-4" /> Đánh giá kỹ năng
+        </TabsTrigger>
+        <TabsTrigger value="reports" className="gap-2">
+          <FileBarChart className="h-4 w-4" /> Báo cáo tiến bộ
         </TabsTrigger>
         <TabsTrigger value="scores" className="gap-2">
           <Award className="h-4 w-4" /> Điểm số
@@ -201,6 +227,32 @@ export default function ClassDetailClient({
               : null
           }
         />
+      </TabsContent>
+
+      <TabsContent value="homework" className="space-y-4">
+        <ClassHomeworkTab
+          classId={classData.id}
+          homework={learning.homework}
+          students={activeStudents}
+          sessions={learning.homeworkSessions}
+          canWrite={learning.canWrite}
+        />
+      </TabsContent>
+
+      <TabsContent value="skills" className="space-y-4">
+        <ClassSkillsTab
+          classId={classData.id}
+          curriculum={classData.curriculum ? { id: classData.curriculum.id, name: classData.curriculum.name } : null}
+          units={learning.units}
+          defaultUnitId={learning.defaultUnitId}
+          students={activeStudents}
+          assessments={learning.skillAssessments}
+          canWrite={learning.canWrite}
+        />
+      </TabsContent>
+
+      <TabsContent value="reports" className="space-y-4">
+        <ClassReportsTab classId={classData.id} reports={learning.reports} canWrite={learning.canWrite} />
       </TabsContent>
 
       <TabsContent value="scores" className="space-y-4">

@@ -10,6 +10,7 @@ import { saveTeachSession } from "../actions"
 import { CountdownTimer } from "./components/countdown-timer"
 import { RandomPicker } from "./components/random-picker"
 import { isAbsent, StudentCard, type AttendanceValue, type StudentDraft } from "./components/student-card"
+import { HomeworkAssign, type TeachHomework } from "./components/homework-assign"
 
 export type TeachStudent = {
   id: string
@@ -97,11 +98,17 @@ function hasFeedbackContent(draft: StudentDraft) {
 export function TeachClient({
   session,
   lesson,
+  lessonRef,
+  homework,
+  nextSessionDateKey,
   students,
   canWrite,
 }: {
   session: TeachSession
   lesson: TeachLesson | null
+  lessonRef: { id: string; title: string; order: number; unitOrder: number; homework: string | null } | null
+  homework: TeachHomework[]
+  nextSessionDateKey: string
   students: TeachStudent[]
   canWrite: boolean
 }) {
@@ -255,6 +262,15 @@ export function TeachClient({
         ) : null}
 
         <LessonPanel lesson={lesson} topic={session.topic} />
+
+        <HomeworkAssign
+          classId={session.classId}
+          sessionId={session.id}
+          lesson={lessonRef}
+          homework={homework}
+          nextSessionDateKey={nextSessionDateKey}
+          canWrite={canWrite}
+        />
 
         {/* Công cụ trên lớp */}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">

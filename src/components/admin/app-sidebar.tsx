@@ -30,7 +30,8 @@ import {
   ClipboardCheck,
   Bell,
   BookOpenCheck,
-  Presentation
+  Presentation,
+  NotebookPen
 } from "lucide-react"
 
 import {
@@ -173,6 +174,12 @@ const data = {
           permissions: [PERMISSIONS.attendanceRead]
         },
         {
+          title: "Bài tập về nhà",
+          url: "/admin/homework",
+          icon: NotebookPen,
+          permissions: [PERMISSIONS.attendanceRead]
+        },
+        {
           title: "Điểm danh",
           url: "/admin/attendance",
           icon: CalendarCheck,
@@ -210,7 +217,7 @@ const data = {
           title: "Bảng lương giáo viên",
           url: "/admin/payroll",
           icon: Banknote,
-          permissions: [PERMISSIONS.teachersRead]
+          permissions: [PERMISSIONS.paymentsRead]
         }
       ]
     },

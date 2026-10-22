@@ -41,15 +41,20 @@ model User {
   teacherProfile Teacher?
 
   // Audit trails
-  createdLeads             Lead[]            @relation("LeadAssignedTo")
+  createdLeads             Lead[]               @relation("LeadAssignedTo")
   leadNotes                LeadNote[]
-  paymentsCreated          Payment[]         @relation("PaymentCreatedBy")
+  paymentsCreated          Payment[]            @relation("PaymentCreatedBy")
   notifications            Notification[]
   activityLogs             ActivityLog[]
-  teachingAssistantClasses Class[]           @relation("ClassTeachingAssistant")
-  scoresCreated            Score[]           @relation("ScoreCreatedBy")
-  classNotesAuthored       ClassNote[]       @relation("ClassNoteAuthor")
-  sessionFeedbackCreated   SessionFeedback[] @relation("SessionFeedbackCreatedBy")
+  teachingAssistantClasses Class[]              @relation("ClassTeachingAssistant")
+  scoresCreated            Score[]              @relation("ScoreCreatedBy")
+  classNotesAuthored       ClassNote[]          @relation("ClassNoteAuthor")
+  sessionFeedbackCreated   SessionFeedback[]    @relation("SessionFeedbackCreatedBy")
+  homeworkCreated          Homework[]           @relation("HomeworkCreatedBy")
+  homeworkReviewed         HomeworkSubmission[] @relation("HomeworkReviewedBy")
+  skillAssessmentsCreated  SkillAssessment[]    @relation("SkillAssessmentAssessedBy")
+  progressReportsCreated   ProgressReport[]     @relation("ProgressReportCreatedBy")
+  parentTokensCreated      ParentAccessToken[]  @relation("ParentAccessTokenCreatedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -179,7 +184,8 @@ model Parent {
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
 
-  students Student[]
+  students     Student[]
+  accessTokens ParentAccessToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -213,6 +219,10 @@ model Student {
   placementTests PlacementTest[]
   scores         Score[]
   feedbacks      SessionFeedback[]
+
+  homeworkSubmissions HomeworkSubmission[]
+  skillAssessments    SkillAssessment[]
+  progressReports     ProgressReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -313,6 +323,10 @@ model Class {
   classNotes     ClassNote[]
   placementTests PlacementTest[]
 
+  homework         Homework[]
+  skillAssessments SkillAssessment[]
+  progressReports  ProgressReport[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -381,6 +395,7 @@ model ClassSession {
   scores      Score[]
   classNotes  ClassNote[]
   feedbacks   SessionFeedback[]
+  homework    Homework[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -440,7 +455,8 @@ model CurriculumUnit {
   curriculumId String
   curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
 
-  lessons Lesson[]
+  lessons          Lesson[]
+  skillAssessments SkillAssessment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -461,7 +477,8 @@ model Lesson {
   unitId String
   unit   CurriculumUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
 
-  sessions ClassSession[]
+  sessions            ClassSession[]
+  homeworkAssignments Homework[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -491,6 +508,147 @@ model SessionFeedback {
 
   @@unique([sessionId, studentId])
   @@index([studentId])
+}
+
+// ------------------------------------------------------
+// BÀI TẬP VỀ NHÀ, ĐÁNH GIÁ KỸ NĂNG, BÁO CÁO TIẾN BỘ (lớp 1)
+// Các cột "kiểu enum" lưu dạng String để thêm giá trị mới không cần migration
+// ------------------------------------------------------
+
+/// Bài tập về nhà giao cho cả lớp (thường gắn với một buổi / bài học)
+model Homework {
+  id           String    @id @default(uuid())
+  title        String
+  instructions String?
+  kind         String    @default("OTHER") // DRAWING | SPEAKING | LISTENING | WORKSHEET | OTHER
+  dueDate      DateTime?
+
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  sessionId String?
+  session   ClassSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  lessonId String?
+  lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+
+  createdById String?
+  createdBy   User?   @relation("HomeworkCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  submissions HomeworkSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId, createdAt])
+  @@index([sessionId])
+}
+
+/// Bài nộp của một bé (phụ huynh nộp ảnh/ghi âm, hoặc giáo viên ghi nhận "đã làm trên lớp")
+model HomeworkSubmission {
+  id             String    @id @default(uuid())
+  submittedBy    String    @default("PARENT") // PARENT | TEACHER
+  mediaUrl       String?
+  mediaType      String? // image | audio | video
+  parentNote     String?
+  sticker        String?
+  teacherComment String?
+  status         String    @default("SUBMITTED") // SUBMITTED | REVIEWED
+  reviewedAt     DateTime?
+
+  homeworkId String
+  homework   Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  reviewedById String?
+  reviewedBy   User?   @relation("HomeworkReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([homeworkId, studentId])
+  @@index([status, createdAt])
+  @@index([studentId])
+}
+
+/// Đánh giá kỹ năng cuối Unit: mức 1 Cần cố gắng / 2 Đạt / 3 Tốt
+model SkillAssessment {
+  id    String  @id @default(uuid())
+  skill String // LISTENING | SPEAKING | READING | WRITING | PHONICS
+  level Int // 1–3
+  note  String?
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  unitId String
+  unit   CurriculumUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  assessedById String?
+  assessedBy   User?   @relation("SkillAssessmentAssessedBy", fields: [assessedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, unitId, skill])
+  @@index([classId, unitId])
+}
+
+/// Báo cáo tiến bộ của một bé trong một kỳ (số liệu tổng hợp lưu dạng JSON)
+model ProgressReport {
+  id             String    @id @default(uuid())
+  title          String
+  periodStart    DateTime
+  periodEnd      DateTime
+  data           String    @default("{}") // JSON snapshot, xem src/lib/progress-report.ts
+  teacherComment String?
+  status         String    @default("DRAFT") // DRAFT | PUBLISHED
+  publishedAt    DateTime?
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  classId String
+  class   Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?   @relation("ProgressReportCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([classId, periodStart])
+  @@index([studentId, status])
+}
+
+// ------------------------------------------------------
+// CỔNG PHỤ HUYNH
+// ------------------------------------------------------
+
+/// Link đăng nhập gửi cho phụ huynh. Chỉ lưu SHA-256 của token; thu hồi có hiệu lực ngay
+model ParentAccessToken {
+  id         String    @id @default(uuid())
+  tokenHash  String    @unique
+  label      String?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+
+  parentId String
+  parent   Parent @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?   @relation("ParentAccessTokenCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
 }
 
 // ------------------------------------------------------

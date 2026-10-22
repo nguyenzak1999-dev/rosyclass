@@ -65,6 +65,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     size: [2.4, 2, 2.2],
     links: [
       { label: "Lên lớp hôm nay", href: "/admin/teach", permission: PERMISSIONS.attendanceRead },
+      { label: "Bài tập về nhà", href: "/admin/homework", permission: PERMISSIONS.attendanceRead },
       { label: "Lịch học", href: "/admin/schedules", permission: PERMISSIONS.schedulesRead },
       { label: "Điểm danh", href: "/admin/attendance", permission: PERMISSIONS.attendanceRead },
     ],
@@ -86,7 +87,7 @@ export const BUILDINGS: BuildingDefinition[] = [
   {
     id: "students",
     name: "Nhà học viên",
-    description: "Hồ sơ học viên và phụ huynh",
+    description: "Hồ sơ học viên, phụ huynh và link cổng phụ huynh",
     href: "/admin/students",
     permission: PERMISSIONS.studentsRead,
     color: "#7be0c3",
@@ -94,7 +95,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     size: [2.8, 2.2, 2.2],
     links: [
       { label: "Học viên", href: "/admin/students", permission: PERMISSIONS.studentsRead },
-      { label: "Phụ huynh", href: "/admin/parents", permission: PERMISSIONS.parentsRead },
+      { label: "Phụ huynh & link cổng phụ huynh", href: "/admin/parents", permission: PERMISSIONS.parentsRead },
     ],
   },
   {

@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, User, Phone, Mail, MapPin } from "lucide-react"
 import ParentDetailClient from "./parent-detail-client"
+import { ParentAccessLinks } from "./components/parent-access-links"
+import { hasPermission, PERMISSIONS, requireAdminUser } from "@/lib/auth/permissions"
+import { formatVietnamDate } from "@/lib/curriculum"
 
 export default async function ParentDetailPage({
   params,
@@ -11,6 +14,7 @@ export default async function ParentDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const user = await requireAdminUser()
   const parent = await prisma.parent.findUnique({
     where: { id },
     include: {
@@ -67,6 +71,14 @@ export default async function ParentDetailPage({
       })
     : []
 
+  const now = new Date()
+  const accessTokens = await prisma.parentAccessToken.findMany({
+    where: { parentId: parent.id, revokedAt: null, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+    include: { createdBy: { select: { fullName: true } } },
+    orderBy: { createdAt: "desc" },
+  })
+  const dateTime = { hour: "2-digit", minute: "2-digit" } as const
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center gap-4">
@@ -99,6 +111,21 @@ export default async function ParentDetailPage({
           </div>
         </div>
       </div>
+
+      <ParentAccessLinks
+        parentId={parent.id}
+        parentName={parent.fullName}
+        childNames={parent.students.map((student) => student.fullName)}
+        canWrite={hasPermission(user, PERMISSIONS.parentsWrite)}
+        links={accessTokens.map((token) => ({
+          id: token.id,
+          label: token.label,
+          createdLabel: formatVietnamDate(token.createdAt, dateTime),
+          createdBy: token.createdBy?.fullName ?? null,
+          expiresLabel: token.expiresAt ? formatVietnamDate(token.expiresAt) : null,
+          lastUsedLabel: token.lastUsedAt ? formatVietnamDate(token.lastUsedAt, dateTime) : null,
+        }))}
+      />
 
       <ParentDetailClient
         parent={JSON.parse(JSON.stringify(parent))}

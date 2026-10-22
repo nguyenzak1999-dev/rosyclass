@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { hasPermission, PERMISSIONS, requireAdminUser } from "@/lib/auth/permissions"
-import { formatVietnamDate, parseJsonList } from "@/lib/curriculum"
+import { formatVietnamDate, parseJsonList, vietnamDateKey, vietnamDayRange } from "@/lib/curriculum"
 import { TeachClient, type TeachLesson, type TeachStudent } from "./teach-client"
 
 export const dynamic = "force-dynamic"
@@ -35,7 +35,7 @@ export default async function TeachSessionPage({ params }: { params: Promise<{ s
   })
   if (!session) notFound()
 
-  const [classStudents, attendances, feedbacks, starTotals] = await Promise.all([
+  const [classStudents, attendances, feedbacks, starTotals, homeworkRows, nextSession] = await Promise.all([
     prisma.classStudent.findMany({
       where: { classId: session.classId, status: "ACTIVE" },
       select: { student: { select: { id: true, fullName: true } } },
@@ -53,6 +53,21 @@ export default async function TeachSessionPage({ params }: { params: Promise<{ s
       by: ["studentId"],
       where: { session: { classId: session.classId } },
       _sum: { stars: true },
+    }),
+    prisma.homework.findMany({
+      where: { sessionId: session.id },
+      select: { id: true, title: true, instructions: true, kind: true, dueDate: true, _count: { select: { submissions: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    // Hạn nộp mặc định: buổi học kế tiếp của lớp
+    prisma.classSession.findFirst({
+      where: {
+        classId: session.classId,
+        sessionDate: { gte: vietnamDayRange(session.sessionDate, 1).start },
+        status: { not: "CANCELLED" },
+      },
+      select: { sessionDate: true },
+      orderBy: { sessionDate: "asc" },
     }),
   ])
 
@@ -120,6 +135,26 @@ export default async function TeachSessionPage({ params }: { params: Promise<{ s
         roomName: session.room?.name ?? null,
       }}
       lesson={lesson}
+      lessonRef={
+        session.lesson
+          ? {
+              id: session.lesson.id,
+              title: session.lesson.title,
+              order: session.lesson.order,
+              unitOrder: session.lesson.unit.order,
+              homework: session.lesson.homework,
+            }
+          : null
+      }
+      homework={homeworkRows.map((item) => ({
+        id: item.id,
+        title: item.title,
+        instructions: item.instructions,
+        kind: item.kind,
+        dueDateKey: item.dueDate ? vietnamDateKey(item.dueDate) : "",
+        submitted: item._count.submissions,
+      }))}
+      nextSessionDateKey={nextSession ? vietnamDateKey(nextSession.sessionDate) : ""}
       students={students}
       canWrite={hasPermission(user, PERMISSIONS.attendanceWrite) && session.status !== "CANCELLED"}
     />
