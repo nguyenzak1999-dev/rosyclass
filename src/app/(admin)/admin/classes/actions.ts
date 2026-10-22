@@ -438,6 +438,18 @@ export async function updateSession(data: UpdateSessionFormValues) {
       return { success: false, error: "Buổi học đã hoàn thành, chỉ sửa được chủ đề/ghi chú" }
     }
 
+    // Đổi bài: chỉ cho chọn bài thuộc chương trình mà lớp đang dùng
+    const lessonChanged = parsed.lessonId !== undefined && parsed.lessonId !== existing.lessonId
+    if (lessonChanged && parsed.lessonId) {
+      const [lesson, cls] = await Promise.all([
+        prisma.lesson.findUnique({ where: { id: parsed.lessonId }, select: { unit: { select: { curriculumId: true } } } }),
+        prisma.class.findUnique({ where: { id: existing.classId }, select: { curriculumId: true } }),
+      ])
+      if (!lesson || !cls?.curriculumId || lesson.unit.curriculumId !== cls.curriculumId) {
+        return { success: false, error: "Bài học không thuộc chương trình của lớp" }
+      }
+    }
+
     await prisma.classSession.update({
       where: { id: parsed.id },
       data: {
@@ -447,13 +459,15 @@ export async function updateSession(data: UpdateSessionFormValues) {
         roomId: parsed.roomId ?? null,
         teacherId: parsed.teacherId ?? null,
         topic: parsed.topic ?? null,
-        notes: parsed.notes ?? null
+        notes: parsed.notes ?? null,
+        lessonId: lessonChanged ? parsed.lessonId : undefined
       }
     })
 
     revalidatePath(`/admin/classes/${existing.classId}`)
     revalidatePath(`/admin/schedules`)
     revalidatePath(`/admin/schedules/${existing.id}`)
+    revalidatePath(`/admin/teach/${existing.id}`)
 
     const warning =
       existing._count.attendances > 0 ? "Đã cập nhật buổi học. Lưu ý: buổi này đã có điểm danh." : undefined
@@ -461,6 +475,91 @@ export async function updateSession(data: UpdateSessionFormValues) {
   } catch (error) {
     console.error("Update session error:", error)
     return { success: false, error: getErrorMessage(error, "Không thể cập nhật buổi học") }
+  }
+}
+
+/**
+ * Gán lần lượt các bài của chương trình (theo Unit.order rồi Lesson.order) cho các buổi học của lớp.
+ *
+ * - Chỉ xét buổi chưa huỷ và không phải buổi phụ đạo (MAKE_UP), sắp theo ngày + giờ.
+ * - Bắt đầu từ buổi chưa có bài đầu tiên nằm SAU buổi cuối cùng đã có bài,
+ *   và tiếp tục từ bài kế tiếp sau bài của buổi đó. Buổi trống xen giữa (vd. buổi ôn tập
+ *   đã được bỏ bài) được giữ nguyên để không làm xáo trộn thứ tự.
+ * - Buổi bị huỷ không được tính, nên nghỉ lễ thì bài tự dồn sang buổi sau.
+ */
+export async function assignLessonsToSessions(classId: string) {
+  try {
+    await requirePermission(PERMISSIONS.classesWrite)
+
+    const cls = await prisma.class.findUnique({
+      where: { id: classId },
+      select: { id: true, curriculumId: true }
+    })
+    if (!cls) return { success: false, error: "Không tìm thấy lớp học" }
+    if (!cls.curriculumId) {
+      return { success: false, error: "Lớp chưa gắn chương trình học. Hãy chọn chương trình trong form sửa lớp." }
+    }
+
+    const [units, sessions] = await Promise.all([
+      prisma.curriculumUnit.findMany({
+        where: { curriculumId: cls.curriculumId },
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: {
+          lessons: { orderBy: [{ order: "asc" }, { createdAt: "asc" }], select: { id: true } }
+        }
+      }),
+      prisma.classSession.findMany({
+        where: { classId, status: { notIn: ["CANCELLED", "MAKE_UP"] } },
+        orderBy: [{ sessionDate: "asc" }, { startTime: "asc" }],
+        select: { id: true, lessonId: true }
+      })
+    ])
+
+    const lessonIds = units.flatMap((unit) => unit.lessons.map((lesson) => lesson.id))
+    if (lessonIds.length === 0) {
+      return { success: false, error: "Chương trình học chưa có bài nào" }
+    }
+
+    let lastAssignedIndex = -1
+    for (let i = sessions.length - 1; i >= 0; i--) {
+      if (sessions[i].lessonId) {
+        lastAssignedIndex = i
+        break
+      }
+    }
+    // Bài cuối đã gắn không thuộc chương trình hiện tại (lớp vừa đổi chương trình) → bắt đầu lại từ bài 1
+    const lastLessonPosition =
+      lastAssignedIndex >= 0 ? lessonIds.indexOf(sessions[lastAssignedIndex].lessonId as string) : -1
+
+    let nextLesson = lastLessonPosition + 1
+    let assigned = 0
+    for (const session of sessions.slice(lastAssignedIndex + 1)) {
+      if (nextLesson >= lessonIds.length) break
+      await prisma.classSession.update({
+        where: { id: session.id },
+        data: { lessonId: lessonIds[nextLesson] }
+      })
+      nextLesson++
+      assigned++
+    }
+
+    const sessionsWithoutLesson = sessions.length - lastAssignedIndex - 1 - assigned
+
+    revalidatePath(`/admin/classes/${classId}`)
+    revalidatePath(`/admin/schedules`)
+    revalidatePath(`/admin/teach`)
+    return {
+      success: true,
+      data: {
+        assigned,
+        /** Số buổi còn trống vì chương trình đã hết bài */
+        sessionsWithoutLesson,
+        lessonsRemaining: lessonIds.length - nextLesson
+      }
+    }
+  } catch (error) {
+    console.error("Assign lessons error:", error)
+    return { success: false, error: getErrorMessage(error, "Không thể gán bài cho buổi học") }
   }
 }
 

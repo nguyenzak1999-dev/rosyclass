@@ -54,6 +54,8 @@ Khi đổi `prisma/schema.prisma` về sau, tạo migration mới bằng cách s
 npx prisma migrate diff --from-local-d1 --to-schema prisma/schema.prisma --script --output migrations/0002_ten.sql
 ```
 
+> **Cẩn thận khi thêm khoá ngoại vào bảng đã có dữ liệu.** Với SQLite, Prisma sinh kiểu "tạo `new_X` → `INSERT … SELECT` → `DROP TABLE X`". D1 luôn bật `foreign_keys` (bỏ qua `PRAGMA foreign_keys=OFF`), nên `DROP TABLE` kéo theo `ON DELETE CASCADE` và **xoá sạch dữ liệu ở các bảng con** (đã kiểm chứng trên D1 local). Nếu chỉ thêm cột khoá ngoại nullable, sửa tay thành `ALTER TABLE "X" ADD COLUMN "yId" TEXT REFERENCES "Y" ("id") ON DELETE SET NULL ON UPDATE CASCADE;` như `migrations/0002_grade1_curriculum.sql`.
+
 ## 3. Dữ liệu nền và tài khoản admin
 
 Hệ thống bắt đầu với database trống (không chuyển dữ liệu từ Supabase). Nạp vai trò, quyền và cấu hình website mặc định; lệnh chạy lại nhiều lần vẫn an toàn:

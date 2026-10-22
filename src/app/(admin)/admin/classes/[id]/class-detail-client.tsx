@@ -15,6 +15,7 @@ import type { ClassroomData } from "./components/classroom-3d/seats"
 import { removeStudentFromClass } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function ClassDetailClient({
   classData,
@@ -152,6 +153,16 @@ export default function ClassDetailClient({
                 <span className="text-muted-foreground">Giáo viên:</span>
                 <span className="font-medium">{classData.teacher?.fullName || "Chưa phân công"}</span>
               </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">Chương trình:</span>
+                {classData.curriculum ? (
+                  <Link href={`/admin/curriculums/${classData.curriculum.id}`} className="truncate font-medium text-primary hover:underline">
+                    {classData.curriculum.name}
+                  </Link>
+                ) : (
+                  <span className="font-medium">Chưa gắn</span>
+                )}
+              </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Chi nhánh:</span>
                 <span className="font-medium">{classData.branch?.name || "—"}</span>
@@ -176,6 +187,19 @@ export default function ClassDetailClient({
           sessions={classData.sessions || []}
           teachers={teachers}
           rooms={rooms}
+          curriculum={
+            classData.curriculum
+              ? {
+                  id: classData.curriculum.id,
+                  name: classData.curriculum.name,
+                  gradeLabel: classData.curriculum.gradeLabel,
+                  lessonCount: classData.curriculum.units.reduce(
+                    (sum: number, unit: { _count: { lessons: number } }) => sum + unit._count.lessons,
+                    0
+                  ),
+                }
+              : null
+          }
         />
       </TabsContent>
 

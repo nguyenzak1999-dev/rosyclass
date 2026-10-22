@@ -22,6 +22,7 @@ interface LazyClassDialogProps {
   branches?: { id: string; name: string }[]
   rooms?: { id: string; name: string; capacity: number; branchId: string; branch: { name: string } }[]
   students?: { id: string; fullName: string; phone: string | null; email: string | null }[]
+  curriculums?: { id: string; name: string; gradeLabel: string }[]
 }
 
 export function LazyClassDialog({
@@ -33,6 +34,7 @@ export function LazyClassDialog({
   branches = [],
   rooms = [],
   students = [],
+  curriculums = [],
 }: LazyClassDialogProps) {
   const [shouldLoad, setShouldLoad] = React.useState(false)
 
@@ -47,6 +49,7 @@ export function LazyClassDialog({
         branches={branches}
         rooms={rooms}
         students={students}
+        curriculums={curriculums}
         defaultOpen
       />
     )

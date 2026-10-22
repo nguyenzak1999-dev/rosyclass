@@ -28,7 +28,9 @@ import {
   MessageCircleQuestion,
   Star,
   ClipboardCheck,
-  Bell
+  Bell,
+  BookOpenCheck,
+  Presentation
 } from "lucide-react"
 
 import {
@@ -147,6 +149,12 @@ const data = {
           permissions: [PERMISSIONS.coursesRead]
         },
         {
+          title: "Chương trình học",
+          url: "/admin/curriculums",
+          icon: BookOpenCheck,
+          permissions: [PERMISSIONS.coursesRead]
+        },
+        {
           title: "Lớp học",
           url: "/admin/classes",
           icon: GraduationCap,
@@ -157,6 +165,12 @@ const data = {
           url: "/admin/schedules",
           icon: CalendarDays,
           permissions: [PERMISSIONS.schedulesRead]
+        },
+        {
+          title: "Lên lớp hôm nay",
+          url: "/admin/teach",
+          icon: Presentation,
+          permissions: [PERMISSIONS.attendanceRead]
         },
         {
           title: "Điểm danh",

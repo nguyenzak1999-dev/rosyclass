@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Pencil, Calendar, Clock, User, MapPin, BookOpen, FileText, Users, ListChecks } from "lucide-react"
+import { Pencil, Calendar, Clock, User, MapPin, BookOpen, FileText, Users, ListChecks, Presentation, NotebookPen } from "lucide-react"
+import { lessonLabel } from "@/lib/curriculum"
 import { format } from "date-fns"
 import { vi } from "date-fns/locale"
 import { DAY_OF_WEEK_LABELS } from "@/lib/schemas/schedule"
@@ -22,6 +23,14 @@ type Session = {
   status: string
   topic: string | null
   notes: string | null
+  lessonId: string | null
+  lesson: {
+    id: string
+    order: number
+    title: string
+    objectives: string | null
+    unit: { order: number; title: string }
+  } | null
   teacherId: string | null
   teacher: { id: string; fullName: string } | null
   roomId: string | null
@@ -68,12 +77,14 @@ interface SessionDetailClientProps {
   session: Session
   teachers: { id: string; fullName: string }[]
   rooms: { id: string; name: string }[]
+  lessons: { id: string; label: string }[]
 }
 
 export default function SessionDetailClient({
   session,
   teachers,
   rooms,
+  lessons,
 }: SessionDetailClientProps) {
   const [editOpen, setEditOpen] = useState(false)
   const d = new Date(session.sessionDate)
@@ -98,6 +109,11 @@ export default function SessionDetailClient({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {session.status !== "CANCELLED" && (
+            <Button render={<Link href={`/admin/teach/${session.id}`} />}>
+              <Presentation className="w-4 h-4 mr-2" /> Lên lớp
+            </Button>
+          )}
           <Button variant="outline" onClick={() => setEditOpen(true)}>
             <Pencil className="w-4 h-4 mr-2" /> Sửa
           </Button>
@@ -170,6 +186,23 @@ export default function SessionDetailClient({
             <Separator className="my-3" />
 
             <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <NotebookPen className="w-4 h-4 mt-1 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="text-muted-foreground text-xs mb-1">Bài học</p>
+                  {session.lesson ? (
+                    <>
+                      <p className="font-medium">{lessonLabel(session.lesson)}</p>
+                      <p className="text-xs text-muted-foreground">Unit {session.lesson.unit.order}: {session.lesson.unit.title}</p>
+                      {session.lesson.objectives && (
+                        <p className="text-sm mt-1 whitespace-pre-wrap">{session.lesson.objectives}</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground italic">Chưa gắn bài</p>
+                  )}
+                </div>
+              </div>
               <div className="flex items-start gap-3">
                 <BookOpen className="w-4 h-4 mt-1 text-muted-foreground" />
                 <div className="flex-1">
@@ -297,6 +330,7 @@ export default function SessionDetailClient({
         session={session}
         teachers={teachers}
         rooms={rooms}
+        lessons={lessons}
         readOnlyDateTime={readOnlyDateTime}
       />
     </div>

@@ -30,6 +30,7 @@ export type ClassData = {
   teachingAssistantId: string | null
   branchId: string | null
   roomId: string | null
+  curriculumId?: string | null
   maxStudents: number
   status: ClassStatus
   notes: string | null
@@ -45,9 +46,20 @@ export type ClassData = {
   _count?: { students: number }
 }
 
-export const getColumns = (
+type CurriculumOption = { id: string; name: string; gradeLabel: string }
+
+/** Danh mục cho hộp thoại sửa lớp; thiếu thì lưu từ bảng sẽ xoá học viên, giáo viên, phòng của lớp */
+export interface ClassLookups {
   courses: { id: string; name: string }[]
-): ColumnDef<ClassData>[] => [
+  curriculums?: CurriculumOption[]
+  teachers?: { id: string; fullName: string }[]
+  teachingAssistants?: { id: string; fullName: string }[]
+  branches?: { id: string; name: string }[]
+  rooms?: { id: string; name: string; capacity: number; branchId: string; branch: { name: string } }[]
+  students?: { id: string; fullName: string; phone: string | null; email: string | null }[]
+}
+
+export const getColumns = (lookups: ClassLookups): ColumnDef<ClassData>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -96,11 +108,11 @@ export const getColumns = (
   },
   {
     id: "actions",
-    cell: ({ row }) => <ActionsCell classData={row.original} courses={courses} />,
+    cell: ({ row }) => <ActionsCell classData={row.original} lookups={lookups} />,
   },
 ]
 
-function ActionsCell({ classData, courses }: { classData: ClassData; courses: { id: string; name: string }[] }) {
+function ActionsCell({ classData, lookups }: { classData: ClassData; lookups: ClassLookups }) {
   const router = useRouter()
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -126,11 +138,20 @@ function ActionsCell({ classData, courses }: { classData: ClassData; courses: { 
           name: classData.name,
           courseId: classData.courseId,
           maxStudents: classData.maxStudents,
+          startDate: classData.startDate as Date | null,
+          expectedEndDate: classData.expectedEndDate as Date | null,
           status: classData.status,
-          studentIds: [],
+          teacherId: classData.teacherId,
+          teachingAssistantId: classData.teachingAssistantId,
+          branchId: classData.branchId,
+          roomId: classData.roomId,
+          curriculumId: classData.curriculumId ?? null,
+          studentIds: (classData.students || [])
+            .filter((student) => student.status === "ACTIVE")
+            .map((student) => student.studentId),
           notes: classData.notes ?? undefined,
         }}
-        courses={courses} 
+        {...lookups}
         trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
       />
       <DropdownMenu>

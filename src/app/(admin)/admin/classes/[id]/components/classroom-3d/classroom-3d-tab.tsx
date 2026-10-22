@@ -87,6 +87,14 @@ function StudentPanel({ seat, onClose }: { seat: ClassroomSeat; onClose: () => v
               {seat.attendanceRate === null ? "—" : `${Math.round(seat.attendanceRate * 100)}% (${seat.sessionsRecorded} buổi)`}
             </dd>
           </div>
+          <div className="rounded-md bg-muted p-2">
+            <dt className="text-xs text-muted-foreground">Sao buổi gần nhất</dt>
+            <dd className="font-medium">{seat.latestStars === null ? "Chưa có" : `⭐ ${seat.latestStars} / 5`}</dd>
+          </div>
+          <div className="rounded-md bg-muted p-2">
+            <dt className="text-xs text-muted-foreground">Tổng sao</dt>
+            <dd className="font-medium">⭐ {seat.totalStars}</dd>
+          </div>
           <div className="col-span-2 rounded-md bg-muted p-2">
             <dt className="text-xs text-muted-foreground">Điểm trung bình</dt>
             <dd className="font-medium">{seat.averageScore === null ? "Chưa có điểm" : `${seat.averageScore} / 10`}</dd>

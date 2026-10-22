@@ -85,6 +85,8 @@ export const updateSessionSchema = z
     teacherId: z.string().optional().nullable(),
     topic: z.string().max(200, "Chủ đề tối đa 200 ký tự").optional().nullable(),
     notes: z.string().optional().nullable(),
+    /** undefined = giữ nguyên bài đã gắn; null = bỏ gắn bài */
+    lessonId: z.string().optional().nullable(),
   })
   .refine(
     (data) => {

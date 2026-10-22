@@ -30,7 +30,7 @@ export default async function ClassesPage({ searchParams }: PageProps) {
     where.teacherId = filters.teacherId
   }
 
-  const [classes, courses, teachers, teachingAssistants, branches, rooms, students] = await Promise.all([
+  const [classes, courses, teachers, teachingAssistants, branches, rooms, students, curriculums] = await Promise.all([
     prisma.class.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -42,6 +42,7 @@ export default async function ClassesPage({ searchParams }: PageProps) {
         teachingAssistantId: true,
         branchId: true,
         roomId: true,
+        curriculumId: true,
         maxStudents: true,
         status: true,
         notes: true,
@@ -101,6 +102,11 @@ export default async function ClassesPage({ searchParams }: PageProps) {
       select: { id: true, fullName: true, phone: true, email: true },
       orderBy: { fullName: "asc" },
     }),
+    // Lấy cả chương trình ngừng dùng để lớp cũ vẫn hiện đúng tên khi sửa
+    prisma.curriculum.findMany({
+      select: { id: true, name: true, gradeLabel: true },
+      orderBy: { name: "asc" },
+    }),
   ])
 
   return (
@@ -112,6 +118,7 @@ export default async function ClassesPage({ searchParams }: PageProps) {
       branches={branches}
       rooms={rooms}
       students={students}
+      curriculums={curriculums}
       filterSlot={
         <ClassFilters
           key="class-filters"

@@ -51,6 +51,7 @@ export const BUILDINGS: BuildingDefinition[] = [
       { label: "Lớp học", href: "/admin/classes", permission: PERMISSIONS.classesRead },
       { label: "Xếp lớp", href: "/admin/classes/arrange", permission: PERMISSIONS.classesWrite },
       { label: "Khoá học", href: "/admin/courses", permission: PERMISSIONS.coursesRead },
+      { label: "Chương trình học", href: "/admin/curriculums", permission: PERMISSIONS.coursesRead },
     ],
   },
   {
@@ -63,6 +64,7 @@ export const BUILDINGS: BuildingDefinition[] = [
     roof: "#3bb4f2",
     size: [2.4, 2, 2.2],
     links: [
+      { label: "Lên lớp hôm nay", href: "/admin/teach", permission: PERMISSIONS.attendanceRead },
       { label: "Lịch học", href: "/admin/schedules", permission: PERMISSIONS.schedulesRead },
       { label: "Điểm danh", href: "/admin/attendance", permission: PERMISSIONS.attendanceRead },
     ],

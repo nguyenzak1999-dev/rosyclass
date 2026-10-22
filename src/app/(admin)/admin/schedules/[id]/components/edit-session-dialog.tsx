@@ -40,9 +40,12 @@ interface EditSessionDialogProps {
     roomId: string | null
     topic: string | null
     notes: string | null
+    lessonId?: string | null
   }
   teachers: { id: string; fullName: string }[]
   rooms: { id: string; name: string }[]
+  /** Bài thuộc chương trình của lớp; rỗng thì ẩn ô chọn bài */
+  lessons?: { id: string; label: string }[]
   /** Nếu true: chỉ cho sửa topic + notes (session COMPLETED) */
   readOnlyDateTime?: boolean
 }
@@ -53,6 +56,7 @@ export function EditSessionDialog({
   session,
   teachers,
   rooms,
+  lessons = [],
   readOnlyDateTime = false,
 }: EditSessionDialogProps) {
   const router = useRouter()
@@ -69,11 +73,14 @@ export function EditSessionDialog({
         roomId: session.roomId,
         topic: session.topic,
         notes: session.notes,
+        lessonId: session.lessonId ?? null,
       },
     })
 
   const teacherId = watch("teacherId")
   const roomId = watch("roomId")
+  const lessonId = watch("lessonId")
+  const selectedLesson = lessons.find((lesson) => lesson.id === lessonId)
 
   React.useEffect(() => {
     if (open) {
@@ -86,6 +93,7 @@ export function EditSessionDialog({
         roomId: session.roomId,
         topic: session.topic,
         notes: session.notes,
+        lessonId: session.lessonId ?? null,
       })
     }
   }, [open, session, reset])
@@ -197,6 +205,28 @@ export function EditSessionDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {lessons.length > 0 && (
+            <div className="space-y-2">
+              <Label>Bài học</Label>
+              <Select
+                value={lessonId || "none"}
+                onValueChange={(v) => setValue("lessonId", !v || v === "none" ? null : v)}
+              >
+                <SelectTrigger className="w-full">
+                  <span className="truncate text-left">{selectedLesson?.label || "— Chưa gắn bài —"}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Chưa gắn bài —</SelectItem>
+                  {lessons.map((lesson) => (
+                    <SelectItem key={lesson.id} value={lesson.id}>
+                      {lesson.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="topic">Chủ đề buổi học</Label>

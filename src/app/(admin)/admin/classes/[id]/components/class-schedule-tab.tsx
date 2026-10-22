@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { Plus, Wand2, Trash2, Pencil, CalendarOff } from "lucide-react"
+import { Plus, Wand2, Trash2, Pencil, CalendarOff, BookOpenCheck } from "lucide-react"
+import Link from "next/link"
 import { DAY_OF_WEEK_LABELS } from "@/lib/schemas/schedule"
 import { ScheduleFormDialog } from "./schedule-form-dialog"
 import { GenerateSessionsDialog } from "./generate-sessions-dialog"
 import { SessionsList } from "./sessions-list"
-import { deleteClassSchedule, cancelSession } from "@/app/(admin)/admin/classes/actions"
+import { deleteClassSchedule, cancelSession, assignLessonsToSessions } from "@/app/(admin)/admin/classes/actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
@@ -36,6 +37,7 @@ type Session = {
   teacher?: { fullName: string } | null
   roomId: string | null
   room?: { name: string } | null
+  lesson?: { id: string; order: number; title: string; unit: { order: number; title: string } } | null
   _count?: { attendances: number }
 }
 
@@ -45,6 +47,7 @@ interface ClassScheduleTabProps {
   sessions: Session[]
   teachers: { id: string; fullName: string }[]
   rooms: { id: string; name: string; capacity: number }[]
+  curriculum: { id: string; name: string; gradeLabel: string; lessonCount: number } | null
 }
 
 export function ClassScheduleTab({
@@ -53,6 +56,7 @@ export function ClassScheduleTab({
   sessions,
   teachers,
   rooms,
+  curriculum,
 }: ClassScheduleTabProps) {
   const router = useRouter()
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false)
@@ -61,6 +65,34 @@ export function ClassScheduleTab({
   const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null)
   const [cancellingSessionId, setCancellingSessionId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [assignOpen, setAssignOpen] = useState(false)
+
+  const handleAssignLessons = async () => {
+    setIsSubmitting(true)
+    const res = await assignLessonsToSessions(classId)
+    setIsSubmitting(false)
+    if (!res.success || !res.data) {
+      toast.error(res.error)
+      return
+    }
+    const { assigned, sessionsWithoutLesson } = res.data
+    if (assigned === 0) {
+      toast.info(
+        sessionsWithoutLesson > 0
+          ? "Chương trình đã hết bài, không còn bài để gán."
+          : "Không có buổi học nào cần gán bài."
+      )
+    } else {
+      toast.success(`Đã gán bài cho ${assigned} buổi học`)
+    }
+    if (sessionsWithoutLesson > 0 && assigned > 0) {
+      toast.warning(`${sessionsWithoutLesson} buổi còn lại chưa có bài vì chương trình đã hết bài.`)
+    }
+    setAssignOpen(false)
+    router.refresh()
+  }
+
+  const sessionsWithLesson = sessions.filter((s) => s.lesson).length
 
   const handleDeleteSchedule = async () => {
     if (!deletingScheduleId) return
@@ -178,13 +210,38 @@ export function ClassScheduleTab({
 
       {/* Phần 2: Danh sách buổi học đã sinh (ClassSession) */}
       <Card>
-        <CardHeader>
-          <CardTitle>Các buổi học đã sinh</CardTitle>
-          <CardDescription>
-            Tổng: {sessions.length} buổi ({sessions.filter((s) => s.status === "COMPLETED").length} hoàn thành /{" "}
-            {sessions.filter((s) => s.status === "SCHEDULED").length} sắp tới /{" "}
-            {sessions.filter((s) => s.status === "CANCELLED").length} huỷ)
-          </CardDescription>
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>Các buổi học đã sinh</CardTitle>
+            <CardDescription>
+              Tổng: {sessions.length} buổi ({sessions.filter((s) => s.status === "COMPLETED").length} hoàn thành /{" "}
+              {sessions.filter((s) => s.status === "SCHEDULED").length} sắp tới /{" "}
+              {sessions.filter((s) => s.status === "CANCELLED").length} huỷ)
+              {curriculum ? (
+                <>
+                  {" · "}
+                  {sessionsWithLesson} buổi đã gắn bài ·{" "}
+                  <Link href={`/admin/curriculums/${curriculum.id}`} className="text-primary hover:underline">
+                    {curriculum.name}
+                  </Link>{" "}
+                  ({curriculum.lessonCount} bài)
+                </>
+              ) : null}
+            </CardDescription>
+          </div>
+          {curriculum ? (
+            <Button
+              variant="outline"
+              onClick={() => setAssignOpen(true)}
+              disabled={sessions.length === 0 || curriculum.lessonCount === 0}
+            >
+              <BookOpenCheck className="w-4 h-4 mr-2" /> Gán bài cho các buổi học
+            </Button>
+          ) : (
+            <p className="max-w-xs text-xs text-muted-foreground">
+              Gắn chương trình học cho lớp (nút Sửa lớp) để tự gán Unit/Bài cho từng buổi.
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <SessionsList
@@ -221,6 +278,16 @@ export function ClassScheduleTab({
         confirmText="Xoá"
         variant="destructive"
         onConfirm={handleDeleteSchedule}
+        isSubmitting={isSubmitting}
+      />
+
+      <ConfirmDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        title="Gán bài cho các buổi học?"
+        description="Hệ thống lần lượt gán Unit 1 – Bài 1, Bài 2… cho các buổi chưa có bài, tính từ sau buổi cuối cùng đã có bài. Buổi đã huỷ và buổi phụ đạo được bỏ qua; bài đã gán sẵn giữ nguyên."
+        confirmText="Gán bài"
+        onConfirm={handleAssignLessons}
         isSubmitting={isSubmitting}
       />
 

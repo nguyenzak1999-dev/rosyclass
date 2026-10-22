@@ -22,6 +22,7 @@ export const classSchema = z.object({
   teachingAssistantId: optionalId.optional(),
   branchId: optionalId.optional(),
   roomId: optionalId.optional(),
+  curriculumId: optionalId.optional(),
   studentIds: z.array(z.string()).default([]),
   notes: z.string().optional(),
 })

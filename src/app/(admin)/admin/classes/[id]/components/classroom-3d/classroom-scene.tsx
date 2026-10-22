@@ -180,6 +180,11 @@ function StudentSeat({
           >
             <span className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full align-middle" style={{ background: color }} />
             {seat.fullName}
+            {seat.latestStars !== null ? (
+              <span className="ml-1.5 rounded-full bg-[#fff1c7] px-1.5 align-middle text-[12px]" aria-label={`${seat.latestStars} sao buổi gần nhất`}>
+                ⭐ {seat.latestStars}
+              </span>
+            ) : null}
           </button>
         </Html>
       ) : null}

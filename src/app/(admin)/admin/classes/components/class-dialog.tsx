@@ -37,6 +37,7 @@ interface ClassDialogProps {
   branches: { id: string; name: string }[]
   rooms: { id: string; name: string; capacity: number; branchId: string; branch: { name: string } }[]
   students: { id: string; fullName: string; phone: string | null; email: string | null }[]
+  curriculums: { id: string; name: string; gradeLabel: string }[]
   defaultOpen?: boolean
 }
 
@@ -51,6 +52,7 @@ const DEFAULT_CLASS_FORM_VALUES: ClassFormValues = {
   teachingAssistantId: null,
   branchId: null,
   roomId: null,
+  curriculumId: null,
   studentIds: [],
   notes: "",
 }
@@ -72,6 +74,7 @@ export function ClassDialog({
   branches,
   rooms,
   students,
+  curriculums,
   defaultOpen = false,
 }: ClassDialogProps) {
   const [open, setOpen] = React.useState(defaultOpen)
@@ -89,6 +92,7 @@ export function ClassDialog({
   const teachingAssistantId = useWatch({ control, name: "teachingAssistantId" })
   const branchId = useWatch({ control, name: "branchId" })
   const roomId = useWatch({ control, name: "roomId" })
+  const curriculumId = useWatch({ control, name: "curriculumId" })
   const studentIds = useWatch({ control, name: "studentIds" }) || []
   const availableRooms = React.useMemo(
     () => rooms.filter((room) => !branchId || room.branchId === branchId),
@@ -111,6 +115,7 @@ export function ClassDialog({
   const selectedAssistant = teachingAssistants.find((assistant) => assistant.id === teachingAssistantId)
   const selectedBranch = branches.find((branch) => branch.id === branchId)
   const selectedRoom = rooms.find((room) => room.id === roomId)
+  const selectedCurriculum = curriculums.find((curriculum) => curriculum.id === curriculumId)
 
   const toggleStudent = (studentId: string, checked: boolean) => {
     const nextStudentIds = checked
@@ -216,6 +221,33 @@ export function ClassDialog({
                 </Select>
               </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Chương trình học</Label>
+            <Select
+              value={curriculumId || "none"}
+              onValueChange={(value) => setValue("curriculumId", !value || value === "none" ? null : value)}
+            >
+              <SelectTrigger className="w-full">
+                <span className="truncate text-left">
+                  {selectedCurriculum
+                    ? `${selectedCurriculum.name} · ${selectedCurriculum.gradeLabel}`
+                    : "Chưa gắn chương trình"}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Chưa gắn chương trình</SelectItem>
+                {curriculums.map((curriculum) => (
+                  <SelectItem key={curriculum.id} value={curriculum.id}>
+                    {curriculum.name} · {curriculum.gradeLabel}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Dùng để gán Unit/Bài cho từng buổi và hiện giáo án trên màn hình Lên lớp.
+            </p>
           </div>
 
           <div className="space-y-3">

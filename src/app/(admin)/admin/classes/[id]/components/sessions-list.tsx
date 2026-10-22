@@ -11,10 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { CalendarOff, ExternalLink } from "lucide-react"
+import { CalendarOff, ExternalLink, Presentation } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
 import { DAY_OF_WEEK_LABELS } from "@/lib/schemas/schedule"
+import { lessonLabel } from "@/lib/curriculum"
 
 type Session = {
   id: string
@@ -27,6 +28,7 @@ type Session = {
   teacher?: { fullName: string } | null
   roomId: string | null
   room?: { name: string } | null
+  lesson?: { id: string; order: number; title: string; unit: { order: number; title: string } } | null
   _count?: { attendances: number }
 }
 
@@ -83,10 +85,22 @@ export function SessionsList({ sessions, onCancel }: SessionsListProps) {
     },
     {
       id: "topic",
-      header: "Chủ đề",
-      cell: ({ row }: any) => (
-        <span className="text-sm">{row.original.topic || "—"}</span>
-      ),
+      header: "Bài học / chủ đề",
+      cell: ({ row }: any) => {
+        const s = row.original as Session
+        return (
+          <div className="max-w-[280px] text-sm">
+            {s.lesson ? (
+              <p className="font-medium">{lessonLabel(s.lesson)}</p>
+            ) : null}
+            {s.topic ? (
+              <p className={s.lesson ? "text-xs text-muted-foreground" : undefined}>{s.topic}</p>
+            ) : s.lesson ? null : (
+              <span className="text-muted-foreground">—</span>
+            )}
+          </div>
+        )
+      },
     },
     {
       id: "teacher",
@@ -130,6 +144,11 @@ export function SessionsList({ sessions, onCancel }: SessionsListProps) {
         const isCancellable = s.status === "SCHEDULED" || s.status === "MAKE_UP"
         return (
           <div className="flex items-center justify-end gap-1">
+            {s.status !== "CANCELLED" && (
+              <Button variant="outline" size="sm" render={<Link href={`/admin/teach/${s.id}`} />} title="Lên lớp">
+                <Presentation className="w-4 h-4" /> Lên lớp
+              </Button>
+            )}
             <Button variant="ghost" size="sm" render={<Link href={`/admin/schedules/${s.id}`} />}>
               <ExternalLink className="w-4 h-4" />
             </Button>

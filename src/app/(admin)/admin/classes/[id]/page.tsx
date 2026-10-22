@@ -15,6 +15,14 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
       teacher: true,
       branch: true,
       room: true,
+      curriculum: {
+        select: {
+          id: true,
+          name: true,
+          gradeLabel: true,
+          units: { select: { _count: { select: { lessons: true } } } },
+        },
+      },
       students: {
         include: {
           student: true
@@ -25,7 +33,12 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
         orderBy: { dayOfWeek: "asc" }
       },
       sessions: {
-        include: { teacher: true, room: true, _count: { select: { attendances: true } } },
+        include: {
+          teacher: true,
+          room: true,
+          lesson: { select: { id: true, order: true, title: true, unit: { select: { order: true, title: true } } } },
+          _count: { select: { attendances: true } },
+        },
         orderBy: { sessionDate: "asc" }
       },
       classNotes: { orderBy: { createdAt: "desc" }, take: 5 }
@@ -43,7 +56,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
   })
 
   // Lookup data cho schedule & session dialogs
-  const [teachers, rooms, scores, attendances] = await Promise.all([
+  const [teachers, rooms, scores, attendances, feedbacks] = await Promise.all([
     prisma.teacher.findMany({
       where: { status: "ACTIVE" },
       select: { id: true, fullName: true },
@@ -65,6 +78,10 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
     prisma.attendance.findMany({
       where: { session: { classId: id } },
       select: { studentId: true, status: true, session: { select: { sessionDate: true } } }
+    }),
+    prisma.sessionFeedback.findMany({
+      where: { session: { classId: id } },
+      select: { studentId: true, stars: true, session: { select: { sessionDate: true, startTime: true } } }
     })
   ])
 
@@ -72,6 +89,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
     students: classData.students,
     attendances,
     scores,
+    feedbacks,
   })
 
   return (

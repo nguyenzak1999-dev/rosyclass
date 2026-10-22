@@ -38,6 +38,7 @@ interface ClassesClientProps {
   branches: { id: string; name: string }[]
   rooms: { id: string; name: string; capacity: number; branchId: string; branch: { name: string } }[]
   students: { id: string; fullName: string; phone: string | null; email: string | null }[]
+  curriculums: { id: string; name: string; gradeLabel: string }[]
   filterSlot?: React.ReactNode
 }
 
@@ -49,6 +50,7 @@ export function ClassesClient({
   branches,
   rooms,
   students,
+  curriculums,
   filterSlot,
 }: ClassesClientProps) {
   const router = useRouter()
@@ -95,6 +97,7 @@ export function ClassesClient({
             branches={branches}
             rooms={rooms}
             students={students}
+            curriculums={curriculums}
           />
         </div>
       </div>
@@ -142,6 +145,7 @@ export function ClassesClient({
                 branches={branches}
                 rooms={rooms}
                 students={students}
+                curriculums={curriculums}
               />
             ))}
           </div>
@@ -156,7 +160,7 @@ export function ClassesClient({
         )
       ) : (
         <DataTable
-          columns={getColumns(courses) as any}
+          columns={getColumns({ courses, curriculums, teachers, teachingAssistants, branches, rooms, students }) as any}
           data={filteredClasses}
           onRowClick={(row) => router.push(`/admin/classes/${row.id}`)}
         />
@@ -173,6 +177,7 @@ function ClassGridCard({
   branches,
   rooms,
   students,
+  curriculums,
 }: {
   classData: ClassData
   courses: { id: string; name: string }[]
@@ -181,6 +186,7 @@ function ClassGridCard({
   branches: { id: string; name: string }[]
   rooms: { id: string; name: string; capacity: number; branchId: string; branch: { name: string } }[]
   students: { id: string; fullName: string; phone: string | null; email: string | null }[]
+  curriculums: { id: string; name: string; gradeLabel: string }[]
 }) {
   const router = useRouter()
   const activeStudents = classData._count?.students ?? 0
@@ -278,6 +284,7 @@ function ClassGridCard({
             teachingAssistantId: classData.teachingAssistantId,
             branchId: classData.branchId,
             roomId: classData.roomId,
+            curriculumId: classData.curriculumId ?? null,
             studentIds: (classData.students || [])
               .filter((student) => student.status === "ACTIVE")
               .map((student) => student.studentId),
@@ -289,6 +296,7 @@ function ClassGridCard({
           branches={branches}
           rooms={rooms}
           students={students}
+          curriculums={curriculums}
           trigger={<Button variant="ghost" size="sm">Sửa</Button>}
         />
       </CardFooter>

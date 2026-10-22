@@ -16,6 +16,10 @@ export interface ClassroomSeat {
   sessionsRecorded: number
   /** Điểm trung bình quy về thang 10 */
   averageScore: number | null
+  /** Số sao ở buổi có nhận xét gần nhất (null nếu bé chưa có nhận xét nào) */
+  latestStars: number | null
+  /** Tổng sao của bé ở lớp này */
+  totalStars: number
 }
 
 export interface ClassroomData {
@@ -33,6 +37,7 @@ interface Input {
   }>
   attendances: Array<{ studentId: string; status: string; session: { sessionDate: Date } }>
   scores: Array<{ studentId: string; value: number; maxValue: number }>
+  feedbacks: Array<{ studentId: string; stars: number; session: { sessionDate: Date; startTime: string } }>
 }
 
 const ATTENDED = new Set(["PRESENT", "LATE", "MAKE_UP"])
@@ -43,7 +48,22 @@ function toSeatAttendance(status: string): SeatAttendance {
   return "UNKNOWN"
 }
 
-export function buildClassroomSeats({ students, attendances, scores }: Input): ClassroomSeat[] {
+export function buildClassroomSeats({ students, attendances, scores, feedbacks }: Input): ClassroomSeat[] {
+  const starsByStudent = new Map<string, { total: number; latest: Input["feedbacks"][number] }>()
+  for (const feedback of feedbacks) {
+    const current = starsByStudent.get(feedback.studentId)
+    if (!current) {
+      starsByStudent.set(feedback.studentId, { total: feedback.stars, latest: feedback })
+      continue
+    }
+    current.total += feedback.stars
+    const latestTime = current.latest.session.sessionDate.getTime()
+    const time = feedback.session.sessionDate.getTime()
+    if (time > latestTime || (time === latestTime && feedback.session.startTime > current.latest.session.startTime)) {
+      current.latest = feedback
+    }
+  }
+
   const attendanceByStudent = new Map<string, Input["attendances"]>()
   for (const record of attendances) {
     const list = attendanceByStudent.get(record.studentId) ?? []
@@ -66,6 +86,7 @@ export function buildClassroomSeats({ students, attendances, scores }: Input): C
       )
       const latest = records[0]
       const studentScores = scoresByStudent.get(student.id) ?? []
+      const stars = starsByStudent.get(student.id)
 
       return {
         studentId: student.id,
@@ -80,6 +101,8 @@ export function buildClassroomSeats({ students, attendances, scores }: Input): C
         averageScore: studentScores.length
           ? Math.round((studentScores.reduce((sum, value) => sum + value, 0) / studentScores.length) * 10) / 10
           : null,
+        latestStars: stars ? stars.latest.stars : null,
+        totalStars: stars?.total ?? 0,
       } satisfies ClassroomSeat
     })
     .sort((a, b) => a.fullName.localeCompare(b.fullName, "vi"))

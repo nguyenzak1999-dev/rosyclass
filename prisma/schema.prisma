@@ -41,14 +41,15 @@ model User {
   teacherProfile Teacher?
 
   // Audit trails
-  createdLeads             Lead[]         @relation("LeadAssignedTo")
+  createdLeads             Lead[]            @relation("LeadAssignedTo")
   leadNotes                LeadNote[]
-  paymentsCreated          Payment[]      @relation("PaymentCreatedBy")
+  paymentsCreated          Payment[]         @relation("PaymentCreatedBy")
   notifications            Notification[]
   activityLogs             ActivityLog[]
-  teachingAssistantClasses Class[]        @relation("ClassTeachingAssistant")
-  scoresCreated            Score[]        @relation("ScoreCreatedBy")
-  classNotesAuthored       ClassNote[]    @relation("ClassNoteAuthor")
+  teachingAssistantClasses Class[]           @relation("ClassTeachingAssistant")
+  scoresCreated            Score[]           @relation("ScoreCreatedBy")
+  classNotesAuthored       ClassNote[]       @relation("ClassNoteAuthor")
+  sessionFeedbackCreated   SessionFeedback[] @relation("SessionFeedbackCreatedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -211,6 +212,7 @@ model Student {
   payments       Payment[]
   placementTests PlacementTest[]
   scores         Score[]
+  feedbacks      SessionFeedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -297,6 +299,10 @@ model Class {
   roomId String?
   room   Room?   @relation(fields: [roomId], references: [id])
 
+  // Chương trình học (Unit / Bài) mà lớp đang dùng
+  curriculumId String?
+  curriculum   Curriculum? @relation(fields: [curriculumId], references: [id], onDelete: SetNull)
+
   tuitionFee Float? // Override course tuition fee
 
   students       ClassStudent[]
@@ -309,6 +315,8 @@ model Class {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([curriculumId])
 }
 
 model ClassStudent {
@@ -365,9 +373,14 @@ model ClassSession {
   teacherId String?
   teacher   Teacher? @relation(fields: [teacherId], references: [id])
 
+  // Bài học trong chương trình được dạy ở buổi này
+  lessonId String?
+  lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+
   attendances Attendance[]
   scores      Score[]
   classNotes  ClassNote[]
+  feedbacks   SessionFeedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -375,6 +388,7 @@ model ClassSession {
   @@unique([classId, sessionDate, startTime])
   @@index([sessionDate])
   @@index([classId, sessionDate])
+  @@index([lessonId])
 }
 
 model Attendance {
@@ -392,6 +406,91 @@ model Attendance {
   updatedAt DateTime @updatedAt
 
   @@unique([sessionId, studentId])
+}
+
+// ------------------------------------------------------
+// CURRICULUM (chương trình học: Unit → Bài) & SESSION FEEDBACK
+// ------------------------------------------------------
+
+model Curriculum {
+  id          String       @id @default(uuid())
+  name        String
+  gradeLabel  String // e.g. "Lớp 1"
+  description String?
+  sourceBook  String? // Giáo trình gốc (ghi tự do)
+  status      EntityStatus @default(ACTIVE)
+
+  units   CurriculumUnit[]
+  classes Class[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CurriculumUnit {
+  id               String  @id @default(uuid())
+  order            Int
+  title            String
+  objectives       String?
+  vocabulary       String  @default("[]") // JSON array of words
+  sentencePatterns String  @default("[]") // JSON array of patterns
+  phonics          String?
+  songUrl          String?
+
+  curriculumId String
+  curriculum   Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+
+  lessons Lesson[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([curriculumId, order])
+}
+
+model Lesson {
+  id         String  @id @default(uuid())
+  order      Int
+  title      String
+  objectives String?
+  activities String? // Giáo án (nhiều dòng)
+  materials  String?
+  mediaUrl   String?
+  homework   String?
+
+  unitId String
+  unit   CurriculumUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  sessions ClassSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([unitId, order])
+}
+
+/// Sao thưởng & nhận xét nhanh của từng bé trong một buổi học
+model SessionFeedback {
+  id      String  @id @default(uuid())
+  stars   Int     @default(0) // 0–5
+  praises String  @default("[]") // JSON array of praise tags
+  mood    String?
+  comment String?
+
+  sessionId String
+  session   ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?   @relation("SessionFeedbackCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sessionId, studentId])
+  @@index([studentId])
 }
 
 // ------------------------------------------------------
