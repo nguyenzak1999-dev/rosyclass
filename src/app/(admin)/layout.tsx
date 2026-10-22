@@ -39,7 +39,7 @@ export default async function AdminLayout({
           <Breadcrumb className="min-w-0">
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/admin/dashboard">
+                <BreadcrumbLink href="/admin/campus">
                   Admin
                 </BreadcrumbLink>
               </BreadcrumbItem>

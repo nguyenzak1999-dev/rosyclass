@@ -47,5 +47,5 @@ export async function login(formData: FormData) {
   cookieStore.set(SESSION_COOKIE, await createSessionToken(adminUser.id, passwordHash), sessionCookieOptions)
 
   revalidatePath("/", "layout")
-  redirect("/admin/dashboard")
+  redirect("/admin/campus")
 }

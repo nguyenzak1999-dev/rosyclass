@@ -13,7 +13,7 @@ export default function ForbiddenPage() {
         <p className="mb-6 text-sm text-muted-foreground">
           Tài khoản của bạn chưa được cấp quyền xem khu vực này. Vui lòng liên hệ quản trị viên nếu cần mở quyền.
         </p>
-        <Button render={<Link href="/admin/dashboard" />}>Quay về Dashboard</Button>
+        <Button render={<Link href="/admin/campus" />}>Về khuôn viên</Button>
       </div>
     </div>
   )

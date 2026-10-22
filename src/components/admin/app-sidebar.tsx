@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   LayoutDashboard,
+  School,
   Users,
   UserCheck,
   GraduationCap,
@@ -51,6 +52,12 @@ const data = {
     {
       label: "TỔNG QUAN",
       items: [
+        {
+          title: "Khuôn viên 3D",
+          url: "/admin/campus",
+          icon: School,
+          permissions: [] as PermissionCode[]
+        },
         {
           title: "Dashboard",
           url: "/admin/dashboard",
@@ -344,7 +351,8 @@ export function AppSidebar({
     })
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => canAccessAny(user, item.permissions as PermissionCode[]))
+      // Mục không khai báo quyền (vd. Khuôn viên 3D) hiện cho mọi tài khoản admin
+      items: group.items.filter((item) => item.permissions.length === 0 || canAccessAny(user, item.permissions as PermissionCode[]))
     }))
     .filter((group) => group.items.length > 0)
 
