@@ -26,21 +26,9 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { upsertPlacementQuestion, type PlacementQuestionFormValues } from "../actions"
+import { KID_COURSE_LEVELS } from "@/lib/course-levels"
 
-const courseLevels = [
-  ["KIDS", "Kids"],
-  ["STARTER", "Starter"],
-  ["A1", "A1"],
-  ["A2", "A2"],
-  ["B1", "B1"],
-  ["B2", "B2"],
-  ["IELTS_FOUNDATION", "IELTS Foundation"],
-  ["IELTS_5_5", "IELTS 5.5+"],
-  ["IELTS_6_5", "IELTS 6.5+"],
-  ["TOEIC", "TOEIC"],
-  ["COMMUNICATION", "Giao tiếp"],
-  ["ONE_ON_ONE", "1 kèm 1"],
-] as const
+const courseLevels = KID_COURSE_LEVELS.map((level) => [level.value, level.label] as const)
 
 function parseOptions(question?: PlacementQuestion) {
   if (!question) return ["", "", "", ""]

@@ -15,7 +15,8 @@
     "db:migrate:remote": "cf d1 migrations apply rosyclass-db",
     "postinstall": "prisma generate",
     "db:bootstrap": "tsx scripts/bootstrap-d1.ts",
-    "admin:create": "tsx scripts/create-admin.ts"
+    "admin:create": "tsx scripts/create-admin.ts",
+    "db:seed-kids": "tsx scripts/seed-kids-content.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

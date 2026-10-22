@@ -29,6 +29,7 @@ import { useRouter } from "next/navigation"
 import { ImageUploader } from "@/components/ui/image-uploader"
 
 import { formatMoneyInput } from "@/lib/utils"
+import { courseLevelOptions } from "@/lib/course-levels"
 
 interface CourseDialogProps {
   course?: any
@@ -132,18 +133,11 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
                   <SelectValue placeholder="Chọn cấp độ" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="KIDS">Kids</SelectItem>
-                  <SelectItem value="STARTER">Starter</SelectItem>
-                  <SelectItem value="A1">A1</SelectItem>
-                  <SelectItem value="A2">A2</SelectItem>
-                  <SelectItem value="B1">B1</SelectItem>
-                  <SelectItem value="B2">B2</SelectItem>
-                  <SelectItem value="IELTS_FOUNDATION">IELTS Foundation</SelectItem>
-                  <SelectItem value="IELTS_5_5">IELTS 5.5+</SelectItem>
-                  <SelectItem value="IELTS_6_5">IELTS 6.5+</SelectItem>
-                  <SelectItem value="TOEIC">TOEIC</SelectItem>
-                  <SelectItem value="COMMUNICATION">Giao tiếp</SelectItem>
-                  <SelectItem value="ONE_ON_ONE">1 kèm 1</SelectItem>
+                  {courseLevelOptions(level).map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

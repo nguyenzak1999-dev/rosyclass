@@ -12,21 +12,7 @@ import {
   initials,
   type BlockComponentProps,
 } from "./shared"
-
-const LEVEL_LABELS: Record<string, string> = {
-  KIDS: "Tiếng Anh trẻ em",
-  STARTER: "Starter",
-  A1: "A1",
-  A2: "A2",
-  B1: "B1",
-  B2: "B2",
-  IELTS_FOUNDATION: "IELTS Foundation",
-  IELTS_5_5: "IELTS 5.5",
-  IELTS_6_5: "IELTS 6.5",
-  TOEIC: "TOEIC",
-  COMMUNICATION: "Giao tiếp",
-  ONE_ON_ONE: "1 kèm 1",
-}
+import { courseLevelLabel } from "@/lib/course-levels"
 
 const dateFormatter = new Intl.DateTimeFormat("vi-VN", {
   day: "2-digit",
@@ -80,7 +66,7 @@ export function FeaturedCoursesBlock({ props, ctx }: BlockComponentProps<BlockPr
                   <div className="relative border-b-[3px] border-kid-ink">
                     <BlockImage src={course.thumbnail} alt={course.name} tone={tone} className="aspect-[16/10] w-full" />
                     <KidBadge tone={tone} className="absolute top-3 left-3 text-[13px]">
-                      {LEVEL_LABELS[course.level] ?? course.level}
+                      {courseLevelLabel(course.level)}
                     </KidBadge>
                   </div>
                   <div className="flex flex-1 flex-col gap-3 p-5">

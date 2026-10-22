@@ -68,7 +68,13 @@ Tạo tài khoản quản trị đầu tiên, hoặc đổi mật khẩu cho tà
 npm run admin:create -- admin@rosyclass.edu.vn "Họ tên"
 ```
 
-Hai lệnh trên chạy SQL trên D1 thật bằng phiên `npx cf auth login`, không cần token riêng.
+Nạp nội dung khởi đầu cho trung tâm trẻ em: 15 câu hỏi kiểm tra trình độ (đã xuất bản), 5 chương trình học (ở trạng thái nháp, cần điền học phí rồi bật hiển thị) và FAQ cho phụ huynh:
+
+```bash
+npm run db:seed-kids
+```
+
+Các lệnh trên chạy SQL trên D1 thật bằng phiên `npx cf auth login`, không cần token riêng.
 
 ## 4. Biến môi trường, deploy và secret
 

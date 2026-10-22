@@ -9,6 +9,7 @@ import { CourseRevenueChart } from "./components/course-revenue-chart"
 import { StudentGrowthChart } from "./components/student-growth-chart"
 import { TeacherHoursChart } from "./components/teacher-hours-chart"
 import { Users, BookOpen, DollarSign, BarChart2 } from "lucide-react"
+import { AGE_GROUP_LABELS, courseAgeGroup } from "@/lib/course-levels"
 
 const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"]
 
@@ -34,19 +35,14 @@ function buildMonthSeries(now: Date, count: number) {
 }
 
 function getCourseGroup(level?: string | null) {
-  if (!level) return "communication"
-  if (level === "KIDS" || level === "STARTER") return "kids"
-  if (level === "A1" || level === "A2" || level === "B1" || level === "B2") return "teens"
-  if (level.startsWith("IELTS")) return "ielts"
-  return "communication"
+  const group = courseAgeGroup(level)
+  if (group === "one-on-one") return "oneOnOne"
+  if (group === "primary") return "primarySchool"
+  return group
 }
 
 function getCourseGroupLabel(level?: string | null) {
-  const group = getCourseGroup(level)
-  if (group === "kids") return "Trẻ em"
-  if (group === "teens") return "Thiếu niên"
-  if (group === "ielts") return "IELTS"
-  return "Giao tiếp/khác"
+  return AGE_GROUP_LABELS[courseAgeGroup(level)]
 }
 
 export default async function DashboardPage() {
@@ -209,10 +205,10 @@ export default async function DashboardPage() {
   const courseRevenueData = sixMonthSeries.map((month) => {
     const base = {
       month: month.longLabel,
-      kids: 0,
-      teens: 0,
-      ielts: 0,
-      communication: 0,
+      preschool: 0,
+      primarySchool: 0,
+      oneOnOne: 0,
+      other: 0,
     }
 
     payments.forEach((payment) => {

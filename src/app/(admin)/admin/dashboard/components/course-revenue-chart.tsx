@@ -12,20 +12,20 @@ import {
 } from "@/components/ui/chart"
 
 const chartConfig = {
-  kids: {
-    label: "Tiếng Anh Trẻ Em",
+  preschool: {
+    label: "Mầm non",
     color: "var(--chart-1)",
   },
-  teens: {
-    label: "Tiếng Anh Thiếu Niên",
+  primarySchool: {
+    label: "Tiểu học",
     color: "var(--chart-2)",
   },
-  ielts: {
-    label: "IELTS",
+  oneOnOne: {
+    label: "Kèm 1–1",
     color: "var(--chart-3)",
   },
-  communication: {
-    label: "Giao Tiếp",
+  other: {
+    label: "Khác",
     color: "var(--chart-4)",
   },
 } satisfies ChartConfig
@@ -33,7 +33,7 @@ const chartConfig = {
 export function CourseRevenueChart({
   data,
 }: {
-  data: { month: string; kids: number; teens: number; ielts: number; communication: number }[]
+  data: { month: string; preschool: number; primarySchool: number; oneOnOne: number; other: number }[]
 }) {
   return (
     <ChartContainer config={chartConfig} className="h-[350px] w-full">
@@ -56,10 +56,10 @@ export function CourseRevenueChart({
           />
           <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
           <ChartLegend content={<ChartLegendContent />} />
-          <Bar dataKey="kids" stackId="a" fill="var(--color-kids)" radius={[0, 0, 4, 4]} />
-          <Bar dataKey="teens" stackId="a" fill="var(--color-teens)" />
-          <Bar dataKey="ielts" stackId="a" fill="var(--color-ielts)" />
-          <Bar dataKey="communication" stackId="a" fill="var(--color-communication)" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="preschool" stackId="a" fill="var(--color-preschool)" radius={[0, 0, 4, 4]} />
+          <Bar dataKey="primarySchool" stackId="a" fill="var(--color-primarySchool)" />
+          <Bar dataKey="oneOnOne" stackId="a" fill="var(--color-oneOnOne)" />
+          <Bar dataKey="other" stackId="a" fill="var(--color-other)" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </ChartContainer>

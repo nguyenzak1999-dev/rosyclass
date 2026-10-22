@@ -10,21 +10,9 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
+import { KID_COURSE_LEVELS } from "@/lib/course-levels"
 
-const COURSE_LEVELS = [
-  { value: "KIDS", label: "Kids" },
-  { value: "STARTER", label: "Starter" },
-  { value: "A1", label: "A1" },
-  { value: "A2", label: "A2" },
-  { value: "B1", label: "B1" },
-  { value: "B2", label: "B2" },
-  { value: "IELTS_FOUNDATION", label: "IELTS Foundation" },
-  { value: "IELTS_5_5", label: "IELTS 5.5+" },
-  { value: "IELTS_6_5", label: "IELTS 6.5+" },
-  { value: "TOEIC", label: "TOEIC" },
-  { value: "COMMUNICATION", label: "Giao tiếp" },
-  { value: "ONE_ON_ONE", label: "1 kèm 1" },
-]
+const COURSE_LEVELS = KID_COURSE_LEVELS
 
 interface CourseFiltersProps {
   currentLevel: string
