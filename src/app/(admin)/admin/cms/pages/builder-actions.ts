@@ -48,6 +48,8 @@ export async function savePageBuilder(input: {
   meta: PageMetaInput
   blocks: unknown
   mode: "draft" | "publish"
+  // updatedAt của bản editor đang mở; khác với DB nghĩa là đã có người lưu đè
+  expectedUpdatedAt?: string
 }): Promise<ActionResult<{ page: SavedPageState }>> {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
@@ -64,6 +66,13 @@ export async function savePageBuilder(input: {
     const existing = await prisma.page.findUnique({ where: { id } })
     if (!existing || existing.slug === SITE_SETTINGS_SLUG) {
       return { success: false, error: "Không tìm thấy trang" }
+    }
+
+    if (input.expectedUpdatedAt && existing.updatedAt.toISOString() !== input.expectedUpdatedAt) {
+      return {
+        success: false,
+        error: "Trang vừa được người khác lưu. Hãy tải lại trang để xem bản mới trước khi lưu, tránh ghi đè thay đổi của họ.",
+      }
     }
 
     const meta = metaResult.data

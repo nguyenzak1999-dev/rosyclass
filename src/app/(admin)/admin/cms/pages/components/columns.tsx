@@ -4,8 +4,11 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, ExternalLink, MoreHorizontal, Paintbrush } from "lucide-react"
+import { ArrowUpDown, ExternalLink, MoreHorizontal, Paintbrush, Trash2 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { toast } from "sonner"
 import { format } from "date-fns"
 import {
   DropdownMenu,
@@ -15,7 +18,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { PageDialog } from "./page-dialog"
+import { deletePage } from "../actions"
 import { HOME_PAGE_SLUG, getPublicPagePath } from "@/lib/page-builder/constants"
 
 export type PageData = {
@@ -75,38 +80,77 @@ export const columns: ColumnDef<PageData>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const page = row.original
-
-      return (
-        <div className="flex items-center justify-end gap-1">
-          <Button size="sm" render={<Link href={`/admin/cms/pages/${page.id}/builder`} />}>
-            <Paintbrush /> Thiết kế
-          </Button>
-          <PageDialog
-            initialData={page}
-            trigger={<Button variant="ghost" size="sm">Sửa</Button>}
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
-              <span className="sr-only">Mở menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(page.id)}
-              >
-                Sao chép ID
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem render={<a href={getPublicPagePath(page.slug)} target="_blank" rel="noopener noreferrer" />}>
-                <ExternalLink /> Xem trên web
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )
-    },
+    cell: ({ row }) => <ActionsCell page={row.original} />,
   },
 ]
+
+function ActionsCell({ page }: { page: PageData }) {
+  const router = useRouter()
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const isHome = page.slug === HOME_PAGE_SLUG
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    const result = await deletePage(page.id)
+    setIsDeleting(false)
+    if (result.success) {
+      toast.success("Đã xoá trang")
+      setDeleteOpen(false)
+      router.refresh()
+    } else {
+      toast.error(result.error)
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Button size="sm" render={<Link href={`/admin/cms/pages/${page.id}/builder`} />}>
+        <Paintbrush /> Thiết kế
+      </Button>
+      <PageDialog
+        initialData={page}
+        trigger={<Button variant="ghost" size="sm">Sửa</Button>}
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
+          <span className="sr-only">Mở menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+          <DropdownMenuItem
+            onClick={() => navigator.clipboard.writeText(page.id)}
+          >
+            Sao chép ID
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem render={<a href={getPublicPagePath(page.slug)} target="_blank" rel="noopener noreferrer" />}>
+            <ExternalLink /> Xem trên web
+          </DropdownMenuItem>
+          {isHome ? null : (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 /> Xoá trang
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`Xoá trang "${page.title}"?`}
+        description="Trang sẽ biến mất khỏi website ngay lập tức. Hành động này không thể hoàn tác."
+        confirmText="Xoá"
+        variant="destructive"
+        onConfirm={handleDelete}
+        isSubmitting={isDeleting}
+      />
+    </div>
+  )
+}

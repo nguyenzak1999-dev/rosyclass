@@ -69,6 +69,7 @@ export async function deletePage(id: string) {
     await requirePermission(PERMISSIONS.cmsWrite)
     const existing = await prisma.page.findUnique({ where: { id }, select: { slug: true } })
     if (!existing || existing.slug === SITE_SETTINGS_SLUG) return { success: false, error: "Không thể xóa trang này" }
+    if (existing.slug === HOME_PAGE_SLUG) return { success: false, error: "Không thể xoá trang chủ" }
     await prisma.page.delete({ where: { id } })
     revalidatePath(getPublicPagePath(existing.slug))
     revalidatePath("/admin/cms/pages")

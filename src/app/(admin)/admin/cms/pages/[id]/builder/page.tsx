@@ -36,6 +36,7 @@ export default async function PageBuilderRoute({ params }: { params: Promise<{ i
         seoDescription: page.seoDescription ?? "",
         status,
         isHome: page.slug === HOME_PAGE_SLUG,
+        updatedAt: page.updatedAt.toISOString(),
       }}
       initialBlocks={doc.draft?.blocks ?? doc.blocks}
       initialHasDraft={Boolean(doc.draft)}

@@ -45,6 +45,7 @@ export interface EditorPage {
   seoDescription: string
   status: PageStatus
   isHome: boolean
+  updatedAt: string
 }
 
 const VIEWPORT_OPTIONS: { id: Viewport; label: string; icon: typeof Monitor }[] = [
@@ -86,6 +87,8 @@ export function PageBuilderEditor({
   })
   const [saved, setSaved] = useState(() => snapshotOf(initialBlocks, meta))
   const [pageState, setPageState] = useState({ status: page.status, hasDraft: initialHasDraft, slug: page.slug })
+  // Phiên bản trang mà editor đang dựa vào, để server phát hiện người khác đã lưu đè
+  const [baseUpdatedAt, setBaseUpdatedAt] = useState(page.updatedAt)
   const [rawSelectedId, setSelectedId] = useState<string | null>(null)
   const [viewport, setViewport] = useState<Viewport>("desktop")
   const [leftTab, setLeftTab] = useState<"library" | "layers">("library")
@@ -222,12 +225,13 @@ export function PageBuilderEditor({
     const normalizedMeta = metaResult.data
     setSaving(mode)
     try {
-      const result = await savePageBuilder({ id: page.id, meta: normalizedMeta, blocks, mode })
+      const result = await savePageBuilder({ id: page.id, meta: normalizedMeta, blocks, mode, expectedUpdatedAt: baseUpdatedAt })
       if (!result.success) {
         toast.error(result.error)
         return
       }
       setPageState({ status: result.page.status, hasDraft: result.page.hasDraft, slug: result.page.slug })
+      setBaseUpdatedAt(result.page.updatedAt)
       const finalMeta = { ...normalizedMeta, slug: result.page.slug }
       setMeta((current) => (current === metaAtSave ? finalMeta : current))
       setSaved(snapshotOf(blocks, finalMeta))
@@ -254,6 +258,7 @@ export function PageBuilderEditor({
         return
       }
       setPageState({ status: result.page.status, hasDraft: false, slug: result.page.slug })
+      setBaseUpdatedAt(result.page.updatedAt)
       toast.success("Đã gỡ trang khỏi website")
       setConfirmUnpublish(false)
     } finally {
@@ -278,6 +283,8 @@ export function PageBuilderEditor({
         return
       }
       const key = event.key.toLowerCase()
+      // Đang gõ trong ô nhập thì để trình duyệt tự hoàn tác chữ, không hoàn tác cả khối
+      if ((key === "z" || key === "y") && isEditableTarget(event.target)) return
       if (key === "z") {
         event.preventDefault()
         if (event.shiftKey) redo()

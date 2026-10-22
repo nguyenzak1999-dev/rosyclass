@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next"
 import { prisma } from "@/lib/prisma"
 import { absoluteUrl } from "@/lib/seo"
+import { PUBLIC_PAGE_STATUSES, isReservedSlug } from "@/lib/page-builder/constants"
 
 export const dynamic = "force-dynamic"
 
@@ -100,6 +101,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.55,
         images: teacher.avatar ? [absoluteUrl(teacher.avatar)] : undefined,
       }))
+    )
+
+    // Trang tuỳ chỉnh dựng bằng page builder (trang chủ đã có ở "/")
+    const pages = await prisma.page.findMany({
+      where: {
+        status: {
+          in: [...PUBLIC_PAGE_STATUSES],
+        },
+      },
+      select: {
+        slug: true,
+        updatedAt: true,
+      },
+    })
+
+    routes.push(
+      ...pages
+        .filter((page) => !isReservedSlug(page.slug))
+        .map((page) => ({
+          url: absoluteUrl(`/${page.slug}`),
+          lastModified: page.updatedAt || now,
+          changeFrequency: "monthly" as const,
+          priority: 0.6,
+        }))
     )
   } catch (error) {
     console.error("Unable to build dynamic sitemap entries:", error)
