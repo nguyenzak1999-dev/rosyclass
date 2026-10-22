@@ -1,11 +1,14 @@
 import { bindings, defineConfig, defineWorker } from "cf/config";
 
 export default defineConfig({
+  // Tài khoản giữ zone rosyclass.edu.vn
+  accountId: "1d46985e8d49340b8c9d2cc4c9fa5481",
   worker: defineWorker({
     name: "rosyclass",
     entrypoint: "vinext/server/fetch-handler",
     compatibilityDate: "2026-10-21",
     compatibilityFlags: ["nodejs_compat"],
+    domains: ["rosyclass.edu.vn", "www.rosyclass.edu.vn", "admin.rosyclass.edu.vn"],
     assets: {
       htmlHandling: "none",
       notFoundHandling: "none",
@@ -14,7 +17,7 @@ export default defineConfig({
     env: {
       ASSETS: bindings.assets(),
       VINEXT_KV_CACHE: bindings.kv(),
-      DB: bindings.d1({ name: "rosyclass-db", id: "41752056-3142-4beb-be13-d74175a7698a" }),
+      DB: bindings.d1({ name: "rosyclass-db", id: "683f38e7-f888-4678-bc36-52a633a1c208" }),
 
       // Ký cookie phiên đăng nhập admin
       AUTH_SECRET: bindings.secret(),
