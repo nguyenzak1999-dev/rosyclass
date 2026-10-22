@@ -29,7 +29,7 @@ export default function BlogClient({ posts }: { posts: BlogCardData[] }) {
         eyebrowIcon={<BookOpen className="h-4 w-4" aria-hidden="true" />}
         title="Góc học tập RosyClass"
         highlight="Góc học tập"
-        description="Chia sẻ phương pháp học, tài liệu luyện thi và những câu chuyện truyền cảm hứng từ các chuyên gia ngôn ngữ."
+        description="Mẹo hay, trò chơi và kinh nghiệm giúp ba mẹ cùng bé học tiếng Anh vui vẻ mỗi ngày, từ mầm non đến tiểu học."
       />
 
       <section className="pt-10 md:pt-14">

@@ -25,18 +25,18 @@ interface Stat {
 const values = [
   {
     Icon: Users,
-    title: "Học viên là trung tâm",
-    desc: "Mọi phương pháp, bài giảng đều được thiết kế xoay quanh sự phát triển và nhu cầu thực tế của người học.",
+    title: "Bé là trung tâm",
+    desc: "Mỗi bài học được thiết kế theo lứa tuổi, tính cách và nhịp phát triển của từng bé, để con học mà như chơi.",
   },
   {
     Icon: BookOpen,
     title: "Học thật, giá trị thật",
-    desc: "Chú trọng vào khả năng ứng dụng ngôn ngữ thực tế, không học vẹt, không chạy theo thành tích ảo.",
+    desc: "Trong mỗi buổi học, bé được nghe, nói, hát và vận động bằng tiếng Anh — không học vẹt, không chạy theo thành tích, không tạo áp lực cho con.",
   },
   {
     Icon: StarIcon,
-    title: "Không ngừng đổi mới",
-    desc: "Liên tục cập nhật kiến thức, công nghệ và phương pháp giáo dục tiên tiến nhất trên thế giới.",
+    title: "Đồng hành cùng ba mẹ",
+    desc: "Trung tâm thường xuyên trao đổi với ba mẹ về việc học của con, để gia đình và lớp học cùng giúp bé tiến bộ.",
   },
 ]
 
@@ -44,13 +44,13 @@ const pillars = [
   {
     Icon: Target,
     title: "Mục tiêu rõ ràng",
-    desc: "Lộ trình học tập được cá nhân hóa, cam kết chuẩn đầu ra rõ ràng cho từng khóa học và từng học viên.",
+    desc: "Mỗi chương trình có mục tiêu rõ ràng theo độ tuổi và cấp lớp, giúp ba mẹ biết con đang học gì và tiến bộ ra sao.",
     tone: "sky" as const,
   },
   {
     Icon: ShieldCheck,
-    title: "Chất lượng quốc tế",
-    desc: "Áp dụng giáo trình chuẩn quốc tế kết hợp cùng phương pháp giảng dạy hiện đại, tương tác cao.",
+    title: "Lớp học an toàn, thân thiện",
+    desc: "Giáo trình phù hợp với trẻ nhỏ, kết hợp trò chơi, bài hát và hoạt động tương tác để bé hứng thú với tiếng Anh.",
     tone: "mint" as const,
   },
 ]
@@ -73,9 +73,9 @@ export default function AboutClient({ stats, imageUrl }: { stats: Stat[]; imageU
         tone="rose"
         eyebrow="Về RosyClass"
         eyebrowIcon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
-        title="Hành trình truyền cảm hứng"
-        highlight="truyền cảm hứng"
-        description="Sứ mệnh của chúng tôi là mang đến môi trường học tiếng Anh chuẩn quốc tế, trang bị cho học viên Việt Nam sự tự tin và kỹ năng để vươn ra thế giới."
+        title="Nơi bé yêu tiếng Anh"
+        highlight="yêu tiếng Anh"
+        description="RosyClass là trung tâm tiếng Anh dành riêng cho các bé mầm non (3–5 tuổi) và tiểu học (lớp 1–5) tại Dương Xá, Gia Lâm, Hà Nội. Chúng tôi mong mỗi bé đều được làm quen với tiếng Anh một cách tự nhiên, vui vẻ và tự tin."
         contentClassName="md:pb-36"
       />
 
@@ -116,7 +116,7 @@ export default function AboutClient({ stats, imageUrl }: { stats: Stat[]; imageU
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={imageUrl}
-                  alt="RosyClass Team"
+                  alt="Lớp học tại RosyClass"
                   className="kid-border relative z-10 h-[380px] w-full -rotate-2 rounded-kid-lg object-cover md:h-[520px]"
                 />
               ) : (
@@ -132,8 +132,8 @@ export default function AboutClient({ stats, imageUrl }: { stats: Stat[]; imageU
                     <Heart className="h-6 w-6 fill-current" aria-hidden="true" />
                   </div>
                   <div>
-                    <div className="mb-1 font-kid-display text-[24px] leading-none font-extrabold text-kid-ink">10+ Năm</div>
-                    <div className="text-[14px] leading-tight font-semibold text-kid-ink-soft">Kinh nghiệm giảng dạy</div>
+                    <div className="mb-1 font-kid-display text-[24px] leading-none font-extrabold text-kid-ink">3–11 tuổi</div>
+                    <div className="text-[14px] leading-tight font-semibold text-kid-ink-soft">Mầm non &amp; Tiểu học</div>
                   </div>
                 </div>
               </div>
@@ -142,7 +142,7 @@ export default function AboutClient({ stats, imageUrl }: { stats: Stat[]; imageU
 
             <motion.div {...rise(0.1)} className="flex flex-col justify-center">
               <h2 className="mb-8 text-[34px] leading-[1.15] font-extrabold text-kid-ink md:text-[46px]">
-                Không chỉ là một nơi dạy học. Đó là{" "}
+                Không chỉ là nơi học tiếng Anh. Đó là{" "}
                 <span className="relative inline-block text-kid-rose">
                   ngôi nhà thứ hai.
                   <Sparkle className="absolute -top-4 -right-6 h-6 w-6 fill-kid-sun" />
@@ -150,10 +150,10 @@ export default function AboutClient({ stats, imageUrl }: { stats: Stat[]; imageU
               </h2>
               <div className="space-y-5 text-[17px] leading-relaxed text-kid-ink-soft md:text-[18px]">
                 <p>
-                  RosyClass được xây dựng từ tâm huyết của những người làm giáo dục, mong muốn tạo ra một môi trường học tập nơi mỗi học viên đều được tôn trọng, thấu hiểu và phát huy tối đa tiềm năng.
+                  RosyClass được xây dựng từ tâm huyết của những người làm giáo dục, mong muốn tạo ra một lớp học ấm áp, nơi mỗi bé đều được yêu thương, thấu hiểu và khích lệ để tự tin thể hiện mình.
                 </p>
                 <p>
-                  Chúng tôi tin rằng ngôn ngữ là chìa khóa vạn năng mở ra những chân trời mới. Hành trình học tiếng Anh không nên là áp lực, mà là niềm vui khám phá, kết nối và trưởng thành mỗi ngày.
+                  Chúng tôi tin rằng với trẻ nhỏ, học tiếng Anh không nên là áp lực, mà là niềm vui khám phá mỗi ngày — qua bài hát, câu chuyện, trò chơi và những người bạn cùng lớp.
                 </p>
               </div>
 
@@ -184,7 +184,7 @@ export default function AboutClient({ stats, imageUrl }: { stats: Stat[]; imageU
             <SectionHeading
               title="Giá trị cốt lõi"
               highlight="cốt lõi"
-              description="Những nguyên tắc định hướng cho mọi hoạt động giảng dạy và vận hành tại RosyClass."
+              description="Những điều RosyClass luôn giữ khi chăm sóc và dạy tiếng Anh cho các bé."
               className="mb-14"
             />
           </motion.div>

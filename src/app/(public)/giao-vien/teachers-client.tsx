@@ -53,11 +53,11 @@ export default function TeachersClient({ teachers }: { teachers: TeacherCardData
     <div ref={container} className="flex min-h-screen w-full flex-col pb-24">
       <PageHero
         tone="grape"
-        eyebrow="Đội ngũ giảng viên"
+        eyebrow="Đội ngũ giáo viên"
         eyebrowIcon={<Users className="h-4 w-4" aria-hidden="true" />}
-        title="Giáo viên bản ngữ xuất sắc"
-        highlight="xuất sắc"
-        description="Tự hào sở hữu 100% đội ngũ giáo viên bản ngữ có bằng cấp quốc tế, tâm huyết và giàu kinh nghiệm giảng dạy tại Việt Nam."
+        title="Thầy cô của bé"
+        highlight="của bé"
+        description="Những thầy cô kiên nhẫn, yêu trẻ, luôn tìm cách để mỗi giờ học tiếng Anh của bé đều vui và nhẹ nhàng. Ba mẹ cùng làm quen với các thầy cô nhé."
       />
 
       <section className="pt-10 md:pt-14">
@@ -97,7 +97,7 @@ export default function TeachersClient({ teachers }: { teachers: TeacherCardData
                           )}
                           <div className="absolute inset-x-3 bottom-3 translate-y-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
                             <p className="kid-border-2 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-[13px] font-bold text-kid-ink">
-                              <Heart className="h-4 w-4 fill-kid-rose text-kid-rose" aria-hidden="true" /> Yêu thương học viên
+                              <Heart className="h-4 w-4 fill-kid-rose text-kid-rose" aria-hidden="true" /> Yêu thương các bé
                             </p>
                           </div>
                         </div>
@@ -112,7 +112,7 @@ export default function TeachersClient({ teachers }: { teachers: TeacherCardData
                         <div className="mt-4 space-y-3 border-t-[3px] border-dashed border-kid-ink/15 pt-4">
                           <div className="flex items-start gap-2">
                             <StarIcon className="mt-0.5 h-4 w-4 shrink-0 fill-kid-sun text-kid-ink" aria-hidden="true" />
-                            <span className="text-[14px] leading-snug text-kid-ink-soft">{teacher.bio || "Nhiều năm kinh nghiệm"}</span>
+                            <span className="text-[14px] leading-snug text-kid-ink-soft">{teacher.bio || "Tận tâm cùng các bé"}</span>
                           </div>
                           {certifications.length > 0 && (
                             <div className="flex items-start gap-2">

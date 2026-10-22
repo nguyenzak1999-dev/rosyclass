@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const siteUrl = getSiteUrl()
   const title = s.seoTitle || s.siteName
   const description = s.seoDescription
-  const ogImage = absoluteUrl(s.ogImage || s.heroImageUrl || "/english-center-hero.png")
+  const ogImage = absoluteUrl(s.ogImage || s.heroImageUrl || "/demo/og-rosyclass.png")
 
   return {
     metadataBase: new URL(siteUrl),
@@ -93,7 +93,7 @@ export default function RootLayout({
               "@id": `${siteUrl}/#organization`,
               name: "RosyClass",
               url: siteUrl,
-              logo: absoluteUrl("/english-center-hero.png"),
+              logo: absoluteUrl("/demo/og-rosyclass.png"),
             },
             {
               "@context": "https://schema.org",

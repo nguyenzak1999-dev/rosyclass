@@ -5,7 +5,7 @@ import TeachersClient from "./teachers-client"
 
 export const metadata: Metadata = createPageMetadata({
   title: "Đội ngũ giáo viên",
-  description: "Gặp gỡ đội ngũ giáo viên RosyClass, những người đồng hành cùng học viên trong phát âm, giao tiếp, IELTS và lộ trình học tiếng Anh.",
+  description: "Gặp gỡ đội ngũ giáo viên RosyClass — những thầy cô đồng hành cùng các bé mầm non và tiểu học trên hành trình làm quen và yêu thích tiếng Anh.",
   path: "/giao-vien",
 })
 
@@ -39,7 +39,7 @@ export default async function TeachersPage() {
       id: user.id,
       fullName: user.fullName,
       avatar: user.teacherProfile?.avatar || user.avatar || null,
-      bio: user.teacherProfile?.bio || "Giáo viên tận tâm với nhiều năm kinh nghiệm",
+      bio: user.teacherProfile?.bio || "Giáo viên tận tâm, đồng hành cùng các bé",
       specialties: user.teacherProfile?.specialties || "Giáo viên",
       certificates: user.teacherProfile?.certificates || ""
     }));

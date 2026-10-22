@@ -38,22 +38,20 @@ import {
 import { submitRegistrationForm } from "./actions"
 
 const COURSE_OPTIONS = [
-  { value: "Tiếng Anh Trẻ Em (4-7 tuổi)", label: "Tiếng Anh Trẻ Em (4-7 tuổi)" },
-  { value: "Tiếng Anh Thiếu Nhi (8-11 tuổi)", label: "Tiếng Anh Thiếu Nhi (8-11 tuổi)" },
-  { value: "Tiếng Anh Thiếu Niên (12-16 tuổi)", label: "Tiếng Anh Thiếu Niên (12-16 tuổi)" },
-  { value: "Tiếng Anh Giao Tiếp", label: "Tiếng Anh Giao Tiếp" },
-  { value: "Luyện thi IELTS", label: "Luyện thi IELTS" },
-  { value: "Luyện thi TOEIC", label: "Luyện thi TOEIC" },
-  { value: "Học 1-1 (Cá nhân)", label: "Học 1-1 (Cá nhân)" },
+  { value: "Tiếng Anh Mầm non (3–5 tuổi)", label: "Tiếng Anh Mầm non (3–5 tuổi)" },
+  { value: "Tiếng Anh Tiểu học lớp 1–2", label: "Tiếng Anh Tiểu học lớp 1–2" },
+  { value: "Tiếng Anh Tiểu học lớp 3–5", label: "Tiếng Anh Tiểu học lớp 3–5" },
+  { value: "Cambridge Starters – Movers – Flyers", label: "Cambridge Starters – Movers – Flyers" },
+  { value: "Kèm 1–1 cho bé", label: "Kèm 1–1 cho bé" },
+  { value: "Chưa rõ / Cần tư vấn thêm", label: "Chưa rõ / Cần tư vấn thêm" },
 ]
 
 const LEVEL_OPTIONS = [
-  { value: "Mất gốc / Chưa biết gì", label: "Mất gốc / Chưa biết gì" },
-  { value: "Sơ cấp (A1)", label: "Sơ cấp (A1)" },
-  { value: "Cơ bản (A2)", label: "Cơ bản (A2)" },
-  { value: "Trung cấp (B1)", label: "Trung cấp (B1)" },
-  { value: "Trên trung cấp (B2+)", label: "Trên trung cấp (B2+)" },
-  { value: "Chưa biết / Cần kiểm tra", label: "Chưa biết / Cần kiểm tra" },
+  { value: "Bé chưa học tiếng Anh", label: "Bé chưa học tiếng Anh" },
+  { value: "Bé đã làm quen (chữ cái, từ đơn giản)", label: "Bé đã làm quen (chữ cái, từ đơn giản)" },
+  { value: "Bé đã học tiếng Anh ở trường / nơi khác", label: "Bé đã học tiếng Anh ở trường / nơi khác" },
+  { value: "Bé đã thi hoặc đang ôn Cambridge (Starters / Movers / Flyers)", label: "Bé đã thi hoặc đang ôn Cambridge (Starters / Movers / Flyers)" },
+  { value: "Chưa rõ / Cần kiểm tra", label: "Chưa rõ / Cần kiểm tra" },
 ]
 
 const HEAR_ABOUT_OPTIONS = [
@@ -66,34 +64,34 @@ const HEAR_ABOUT_OPTIONS = [
 ]
 
 const GOAL_OPTIONS = [
-  "Giao tiếp tự tin hàng ngày",
-  "Luyện thi IELTS / TOEIC",
-  "Chuẩn bị du học",
-  "Hỗ trợ công việc",
-  "Phát triển bản thân",
-  "Học cho trẻ em",
+  "Làm quen và yêu thích tiếng Anh",
+  "Phát âm chuẩn ngay từ đầu",
+  "Tự tin nghe – nói tiếng Anh",
+  "Học tốt môn tiếng Anh ở trường",
+  "Ôn thi Cambridge Starters – Movers – Flyers",
+  "Chuẩn bị cho bé vào lớp 1",
 ]
 
 const BENEFITS = [
   {
     Icon: Target,
-    title: "Lộ trình cá nhân hóa",
-    desc: "Kiểm tra trình độ miễn phí và thiết kế chương trình riêng cho bạn.",
+    title: "Lộ trình phù hợp với bé",
+    desc: "Bé được kiểm tra trình độ miễn phí, sau đó trung tâm tư vấn chương trình hợp với độ tuổi và khả năng của con.",
   },
   {
     Icon: GraduationCap,
-    title: "Giáo viên bản ngữ & chuyên nghiệp",
-    desc: "100% giáo viên có chứng chỉ quốc tế, giàu kinh nghiệm giảng dạy.",
+    title: "Thầy cô tận tâm, hiểu trẻ",
+    desc: "Giáo viên kiên nhẫn, yêu trẻ, đồng hành cùng bé qua từng buổi học vui và nhẹ nhàng.",
   },
   {
     Icon: ChartNoAxesColumnIncreasing,
-    title: "Theo dõi tiến độ minh bạch",
-    desc: "Phụ huynh và học viên dễ dàng nắm kết quả qua hệ thống trực tuyến.",
+    title: "Ba mẹ theo dõi tiến bộ của con",
+    desc: "Ba mẹ dễ dàng nắm được tình hình học tập của bé qua hệ thống trực tuyến.",
   },
   {
     Icon: Gift,
     title: "Học thử miễn phí",
-    desc: "Trải nghiệm 1 buổi học thử hoàn toàn không mất phí.",
+    desc: "Bé được học thử 1 buổi hoàn toàn miễn phí để ba mẹ yên tâm trước khi quyết định.",
   },
 ]
 
@@ -118,11 +116,11 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
   const update = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }))
 
-  const steps = ["Thông tin cá nhân", "Chương trình học", "Phụ huynh & Khác"]
+  const steps = ["Thông tin của bé", "Chương trình học", "Phụ huynh & Khác"]
 
   const handleNext = () => {
     if (step === 0 && (!formData.studentName || !formData.phone)) {
-      toast.error("Vui lòng điền họ tên và số điện thoại!")
+      toast.error("Ba mẹ vui lòng điền họ tên của bé và số điện thoại nhé!")
       return
     }
     setStep((s) => Math.min(s + 1, steps.length - 1))
@@ -130,7 +128,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
 
   const handleSubmit = async () => {
     if (!formData.studentName || !formData.phone) {
-      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc!")
+      toast.error("Ba mẹ vui lòng điền đầy đủ thông tin bắt buộc nhé!")
       return
     }
     setIsSubmitting(true)
@@ -138,7 +136,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
     setIsSubmitting(false)
     if (result.success) {
       setIsSuccess(true)
-      toast.success("Đăng ký thành công! Chúng tôi sẽ liên hệ bạn sớm nhất.")
+      toast.success("Đăng ký thành công! RosyClass sẽ liên hệ ba mẹ sớm nhất.")
     } else {
       toast.error(result.error || "Có lỗi xảy ra, vui lòng thử lại.")
     }
@@ -157,11 +155,11 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
       <PageHero
         tone="rose"
         align="left"
-        eyebrow="Đăng ký ngay — Tư vấn miễn phí"
+        eyebrow="Đăng ký cho bé — Tư vấn miễn phí"
         eyebrowIcon={<Sparkles className="h-4 w-4" aria-hidden="true" />}
-        title="Đăng ký học thử"
+        title="Đăng ký học thử cho bé"
         highlight="học thử"
-        description="Điền thông tin bên dưới — đội ngũ tư vấn của RosyClass sẽ liên hệ để sắp xếp buổi học thử và xây dựng lộ trình phù hợp nhất cho bạn."
+        description="Ba mẹ điền thông tin bên dưới — RosyClass sẽ liên hệ để sắp xếp buổi học thử và tư vấn lộ trình phù hợp với độ tuổi, khả năng của bé."
         aside={
           <div className="hidden justify-center lg:flex">
             <RosyMascot mood="wow" className="kid-float h-56 w-56" />
@@ -195,7 +193,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                       <RosyMascot mood="happy" className="kid-float mb-6 h-32 w-32" />
                       <h2 className="mb-3 text-[32px] font-extrabold text-kid-ink">Đăng ký thành công!</h2>
                       <p className="max-w-sm leading-relaxed text-kid-ink-soft">
-                        Cảm ơn bạn đã đăng ký. Đội ngũ tư vấn sẽ liên hệ lại trong vòng <strong className="text-kid-ink">24 giờ</strong> để sắp xếp buổi học thử.
+                        Cảm ơn ba mẹ đã đăng ký cho bé. Đội ngũ tư vấn sẽ liên hệ lại trong vòng <strong className="text-kid-ink">24 giờ</strong> để sắp xếp buổi học thử.
                       </p>
                       <div className="mt-8 flex flex-wrap justify-center gap-3">
                         <KidButton href="/kiem-tra-trinh-do" tone="sun">
@@ -257,20 +255,20 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                               <KidField>
                                 <KidLabel htmlFor="reg-studentName" required icon={<User className="h-4 w-4 text-kid-rose" />}>
-                                  Họ và tên học viên
+                                  Họ và tên của bé
                                 </KidLabel>
                                 <KidInput
                                   id="reg-studentName"
                                   autoComplete="name"
                                   aria-required="true"
-                                  placeholder="Nguyễn Văn A"
+                                  placeholder="Ví dụ: Nguyễn Minh An"
                                   value={formData.studentName}
                                   onChange={(e) => update("studentName", e.target.value)}
                                 />
                               </KidField>
                               <KidField>
                                 <KidLabel htmlFor="reg-phone" required icon={<Phone className="h-4 w-4 text-kid-rose" />}>
-                                  Số điện thoại
+                                  Số điện thoại liên hệ
                                 </KidLabel>
                                 <KidInput
                                   id="reg-phone"
@@ -317,7 +315,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                               </KidSelect>
                             </KidField>
                             <KidField>
-                              <KidLabel htmlFor="reg-level">Trình độ hiện tại</KidLabel>
+                              <KidLabel htmlFor="reg-level">Trình độ tiếng Anh của bé</KidLabel>
                               <KidSelect
                                 id="reg-level"
                                 value={formData.currentLevel}
@@ -330,7 +328,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                               </KidSelect>
                             </KidField>
                             <fieldset className="space-y-2.5">
-                              <legend className="mb-2.5 font-kid-display text-[16px] font-bold text-kid-ink">Mục tiêu học tập</legend>
+                              <legend className="mb-2.5 font-kid-display text-[16px] font-bold text-kid-ink">Ba mẹ mong muốn điều gì cho bé?</legend>
                               <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
                                 {GOAL_OPTIONS.map((g, i) => (
                                   <KidChoice
@@ -351,7 +349,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                           <motion.div key="step2" {...slide} transition={{ duration: 0.25 }} className="space-y-5">
                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                               <KidField>
-                                <KidLabel htmlFor="reg-parentName">Tên phụ huynh (nếu có)</KidLabel>
+                                <KidLabel htmlFor="reg-parentName">Họ tên ba / mẹ</KidLabel>
                                 <KidInput
                                   id="reg-parentName"
                                   placeholder="Nguyễn Thị B"
@@ -360,7 +358,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                                 />
                               </KidField>
                               <KidField>
-                                <KidLabel htmlFor="reg-parentPhone">SĐT phụ huynh</KidLabel>
+                                <KidLabel htmlFor="reg-parentPhone">SĐT ba / mẹ (nếu khác số trên)</KidLabel>
                                 <KidInput
                                   id="reg-parentPhone"
                                   type="tel"
@@ -371,7 +369,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                               </KidField>
                             </div>
                             <fieldset>
-                              <legend className="mb-2.5 font-kid-display text-[16px] font-bold text-kid-ink">Bạn biết đến RosyClass qua đâu?</legend>
+                              <legend className="mb-2.5 font-kid-display text-[16px] font-bold text-kid-ink">Ba mẹ biết đến RosyClass qua đâu?</legend>
                               <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2">
                                 {HEAR_ABOUT_OPTIONS.map((o, i) => (
                                   <KidChoice
@@ -390,7 +388,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                               <KidTextarea
                                 id="reg-notes"
                                 className="min-h-[100px]"
-                                placeholder="Thời gian có thể học, yêu cầu đặc biệt..."
+                                placeholder="Bé đang học lớp mấy, khung giờ bé có thể học, điều ba mẹ muốn chia sẻ thêm..."
                                 value={formData.notes}
                                 onChange={(e) => update("notes", e.target.value)}
                               />
@@ -434,7 +432,7 @@ export function RegisterClient({ courses }: { courses: { id: string; name: strin
                       </div>
 
                       <p className="mt-5 text-center text-[13px] text-kid-ink-soft">
-                        Thông tin của bạn được bảo mật theo{" "}
+                        Thông tin của ba mẹ và bé được bảo mật theo{" "}
                         <Link href="/chinh-sach-bao-mat" className="font-bold text-kid-ink underline decoration-kid-sun decoration-2 underline-offset-2">
                           Chính sách bảo mật
                         </Link>.

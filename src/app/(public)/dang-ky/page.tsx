@@ -5,7 +5,7 @@ import { RegisterClient } from "./register-client"
 
 export const metadata: Metadata = createPageMetadata({
   title: "Đăng ký học thử",
-  description: "Đăng ký học thử miễn phí tại RosyClass. Đội ngũ tư vấn sẽ liên hệ để xây dựng lộ trình học phù hợp nhất cho bạn.",
+  description: "Ba mẹ đăng ký cho bé học thử miễn phí tại RosyClass — tiếng Anh cho trẻ mầm non và tiểu học. Đội ngũ tư vấn sẽ liên hệ để gợi ý lộ trình phù hợp với bé.",
   path: "/dang-ky",
 })
 

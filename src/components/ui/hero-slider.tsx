@@ -6,15 +6,15 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 
 const images = [
   {
-    src: "/english-center-hero.png",
+    src: "/demo/kids-classroom.svg",
     alt: "Học viên tại RosyClass",
   },
   {
-    src: "/hero_slider_2.png",
+    src: "/demo/kids-songs.svg",
     alt: "Lớp học giao tiếp người đi làm",
   },
   {
-    src: "/hero_slider_3.png",
+    src: "/demo/kids-storytime.svg",
     alt: "Lớp học tiếng Anh trẻ em",
   },
 ]

@@ -1,22 +1,23 @@
 import { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 import { createPageMetadata } from "@/lib/seo"
-import { ScheduleClient } from "@/app/(public)/lich-khai-giang/schedule-client"
+import { ScheduleClient, type ScheduleLevelGroup } from "@/app/(public)/lich-khai-giang/schedule-client"
 
 export const metadata: Metadata = createPageMetadata({
   title: "Lịch khai giảng",
-  description: "Cập nhật lịch khai giảng các khóa học tiếng Anh mới nhất tại RosyClass.",
+  description: "Lịch khai giảng các lớp tiếng Anh cho bé mầm non và tiểu học tại RosyClass, Dương Xá, Gia Lâm, Hà Nội.",
   path: "/lich-khai-giang",
 })
 
 const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"]
 
-function getLevelGroup(level: string) {
-  if (level === "KIDS" || level === "STARTER") return "kids"
-  if (level === "A1" || level === "A2" || level === "B1" || level === "B2") return "teens"
-  if (level.startsWith("IELTS")) return "ielts"
-  if (level === "COMMUNICATION" || level === "ONE_ON_ONE" || level === "TOEIC") return "communication"
-  return "all"
+// Gom CourseLevel (enum trong DB) thành nhóm tuổi hiển thị trên bộ lọc.
+// Các level không dành cho trẻ mầm non / tiểu học rơi vào nhóm "khac".
+function getLevelGroup(level: string): ScheduleLevelGroup {
+  if (level === "KIDS") return "mam-non"
+  if (level === "STARTER" || level === "A1" || level === "A2") return "tieu-hoc"
+  if (level === "ONE_ON_ONE") return "kem-1-1"
+  return "khac"
 }
 
 export default async function SchedulePage() {

@@ -24,7 +24,7 @@ export default function FAQClient({ faqs }: { faqs: FAQ[] }) {
         eyebrowIcon={<HelpCircle className="h-4 w-4" aria-hidden="true" />}
         title="Câu hỏi thường gặp"
         highlight="thường gặp"
-        description="Mọi thắc mắc của bạn về khóa học, lộ trình và chính sách học phí đều được giải đáp tại đây."
+        description="Những thắc mắc ba mẹ hay gửi về chương trình học của bé, lộ trình và học phí đều được giải đáp tại đây."
       />
 
       <section className="pt-10 md:pt-14">
@@ -105,7 +105,7 @@ export default function FAQClient({ faqs }: { faqs: FAQ[] }) {
           <div className="kid-border kid-shadow relative mt-16 flex flex-col items-center gap-5 rounded-kid-lg bg-kid-grape-soft px-6 py-10 text-center sm:flex-row sm:text-left">
             <RosyMascot mood="think" className="kid-float h-24 w-24 shrink-0" />
             <div className="flex-1">
-              <p className="font-kid-display text-[24px] leading-tight font-extrabold text-kid-ink">Cần hỗ trợ?</p>
+              <p className="font-kid-display text-[24px] leading-tight font-extrabold text-kid-ink">Ba mẹ cần tư vấn thêm?</p>
             </div>
             <KidButton href="/lien-he" tone="sun" size="lg">
               Liên hệ tư vấn

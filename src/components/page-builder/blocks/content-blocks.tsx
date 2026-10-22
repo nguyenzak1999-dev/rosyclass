@@ -142,7 +142,10 @@ export function StatisticsBlock({ props, ctx }: BlockComponentProps<BlockProps<"
                     aria-hidden="true"
                   />
                   <dt className="order-2 text-[14px] leading-snug font-bold text-kid-ink-soft @3xl:text-[16px]">{item.label}</dt>
-                  <dd className="order-1 font-kid-display text-[36px] leading-none font-extrabold text-kid-ink @3xl:text-[52px]">
+                  <dd
+                    data-count={ctx.mode === "public" ? item.number : undefined}
+                    className="order-1 font-kid-display text-[36px] leading-none font-extrabold text-kid-ink @3xl:text-[52px]"
+                  >
                     {item.number}
                   </dd>
                 </div>

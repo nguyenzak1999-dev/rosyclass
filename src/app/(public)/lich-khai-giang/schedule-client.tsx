@@ -19,11 +19,13 @@ import {
 } from "@/components/kids"
 import { submitClassRegistration } from "./actions"
 
+export type ScheduleLevelGroup = "mam-non" | "tieu-hoc" | "kem-1-1" | "khac"
+
 type ClassData = {
   id: string
   courseId: string
   name: string
-  level: string
+  level: ScheduleLevelGroup
   startDate: string
   schedule: string
   branch: string
@@ -32,12 +34,12 @@ type ClassData = {
   spotsLeft: number
 }
 
-const levels: { id: string; label: string; tone: KidTone }[] = [
+const levels: { id: ScheduleLevelGroup | "all"; label: string; tone: KidTone }[] = [
   { id: "all", label: "Tất cả", tone: "sun" },
-  { id: "kids", label: "Trẻ em", tone: "rose" },
-  { id: "teens", label: "Thiếu niên", tone: "sky" },
-  { id: "ielts", label: "IELTS", tone: "grape" },
-  { id: "communication", label: "Giao tiếp", tone: "mint" },
+  { id: "mam-non", label: "Mầm non (3–5 tuổi)", tone: "rose" },
+  { id: "tieu-hoc", label: "Tiểu học (lớp 1–5)", tone: "sky" },
+  { id: "kem-1-1", label: "Kèm 1–1", tone: "mint" },
+  { id: "khac", label: "Khác", tone: "grape" },
 ]
 
 type RegisterModalProps = {
@@ -86,7 +88,7 @@ function RegisterModal({ cls, onClose }: RegisterModalProps) {
 
     if (result.success) {
       setIsSuccess(true)
-      toast.success("Đăng ký thành công! Chúng tôi sẽ liên hệ xác nhận sớm nhất.")
+      toast.success("Đăng ký thành công! RosyClass sẽ liên hệ ba mẹ để xác nhận sớm nhất.")
     } else {
       toast.error(result.error || "Có lỗi xảy ra, vui lòng thử lại.")
     }
@@ -124,7 +126,7 @@ function RegisterModal({ cls, onClose }: RegisterModalProps) {
               Đã gửi thành công!
             </h3>
             <p className="mb-6 text-[16px] text-kid-ink-soft">
-              Chúng tôi sẽ liên hệ để xác nhận chỗ đăng ký vào lớp{" "}
+              RosyClass sẽ liên hệ ba mẹ để xác nhận chỗ của bé trong lớp{" "}
               <span className="font-bold text-kid-ink">{cls.name}</span>.
             </p>
             <KidButton type="button" onClick={onClose} tone="sun">
@@ -136,7 +138,7 @@ function RegisterModal({ cls, onClose }: RegisterModalProps) {
             <div className="mb-6 pr-10">
               <span className="kid-border-2 inline-flex items-center gap-1.5 rounded-full bg-kid-rose-soft px-3 py-0.5 font-kid-display text-[14px] font-bold text-kid-ink">
                 <PartyPopper className="h-4 w-4" aria-hidden="true" />
-                Đăng ký lớp học
+                Đăng ký lớp cho bé
               </span>
               <h3 id={titleId} className="mt-3 text-[24px] leading-snug font-extrabold text-kid-ink">
                 {cls.name}
@@ -149,7 +151,7 @@ function RegisterModal({ cls, onClose }: RegisterModalProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <KidField>
                 <KidLabel htmlFor="schedule-fullName" required>
-                  Họ và tên
+                  Họ và tên của bé
                 </KidLabel>
                 <KidInput
                   id="schedule-fullName"
@@ -157,13 +159,13 @@ function RegisterModal({ cls, onClose }: RegisterModalProps) {
                   autoComplete="name"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="Ví dụ: Nguyễn Văn A"
+                  placeholder="Ví dụ: Nguyễn Minh An"
                 />
               </KidField>
 
               <KidField>
                 <KidLabel htmlFor="schedule-phone" required>
-                  Số điện thoại
+                  Số điện thoại ba / mẹ
                 </KidLabel>
                 <KidInput
                   id="schedule-phone"
@@ -193,7 +195,7 @@ function RegisterModal({ cls, onClose }: RegisterModalProps) {
               </KidButton>
 
               <p className="text-center text-[13px] text-kid-ink-soft">
-                Thông tin của bạn được bảo mật và chỉ dùng để liên hệ tư vấn.
+                Thông tin của ba mẹ và bé được bảo mật và chỉ dùng để liên hệ tư vấn.
               </p>
             </form>
           </div>
@@ -204,8 +206,11 @@ function RegisterModal({ cls, onClose }: RegisterModalProps) {
 }
 
 export function ScheduleClient({ initialClasses }: { initialClasses: ClassData[] }) {
-  const [activeLevel, setActiveLevel] = useState("all")
+  const [activeLevel, setActiveLevel] = useState<ScheduleLevelGroup | "all">("all")
   const [registeringClass, setRegisteringClass] = useState<ClassData | null>(null)
+
+  // Chỉ hiện chip "Khác" khi thật sự có lớp thuộc nhóm này
+  const visibleLevels = levels.filter(level => level.id !== "khac" || initialClasses.some(c => c.level === "khac"))
 
   const filteredClasses = initialClasses.filter(c =>
     activeLevel === "all" ? true : c.level === activeLevel
@@ -235,14 +240,14 @@ export function ScheduleClient({ initialClasses }: { initialClasses: ClassData[]
           eyebrowIcon={<Calendar className="h-4 w-4" aria-hidden="true" />}
           title="Lịch khai giảng"
           highlight="khai giảng"
-          description="Cập nhật lịch mở lớp mới nhất. Đăng ký sớm để nhận ưu đãi và giữ chỗ vì số lượng học viên mỗi lớp có hạn."
+          description="Lịch mở lớp mới nhất cho bé mầm non và tiểu học. Ba mẹ đăng ký sớm để giữ chỗ cho con vì mỗi lớp chỉ nhận số bé có hạn."
         />
 
         <section className="pt-8 md:pt-12">
           <div className="mx-auto max-w-[1200px] px-4 sm:px-8">
             {/* Filters */}
-            <div role="group" aria-label="Lọc theo cấp độ" className="mb-12 flex flex-wrap items-center justify-center gap-3">
-              {levels.map(level => {
+            <div role="group" aria-label="Lọc theo độ tuổi" className="mb-12 flex flex-wrap items-center justify-center gap-3">
+              {visibleLevels.map(level => {
                 const active = activeLevel === level.id
                 return (
                   <button
@@ -336,7 +341,7 @@ export function ScheduleClient({ initialClasses }: { initialClasses: ClassData[]
               ) : (
                 <EmptyState
                   className="col-span-full"
-                  title="Không có lớp học nào đang mở cho cấp độ này."
+                  title="Hiện chưa có lớp nào đang mở cho nhóm tuổi này."
                   action={
                     <KidButton type="button" tone="sun" onClick={() => setActiveLevel("all")}>
                       Xem tất cả các lớp

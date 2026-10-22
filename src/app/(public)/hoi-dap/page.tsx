@@ -5,7 +5,7 @@ import FAQClient from "./faq-client"
 
 export const metadata: Metadata = createPageMetadata({
   title: "Hỏi đáp",
-  description: "Giải đáp các câu hỏi thường gặp về khóa học, học phí, học thử, kiểm tra trình độ và chính sách học bù tại RosyClass.",
+  description: "Giải đáp những câu hỏi ba mẹ thường gặp về chương trình tiếng Anh cho bé mầm non và tiểu học, học phí, học thử, kiểm tra trình độ và học bù tại RosyClass.",
   path: "/hoi-dap",
 })
 

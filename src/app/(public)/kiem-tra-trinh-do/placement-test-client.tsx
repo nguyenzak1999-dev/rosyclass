@@ -61,7 +61,13 @@ interface PlacementTestClientProps {
   suggestedCourses: SuggestedCourseView[]
 }
 
-const COURSE_CHOICES = ["Trẻ Em", "Thiếu Niên", "IELTS", "Giao Tiếp"]
+const COURSE_CHOICES = [
+  "Tiếng Anh Mầm non (3–5 tuổi)",
+  "Tiếng Anh Tiểu học lớp 1–2",
+  "Tiếng Anh Tiểu học lớp 3–5",
+  "Cambridge Starters – Movers – Flyers",
+  "Kèm 1–1 cho bé",
+]
 
 export default function PlacementTestClient({
   questions,
@@ -79,7 +85,7 @@ export default function PlacementTestClient({
     fullName: "",
     phone: "",
     email: "",
-    courseInterest: "Trẻ Em",
+    courseInterest: "Tiếng Anh Mầm non (3–5 tuổi)",
   })
   const reduceMotion = useReducedMotion()
 
@@ -194,11 +200,11 @@ export default function PlacementTestClient({
         <PageHero
           tone="sun"
           align="left"
-          eyebrow="Đánh giá năng lực"
+          eyebrow="Kiểm tra cho bé"
           eyebrowIcon={<PenTool className="h-4 w-4" aria-hidden="true" />}
           title="Kiểm tra trình độ miễn phí"
           highlight="miễn phí"
-          description="Làm bài test ngắn để biết trình độ hiện tại và nhận tư vấn lộ trình học phù hợp từ RosyClass."
+          description="Bé làm một bài test ngắn, vui như chơi trò chơi, để ba mẹ biết con đang ở đâu và nhận tư vấn lộ trình học phù hợp từ RosyClass."
           aside={
             <div className="hidden justify-center lg:flex">
               <div className="relative">
@@ -239,9 +245,9 @@ export default function PlacementTestClient({
             <div className="kid-border kid-shadow-lg relative rounded-kid-lg bg-white p-6 sm:p-8 md:p-12">
               <Star className="pointer-events-none absolute -top-6 -right-3 h-14 w-14 rotate-12" />
               <div className="mb-8 text-center">
-                <h2 className="mb-2 text-[30px] font-extrabold text-kid-ink">Đăng ký ngay</h2>
+                <h2 className="mb-2 text-[30px] font-extrabold text-kid-ink">Thông tin của bé</h2>
                 <p className="text-[16px] text-kid-ink-soft">
-                  Vui lòng điền thông tin bên dưới để bắt đầu bài kiểm tra.
+                  Ba mẹ điền thông tin bên dưới rồi cùng bé bắt đầu bài kiểm tra nhé.
                 </p>
               </div>
 
@@ -261,7 +267,7 @@ export default function PlacementTestClient({
                   <div className="grid gap-6 md:grid-cols-2">
                     <KidField>
                       <KidLabel htmlFor="pt-fullName" required icon={<User className="h-4 w-4 text-kid-rose" />}>
-                        Họ và tên
+                        Họ và tên của bé
                       </KidLabel>
                       <KidInput
                         id="pt-fullName"
@@ -269,12 +275,12 @@ export default function PlacementTestClient({
                         autoComplete="name"
                         value={formData.fullName}
                         onChange={(event) => setFormData({ ...formData, fullName: event.target.value })}
-                        placeholder="Nhập họ tên của bạn"
+                        placeholder="Ví dụ: Nguyễn Minh An"
                       />
                     </KidField>
                     <KidField>
                       <KidLabel htmlFor="pt-phone" required icon={<Phone className="h-4 w-4 text-kid-rose" />}>
-                        Số điện thoại
+                        Số điện thoại ba / mẹ
                       </KidLabel>
                       <KidInput
                         id="pt-phone"
@@ -283,14 +289,14 @@ export default function PlacementTestClient({
                         autoComplete="tel"
                         value={formData.phone}
                         onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
-                        placeholder="Nhập số điện thoại"
+                        placeholder="Nhập số điện thoại của ba / mẹ"
                       />
                     </KidField>
                   </div>
 
                   <KidField>
                     <KidLabel htmlFor="pt-email" icon={<Mail className="h-4 w-4 text-kid-rose" />}>
-                      Email
+                      Email ba / mẹ
                     </KidLabel>
                     <KidInput
                       id="pt-email"
@@ -298,13 +304,13 @@ export default function PlacementTestClient({
                       autoComplete="email"
                       value={formData.email}
                       onChange={(event) => setFormData({ ...formData, email: event.target.value })}
-                      placeholder="Nhập địa chỉ email"
+                      placeholder="Nhập email (không bắt buộc)"
                     />
                   </KidField>
 
                   <fieldset>
-                    <legend className="mb-3 font-kid-display text-[16px] font-bold text-kid-ink">Khóa học bạn quan tâm</legend>
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <legend className="mb-3 font-kid-display text-[16px] font-bold text-kid-ink">Chương trình ba mẹ quan tâm</legend>
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                       {COURSE_CHOICES.map((course, i) => {
                         const tone = toneAt(i)
                         return (
@@ -357,7 +363,7 @@ export default function PlacementTestClient({
                       )}
                     </KidButton>
                     <p className="mt-4 text-center text-[13px] text-kid-ink-soft">
-                      Bằng việc đăng ký, bạn đồng ý với{" "}
+                      Bằng việc đăng ký, ba mẹ đồng ý với{" "}
                       <Link href="/chinh-sach-bao-mat" className="font-bold text-kid-ink underline decoration-kid-sun decoration-2 underline-offset-2">
                         Chính sách bảo mật
                       </Link>{" "}
@@ -472,7 +478,7 @@ export default function PlacementTestClient({
                   <RosyMascot mood="happy" className="kid-float mx-auto mb-4 h-32 w-32 md:h-36 md:w-36" />
                   <h2 className="mb-3 text-[30px] leading-tight font-extrabold text-kid-ink md:text-[40px]">Hoàn thành bài kiểm tra!</h2>
                   <p className="mx-auto mb-8 max-w-[520px] text-[16px] text-kid-ink-soft md:text-[17px]">
-                    Cảm ơn bạn đã tham gia đánh giá năng lực. Dưới đây là kết quả sơ bộ của bạn.
+                    Bé giỏi lắm! Dưới đây là kết quả sơ bộ để ba mẹ tham khảo — thầy cô sẽ tư vấn chi tiết hơn sau.
                   </p>
 
                   <div className="mb-6 flex justify-center gap-2" aria-label={`${starCount} / 3 sao`} role="img">
@@ -507,7 +513,7 @@ export default function PlacementTestClient({
                       <Sparkles className="h-7 w-7" aria-hidden="true" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-[15px] font-bold text-kid-ink-soft">Gợi ý trình độ của bạn</p>
+                      <p className="text-[15px] font-bold text-kid-ink-soft">Gợi ý trình độ của bé</p>
                       <h3 className={cn("mt-1 text-[26px] font-extrabold md:text-[30px]", suggestion.color)}>
                         {suggestion.label}
                       </h3>
@@ -522,7 +528,7 @@ export default function PlacementTestClient({
                 <div>
                   <h3 className="mb-5 flex items-center gap-2 text-[24px] font-extrabold text-kid-ink">
                     <GraduationCap className="h-6 w-6" aria-hidden="true" />
-                    Khóa học phù hợp với bạn
+                    Khóa học phù hợp với bé
                   </h3>
                   <div className="grid gap-5 md:grid-cols-3">
                     {recommendedCourses.map((course, i) => {
@@ -562,13 +568,13 @@ export default function PlacementTestClient({
                   tone="sky"
                   mood="think"
                   className="py-8"
-                  title="Hiện chưa có khóa học phù hợp được mở bán. Vui lòng liên hệ trung tâm để được tư vấn."
+                  title="Hiện chưa có khóa học phù hợp đang mở. Ba mẹ liên hệ trung tâm để được tư vấn cho bé nhé."
                 />
               )}
 
               <div className="mx-auto grid max-w-[640px] gap-3 md:grid-cols-2">
                 <KidButton href="/lien-he" tone="rose" size="lg" className="w-full text-kid-ink h-auto min-h-14 py-3 whitespace-normal leading-tight">
-                  Nhận tư vấn lộ trình học
+                  Nhận tư vấn lộ trình cho bé
                 </KidButton>
                 <KidButton type="button" tone="white" size="lg" onClick={resetTest} className="w-full h-auto min-h-14 py-3 whitespace-normal leading-tight">
                   <RotateCcw className="h-5 w-5" aria-hidden="true" />

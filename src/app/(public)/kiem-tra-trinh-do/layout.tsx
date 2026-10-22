@@ -3,7 +3,7 @@ import { createPageMetadata } from "@/lib/seo"
 
 export const metadata: Metadata = createPageMetadata({
   title: "Kiểm tra trình độ miễn phí",
-  description: "Làm bài kiểm tra trình độ tiếng Anh miễn phí tại RosyClass để nhận tư vấn lộ trình học phù hợp.",
+  description: "Cho bé làm bài kiểm tra trình độ tiếng Anh miễn phí tại RosyClass để ba mẹ nhận tư vấn lộ trình học phù hợp — dành cho trẻ mầm non và tiểu học.",
   path: "/kiem-tra-trinh-do",
 })
 

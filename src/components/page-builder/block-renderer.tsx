@@ -20,6 +20,7 @@ import {
 import { ContactInfoBlock, CtaBlock, FaqBlock } from "./blocks/engage-blocks"
 import { DividerBlock, GalleryBlock, SpacerBlock, VideoEmbedBlock } from "./blocks/media-layout-blocks"
 import type { BlockComponentProps, BlockRenderContext, RenderMode } from "./blocks/shared"
+import { PageAnimations } from "./page-animations"
 
 type BlockComponentMap = {
   [T in BlockType]: (input: BlockComponentProps<BlockProps<T>>) => React.ReactNode
@@ -71,7 +72,7 @@ export function PageBlocks({
   className?: string
 }) {
   const ctx: BlockRenderContext = { mode, data }
-  return (
+  const content = (
     <BlockCanvasRoot className={className}>
       {blocks
         .filter((block) => !block.hidden)
@@ -80,4 +81,6 @@ export function PageBlocks({
         ))}
     </BlockCanvasRoot>
   )
+  // Hiệu ứng cuộn chỉ chạy trên trang thật, không chạy trong canvas của builder
+  return mode === "public" ? <PageAnimations>{content}</PageAnimations> : content
 }

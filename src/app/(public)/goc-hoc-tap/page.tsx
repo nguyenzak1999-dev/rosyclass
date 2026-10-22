@@ -5,7 +5,7 @@ import BlogClient from "./blog-client"
 
 export const metadata: Metadata = createPageMetadata({
   title: "Góc học tập",
-  description: "Bài viết, kinh nghiệm học tiếng Anh, mẹo luyện giao tiếp và định hướng lộ trình học từ RosyClass.",
+  description: "Bài viết, kinh nghiệm và mẹo giúp ba mẹ đồng hành cùng bé học tiếng Anh tại nhà — dành cho trẻ mầm non và tiểu học — từ RosyClass.",
   path: "/goc-hoc-tap",
 })
 

@@ -23,47 +23,39 @@ export interface LevelSuggestion {
 }
 
 /**
- * Map % đúng → suggested level.
- * Theo heuristic đơn giản:
- * - 0-30%: STARTER
- * - 30-50%: A1
- * - 50-65%: A2
- * - 65-75%: B1
- * - 75-85%: B2 hoặc IELTS_FOUNDATION
- * - 85-95%: IELTS_5_5
- * - 95-100%: IELTS_6_5 hoặc TOEIC
+ * Map % đúng → trình độ gợi ý cho bé 3–11 tuổi (định hướng Cambridge Young Learners):
+ * - dưới 35%: STARTER (lớp nền tảng, Starters)
+ * - 35–70%: A1 (Movers)
+ * - từ 70%: A2 (Flyers)
+ * Các mức người lớn (B1, IELTS, TOEIC) không còn được gợi ý vì trung tâm chỉ dạy trẻ.
  */
 export function suggestLevel(score: number, total: number): LevelSuggestion {
   if (total === 0) {
     return LEVEL_MAP.STARTER
   }
   const percent = (score / total) * 100
-  if (percent < 30) return LEVEL_MAP.STARTER
-  if (percent < 50) return LEVEL_MAP.A1
-  if (percent < 65) return LEVEL_MAP.A2
-  if (percent < 75) return LEVEL_MAP.B1
-  if (percent < 85) return LEVEL_MAP.B2_IELTS_FOUNDATION
-  if (percent < 95) return LEVEL_MAP.IELTS_5_5
-  return LEVEL_MAP.IELTS_6_5
+  if (percent < 35) return LEVEL_MAP.STARTER
+  if (percent < 70) return LEVEL_MAP.A1
+  return LEVEL_MAP.A2
 }
 
 const LEVEL_MAP: Record<SuggestedLevel, LevelSuggestion> = {
   STARTER: {
     level: "STARTER",
-    label: "Starter (Mất gốc)",
-    description: "Bạn nên bắt đầu với khóa Starter để xây nền tảng vững chắc.",
+    label: "Lớp nền tảng (Cambridge Starters)",
+    description: "Bé nên bắt đầu ở lớp nền tảng: làm quen âm, từ vựng và mẫu câu đơn giản qua bài hát và trò chơi.",
     color: "text-gray-700",
   },
   A1: {
     level: "A1",
-    label: "A1 (Sơ cấp)",
-    description: "Trình độ mới bắt đầu. Khóa A1 sẽ giúp bạn nắm vững nền tảng cơ bản.",
+    label: "Lớp Movers (Cambridge Movers)",
+    description: "Bé đã có nền tảng tốt. Con có thể học lớp luyện nói thành câu, nghe hiểu và đọc đoạn ngắn.",
     color: "text-blue-700",
   },
   A2: {
     level: "A2",
-    label: "A2 (Sơ cấp nâng cao)",
-    description: "Bạn đã có nền tảng cơ bản. Khóa A2 sẽ giúp phát triển kỹ năng giao tiếp hàng ngày.",
+    label: "Lớp Flyers (Cambridge Flyers)",
+    description: "Bé làm bài rất tốt! Con có thể học lớp nâng cao, luyện đủ nghe, nói, đọc, viết.",
     color: "text-cyan-700",
   },
   B1: {

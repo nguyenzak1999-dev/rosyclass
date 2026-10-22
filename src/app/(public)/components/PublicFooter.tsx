@@ -12,10 +12,11 @@ const footerColumns = [
   {
     eyebrow: "Học gì",
     links: [
-      { label: "Tiếng Anh trẻ em", href: "/khoa-hoc?level=kids" },
-      { label: "Tiếng Anh thiếu niên", href: "/khoa-hoc?level=teens" },
-      { label: "Luyện thi IELTS", href: "/khoa-hoc?level=ielts" },
-      { label: "Giao tiếp thực chiến", href: "/khoa-hoc?level=communication" },
+      { label: "Tiếng Anh Mầm non (3–5 tuổi)", href: "/khoa-hoc?nhom=mam-non" },
+      { label: "Tiếng Anh Tiểu học lớp 1–2", href: "/khoa-hoc?nhom=lop-1-2" },
+      { label: "Tiếng Anh Tiểu học lớp 3–5", href: "/khoa-hoc?nhom=lop-3-5" },
+      { label: "Cambridge Starters – Movers – Flyers", href: "/khoa-hoc?nhom=cambridge" },
+      { label: "Kèm 1–1 cho bé", href: "/khoa-hoc?nhom=kem-1-1" },
     ],
   },
   {

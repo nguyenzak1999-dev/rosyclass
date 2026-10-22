@@ -52,7 +52,7 @@ export function createPageMetadata({
   const siteName = site?.siteName || "RosyClass"
   const seoTitle = trimSeoText(title, 70)
   const seoDescription = trimSeoText(description, 160)
-  const imageUrl = image || site?.ogImage || site?.heroImageUrl || "/english-center-hero.png"
+  const imageUrl = image || site?.ogImage || site?.heroImageUrl || "/demo/og-rosyclass.png"
   const ogImage = absoluteUrl(imageUrl)
 
   return {

@@ -8,17 +8,26 @@ export function HeroButtons({
   secondaryText,
   secondaryLink,
   accent,
+  nudge = false,
 }: {
   primaryText?: string | null
   primaryLink?: string | null
   secondaryText?: string
   secondaryLink?: string
   accent: KidTone
+  /** Nút chính thỉnh thoảng lắc nhẹ để gây chú ý (chỉ trên trang công khai) */
+  nudge?: boolean
 }) {
   if (!(primaryText && primaryLink) && !(secondaryText && secondaryLink)) return null
   return (
     <div className="flex w-full flex-col gap-3 @md:w-auto @md:flex-row @md:flex-wrap">
-      <BlockButton text={primaryText ?? ""} link={primaryLink ?? ""} tone={accent} size="lg" />
+      {nudge && primaryText && primaryLink ? (
+        <span className="kid-nudge">
+          <BlockButton text={primaryText} link={primaryLink} tone={accent} size="lg" />
+        </span>
+      ) : (
+        <BlockButton text={primaryText ?? ""} link={primaryLink ?? ""} tone={accent} size="lg" />
+      )}
       <BlockButton text={secondaryText} link={secondaryLink} tone="white" size="lg" />
     </div>
   )

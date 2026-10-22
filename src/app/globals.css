@@ -372,8 +372,31 @@
   }
 }
 
+/* Hero trang chủ: chạy bằng CSS để hiện ngay từ lần vẽ đầu, không chờ JavaScript */
+@layer utilities {
+  .kid-hero-in { animation: kid-rise 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both; animation-delay: var(--kid-delay, 0s); }
+  .kid-word { display: inline-block; animation: kid-word 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; animation-delay: var(--kid-delay, 0s); }
+  .kid-swing-in { transform-origin: 50% 100%; animation: kid-swing-in 1s cubic-bezier(0.34, 1.56, 0.64, 1) both; animation-delay: var(--kid-delay, 0s); }
+  .kid-nudge { display: inline-flex; animation: kid-nudge 4.5s ease-in-out 2.4s infinite; }
+
+  @keyframes kid-word {
+    from { opacity: 0; transform: translateY(0.6em) rotate(6deg) scale(0.8); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes kid-swing-in {
+    from { opacity: 0; transform: translateY(40px) rotate(-8deg) scale(0.85); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes kid-nudge {
+    0%, 84%, 100% { transform: none; }
+    88% { transform: rotate(-4deg) scale(1.05); }
+    92% { transform: rotate(4deg) scale(1.05); }
+    96% { transform: rotate(-2deg); }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .kid-rise, .kid-bounce-in, .kid-stripes { animation: none; }
+  .kid-rise, .kid-bounce-in, .kid-stripes, .kid-hero-in, .kid-word, .kid-swing-in, .kid-nudge { animation: none; }
   .kid-confetti-piece { display: none; }
   .kid-field, .kid-field:focus { transition: none; transform: none; }
 }

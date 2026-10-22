@@ -49,7 +49,7 @@ export function ContactClient({ settings }: { settings: SiteSettings }) {
 
     if (result.success) {
       setIsSuccess(true)
-      toast.success("Gửi thông tin thành công! Chúng tôi sẽ liên hệ lại sớm nhất.")
+      toast.success("Gửi thông tin thành công! RosyClass sẽ liên hệ lại ba mẹ sớm nhất.")
       setTimeout(() => {
         setIsSuccess(false)
         form.reset()
@@ -109,7 +109,7 @@ export function ContactClient({ settings }: { settings: SiteSettings }) {
         eyebrowIcon={<MessageCircleHeart className="h-4 w-4" aria-hidden="true" />}
         title="Liên hệ với chúng tôi"
         highlight="chúng tôi"
-        description={`Hãy để lại thông tin, đội ngũ tư vấn của ${settings.siteName} sẽ liên hệ lại với bạn trong thời gian sớm nhất để hỗ trợ lộ trình học phù hợp.`}
+        description={`Ba mẹ hãy để lại thông tin, đội ngũ tư vấn của ${settings.siteName} sẽ liên hệ lại sớm nhất để giải đáp thắc mắc và gợi ý lộ trình học phù hợp cho bé.`}
         aside={
           <div className="hidden justify-center lg:flex">
             <RosyMascot mood="happy" className="kid-float h-56 w-56" />
@@ -182,7 +182,7 @@ export function ContactClient({ settings }: { settings: SiteSettings }) {
                     <RosyMascot mood="happy" className="kid-float mb-5 h-28 w-28" />
                     <h3 className="mb-2 text-[28px] font-extrabold text-kid-ink">Đã gửi thành công!</h3>
                     <p className="max-w-sm text-kid-ink-soft">
-                      Cảm ơn bạn đã quan tâm. Đội ngũ tư vấn sẽ liên hệ lại qua số điện thoại bạn cung cấp.
+                      Cảm ơn ba mẹ đã quan tâm. Đội ngũ tư vấn sẽ liên hệ lại qua số điện thoại ba mẹ đã cung cấp.
                     </p>
                   </motion.div>
                 ) : (
@@ -190,9 +190,9 @@ export function ContactClient({ settings }: { settings: SiteSettings }) {
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                       <KidField>
                         <KidLabel htmlFor="name" required>
-                          Họ và tên
+                          Họ và tên ba / mẹ
                         </KidLabel>
-                        <KidInput id="name" autoComplete="name" placeholder="Ví dụ: Nguyễn Văn A" required />
+                        <KidInput id="name" autoComplete="name" placeholder="Ví dụ: Nguyễn Thị Hoa" required />
                       </KidField>
                       <KidField>
                         <KidLabel htmlFor="phone" required>
@@ -213,17 +213,18 @@ export function ContactClient({ settings }: { settings: SiteSettings }) {
                         <option value="" disabled>
                           Chọn chương trình...
                         </option>
-                        <option value="kids">Tiếng Anh Trẻ Em (4-11 tuổi)</option>
-                        <option value="teens">Tiếng Anh Thiếu Niên (12-16 tuổi)</option>
-                        <option value="ielts">Luyện thi IELTS</option>
-                        <option value="communication">Tiếng Anh Giao Tiếp</option>
-                        <option value="other">Chương trình khác / Cần tư vấn thêm</option>
+                        <option value="Tiếng Anh Mầm non (3–5 tuổi)">Tiếng Anh Mầm non (3–5 tuổi)</option>
+                        <option value="Tiếng Anh Tiểu học lớp 1–2">Tiếng Anh Tiểu học lớp 1–2</option>
+                        <option value="Tiếng Anh Tiểu học lớp 3–5">Tiếng Anh Tiểu học lớp 3–5</option>
+                        <option value="Cambridge Starters – Movers – Flyers">Cambridge Starters – Movers – Flyers</option>
+                        <option value="Kèm 1–1 cho bé">Kèm 1–1 cho bé</option>
+                        <option value="Chưa rõ / Cần tư vấn thêm">Chưa rõ / Cần tư vấn thêm</option>
                       </KidSelect>
                     </KidField>
 
                     <KidField>
                       <KidLabel htmlFor="message">Lời nhắn (Tùy chọn)</KidLabel>
-                      <KidTextarea id="message" placeholder="Bạn có câu hỏi hoặc yêu cầu đặc biệt nào không?" />
+                      <KidTextarea id="message" placeholder="Bé năm nay mấy tuổi, đang học lớp mấy? Ba mẹ có câu hỏi gì cho RosyClass không?" />
                     </KidField>
 
                     <KidButton type="submit" disabled={isSubmitting} tone="rose" size="lg" className="w-full text-kid-ink h-auto min-h-14 py-3 whitespace-normal leading-tight">
@@ -247,7 +248,7 @@ export function ContactClient({ settings }: { settings: SiteSettings }) {
                       )}
                     </KidButton>
                     <p className="text-center text-[13px] text-kid-ink-soft">
-                      Thông tin của bạn sẽ được bảo mật tuyệt đối theo{" "}
+                      Thông tin của ba mẹ và bé được bảo mật theo{" "}
                       <Link href="/chinh-sach-bao-mat" className="font-bold text-kid-ink underline decoration-kid-sun decoration-2 underline-offset-2">
                         Chính sách bảo mật
                       </Link>{" "}

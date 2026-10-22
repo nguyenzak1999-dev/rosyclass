@@ -5,7 +5,7 @@ import { Metadata } from "next"
 
 export const metadata: Metadata = createPageMetadata({
   title: "Liên hệ",
-  description: "Liên hệ với trung tâm tiếng Anh RosyClass để được tư vấn lộ trình học phù hợp nhất.",
+  description: "Liên hệ RosyClass — trung tâm tiếng Anh cho trẻ mầm non và tiểu học tại Dương Xá, Gia Lâm, Hà Nội — để được tư vấn lộ trình học phù hợp cho bé.",
   path: "/lien-he",
 })
 
