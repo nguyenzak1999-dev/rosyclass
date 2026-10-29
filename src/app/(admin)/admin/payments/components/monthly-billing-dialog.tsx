@@ -348,7 +348,7 @@ export function MonthlyBillingDialog({ students, classes, edit, trigger }: Month
           <div className="space-y-2">
             <Label htmlFor="billing-due">Hạn đóng</Label>
             <Input id="billing-due" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
-            <p className="text-xs text-muted-foreground">Trống = ngày 5 của tháng thu</p>
+            <p className="text-xs text-muted-foreground">Trống = ngày cuối tháng trước tháng thu (thu trước)</p>
           </div>
           {mode === "student" || edit ? (
             <div className="space-y-2">

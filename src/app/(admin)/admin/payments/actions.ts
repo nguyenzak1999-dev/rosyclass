@@ -13,6 +13,8 @@ import { getErrorMessage } from "@/lib/errors"
 import { notifyAdmins } from "@/lib/admin-notifications"
 import { formatVietnam } from "@/lib/curriculum"
 import { buildQrPayload, generateReceiptCode } from "@/lib/payment-receipt"
+import { buildMonthlyBillDraft, saveMonthlyPaymentRecord } from "@/lib/monthly-billing"
+import { billTotal, billingMonthKey, formatBillingMonth } from "@/lib/monthly-billing-shared"
 
 export async function upsertPayment(data: PaymentFormValues) {
   try {
@@ -214,18 +216,53 @@ export async function createPaymentForStudent(
         id: true,
         name: true,
         tuitionFee: true,
+        sessionFee: true,
         course: {
           select: {
             id: true,
             name: true,
             totalSessions: true,
             tuitionFee: true,
-            salePrice: true
+            salePrice: true,
+            sessionFee: true
           }
         }
       }
     })
     if (!cls || !cls.course) return null
+
+    // Lớp thu học phí theo tháng (có đơn giá/buổi): không thu cả khoá, mà lập phiếu tháng hiện tại (thu trước),
+    // chỉ tính các buổi từ ngày vào lớp. Các tháng sau lập theo đợt thu hằng tháng.
+    if ((cls.sessionFee ?? cls.course.sessionFee ?? 0) > 0) {
+      await prisma.classStudent.upsert({
+        where: { classId_studentId: { classId, studentId } },
+        update: { status: "ACTIVE" },
+        create: { studentId, classId, status: "ACTIVE" }
+      })
+      await prisma.student.update({ where: { id: studentId }, data: { status: "ACTIVE" } })
+      if (!createPayment) return null
+
+      const month = billingMonthKey(new Date())
+      const draft = await buildMonthlyBillDraft(studentId, month)
+      // Bé đã có phiếu tháng này (đang học lớp khác): kế toán mở phiếu đó, bấm sửa để thêm lớp mới
+      if (draft.existingPayment) {
+        notifyAdmins(
+          "Cần cập nhật phiếu thu tháng",
+          `Học viên vừa vào lớp ${cls.name} nhưng đã có phiếu tháng ${formatBillingMonth(month)}: mở phiếu và bấm "Sửa phiếu" để thêm lớp mới`,
+          `/admin/payments/${draft.existingPayment.id}`
+        )
+        return null
+      }
+      if (billTotal(draft.lines) <= 0) return null
+
+      const saved = await saveMonthlyPaymentRecord({ studentId, month, lines: draft.lines }, actorId)
+      notifyAdmins(
+        "Phiếu thu tháng mới",
+        `Học viên vào lớp ${cls.name}: đã lập phiếu tháng ${formatBillingMonth(month)} ${saved.totalAmount.toLocaleString("vi-VN")}đ`,
+        `/admin/payments/${saved.id}`
+      )
+      return saved
+    }
 
     const totalAmount = cls.tuitionFee ?? (cls.course.salePrice || cls.course.tuitionFee)
     const sessionCount = cls.course.totalSessions || 1

@@ -7,14 +7,18 @@ import {
   DAY_MS,
   formatVietnam,
   toVietnamWallClock,
+  parseVietnamDateKey,
   vietnamDateKey,
   vietnamDayRange,
   vietnamMonthBounds,
   vietnamMonthStart,
 } from "@/lib/curriculum"
+import { buildQrPayload, generateReceiptCode } from "@/lib/payment-receipt"
 import {
+  billTotal,
   billingMonthKey,
   formatBillingMonth,
+  lineTotal,
   normalizePhone,
   parseBillingSummary,
   shiftBillingMonth,
@@ -115,6 +119,7 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
       classStudents: {
         where: { status: "ACTIVE", class: { status: { in: ["ACTIVE", "UPCOMING"] } } },
         select: {
+          joinedAt: true,
           class: {
             select: {
               id: true,
@@ -133,7 +138,8 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
   })
   if (!student) throw new Error("Không tìm thấy học viên")
 
-  const classes = student.classStudents.map((item) => item.class)
+  // Ngày vào lớp (giờ VN): bé vào giữa tháng chỉ tính các buổi từ ngày đó
+  const classes = student.classStudents.map((item) => ({ ...item.class, joinedKey: vietnamDateKey(item.joinedAt) }))
   const classIds = classes.map((cls) => cls.id)
   const warnings: string[] = []
 
@@ -182,14 +188,28 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
     if (fee <= 0) warnings.push(`Lớp ${cls.name} chưa có đơn giá/buổi (sửa ở lớp hoặc khoá học)`)
 
     const monthSessions = sessions.filter(
-      (session) => session.classId === cls.id && session.status !== "CANCELLED" && session.sessionDate >= start && session.sessionDate < end
+      (session) =>
+        session.classId === cls.id &&
+        session.status !== "CANCELLED" &&
+        session.sessionDate >= start &&
+        session.sessionDate < end &&
+        vietnamDateKey(session.sessionDate) >= cls.joinedKey
     )
     // Buổi GV nước ngoài là buổi thêm, luôn lấy theo buổi đã xếp
     const foreign = monthSessions.filter((session) => session.isForeignTeacher)
     let regularDates = monthSessions.filter((session) => !session.isForeignTeacher).map((session) => session.sessionDate)
     let estimated = false
+    // Chỉ ước tính khi lớp chưa sinh buổi thường nào trong tháng (kể cả buổi trước ngày bé vào lớp)
+    const hasGeneratedRegular = sessions.some(
+      (session) =>
+        session.classId === cls.id &&
+        !session.isForeignTeacher &&
+        session.status !== "CANCELLED" &&
+        session.sessionDate >= start &&
+        session.sessionDate < end
+    )
 
-    if (regularDates.length === 0) {
+    if (!hasGeneratedRegular) {
       // Chưa sinh buổi học thường của tháng: ước tính theo lịch tuần, trong khoảng ngày bắt đầu – kết thúc của lớp
       estimated = true
       const weekdays = new Set(cls.schedules.map((schedule) => schedule.dayOfWeek))
@@ -197,6 +217,7 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
       regularDates = Array.from({ length: days }, (_, index) => vietnamDayRange(start, index).start).filter((day) => {
         if (!weekdays.has(toVietnamWallClock(day).getDay())) return false
         if (cls.startDate && vietnamDateKey(day) < vietnamDateKey(cls.startDate)) return false
+        if (vietnamDateKey(day) < cls.joinedKey) return false
         if (cls.expectedEndDate && vietnamDateKey(day) > vietnamDateKey(cls.expectedEndDate)) return false
         return true
       })
@@ -230,7 +251,8 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
         session.status !== "CANCELLED" &&
         session.sessionDate >= previousStart &&
         session.sessionDate < start &&
-        session.sessionDate <= now
+        session.sessionDate <= now &&
+        vietnamDateKey(session.sessionDate) >= cls.joinedKey
     )
     const billed = previousPlanned?.find((item) => item.classId === cls.id)
     const absentSessions = held.filter((session) => ABSENT.has(session.attendances[0]?.status ?? ""))
@@ -311,4 +333,128 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
     existingPayment: existing ? { id: existing.id, receiptCode: existing.receiptCode, status: existing.status } : null,
     warnings,
   }
+}
+
+export type MonthlyPaymentRecordInput = {
+  studentId: string
+  month: string
+  lines: BillingLineDraft[]
+  /** "YYYY-MM-DD" (giờ VN); trống = hạn mặc định */
+  dueDate?: string | null
+  note?: string | null
+  /** Có = sửa phiếu tháng đã có */
+  paymentId?: string | null
+}
+
+/**
+ * Hạn đóng mặc định, học phí thu trước: ngày cuối của tháng liền trước tháng thu.
+ * Phiếu lập muộn (vd. bé vào lớp giữa tháng) thì hạn không sớm hơn hôm nay.
+ */
+export function defaultDueDate(month: string, now = new Date()) {
+  const bounds = vietnamMonthBounds(month)
+  if (!bounds) return vietnamDayRange(now, 7).start
+  const lastDayBefore = vietnamDayRange(bounds.start, -1).start
+  const today = vietnamDayRange(now).start
+  return lastDayBefore < today ? today : lastDayBefore
+}
+
+/**
+ * Lưu phiếu thu tháng (tạo mới hoặc sửa). Không kiểm tra quyền: người gọi (server action) phải kiểm tra trước.
+ * Ảnh chụp đối chiếu luôn tính lại trên server, không tin dữ liệu trình duyệt gửi.
+ */
+export async function saveMonthlyPaymentRecord(input: MonthlyPaymentRecordInput, actorId: string): Promise<{ id: string; totalAmount: number }> {
+  const draft = await buildMonthlyBillDraft(input.studentId, input.month)
+  const lines: BillingLineDraft[] = input.lines.filter((line) => line.quantity > 0)
+  if (lines.length === 0) throw new Error("Phiếu thu cần ít nhất một dòng có số lượng > 0")
+  const totalAmount = billTotal(lines)
+  const dueDate = parseVietnamDateKey(input.dueDate) ?? defaultDueDate(input.month)
+  const billingSummary = JSON.stringify(draft.summary)
+  const lineRows = lines.map((line) => ({
+    description: line.description,
+    category: line.category,
+    quantity: line.quantity,
+    unitAmount: line.unitAmount,
+    totalAmount: lineTotal(line),
+  }))
+  // Chỉ nhận các buổi kèm bù hợp lệ của chính bé (không tin id do trình duyệt gửi)
+  const makeUpIds = [...new Set(lines.flatMap((line) => line.makeUpIds ?? []))]
+
+  const student = await prisma.student.findUnique({ where: { id: input.studentId }, select: { code: true, fullName: true } })
+  if (!student) throw new Error("Không tìm thấy học viên")
+
+  let paymentId: string
+  if (input.paymentId) {
+    const existing = await prisma.payment.findUnique({
+      where: { id: input.paymentId },
+      select: { id: true, studentId: true, billingMonth: true, paidAmount: true, status: true, receiptCode: true },
+    })
+    if (!existing || existing.studentId !== input.studentId || existing.billingMonth !== input.month) {
+      throw new Error("Không tìm thấy phiếu thu tháng cần sửa")
+    }
+    if (existing.status === "CANCELLED" || existing.status === "REFUNDED") throw new Error("Phiếu đã huỷ/hoàn tiền, không sửa được")
+    if (totalAmount < existing.paidAmount) {
+      throw new Error(`Tổng mới (${totalAmount.toLocaleString("vi-VN")}đ) nhỏ hơn số đã thu (${existing.paidAmount.toLocaleString("vi-VN")}đ)`)
+    }
+    const remainingAmount = totalAmount - existing.paidAmount
+    const receiptCode = existing.receiptCode || (await generateReceiptCode())
+
+    // D1 không có transaction tương tác: gom các câu ghi vào một batch để chạy cùng lúc.
+    // Buổi kèm bù đã trừ vào phiếu này giữ nguyên đánh dấu (dòng nạp lại khi sửa không mang makeUpIds)
+    await prisma.$transaction([
+      prisma.paymentLineItem.deleteMany({ where: { paymentId: existing.id } }),
+      prisma.paymentLineItem.createMany({ data: lineRows.map((row) => ({ ...row, paymentId: existing.id })) }),
+      prisma.payment.update({
+        where: { id: existing.id },
+        data: {
+          receiptCode,
+          totalAmount,
+          remainingAmount,
+          status: remainingAmount <= 0 ? "PAID" : existing.paidAmount > 0 ? "PARTIAL" : "UNPAID",
+          dueDate,
+          note: input.note?.trim() || null,
+          billingSummary,
+          qrPayload: buildQrPayload(receiptCode, remainingAmount, student),
+        },
+      }),
+    ])
+    paymentId = existing.id
+  } else {
+    if (draft.existingPayment) {
+      throw new Error(`Bé đã có phiếu thu tháng ${formatBillingMonth(input.month)} (${draft.existingPayment.receiptCode ?? "chưa có mã"})`)
+    }
+    const receiptCode = await generateReceiptCode()
+    const created = await prisma.payment.create({
+      data: {
+        receiptCode,
+        studentId: input.studentId,
+        classId: draft.summary.planned.length === 1 ? draft.summary.planned[0].classId : null,
+        totalAmount,
+        paidAmount: 0,
+        remainingAmount: totalAmount,
+        status: totalAmount <= 0 ? "PAID" : "UNPAID",
+        paymentMethod: "BANK_TRANSFER",
+        dueDate,
+        billingMonth: input.month,
+        billingSummary,
+        qrPayload: buildQrPayload(receiptCode, totalAmount, student),
+        bankName: process.env.PAYMENT_BANK_NAME || null,
+        bankAccountName: process.env.PAYMENT_BANK_ACCOUNT_NAME || null,
+        bankAccountNo: process.env.PAYMENT_BANK_ACCOUNT_NO || null,
+        note: input.note?.trim() || `Học phí tháng ${formatBillingMonth(input.month)}`,
+        createdById: actorId,
+        lineItems: { create: lineRows },
+      },
+      select: { id: true },
+    })
+    paymentId = created.id
+  }
+
+  if (makeUpIds.length > 0) {
+    await prisma.makeUpLesson.updateMany({
+      where: { id: { in: makeUpIds }, studentId: input.studentId, status: "MISSED", creditedPaymentId: null },
+      data: { creditedPaymentId: paymentId },
+    })
+  }
+
+  return { id: paymentId, totalAmount }
 }
