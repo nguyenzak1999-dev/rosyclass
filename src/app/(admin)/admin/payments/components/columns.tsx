@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
-import { format } from "date-fns"
+import Link from "next/link"
+import { formatVietnam } from "@/lib/curriculum"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -116,7 +117,7 @@ export const getColumns = (
     header: "Ngày tạo",
     cell: ({ row }) => {
       const date = row.getValue("createdAt") as Date
-      return <div>{format(new Date(date), "dd/MM/yyyy HH:mm")}</div>
+      return <div>{formatVietnam(new Date(date), "dd/MM/yyyy HH:mm")}</div>
     },
   },
   {
@@ -125,7 +126,8 @@ export const getColumns = (
       const payment = row.original
 
       return (
-        <div className="flex items-center justify-end">
+        // Dialog render qua portal nhưng sự kiện React vẫn nổi lên hàng: chặn để click trong form sửa không mở biên lai
+        <div className="flex items-center justify-end" onClick={(event) => event.stopPropagation()}>
           <PaymentDialog 
             initialData={payment}
             students={students} 
@@ -147,7 +149,9 @@ export const getColumns = (
               <DropdownMenuItem onClick={() => onViewReceipt(payment)}>
                 Xem & In biên lai
               </DropdownMenuItem>
-              <DropdownMenuItem>Cập nhật trạng thái</DropdownMenuItem>
+              <DropdownMenuItem render={<Link href={`/admin/payments/${payment.id}`} />}>
+                Ghi nhận thanh toán / Hoàn tiền
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

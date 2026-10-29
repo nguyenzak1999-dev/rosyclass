@@ -12,10 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { CalendarOff, ExternalLink, Presentation } from "lucide-react"
-import { format } from "date-fns"
 import Link from "next/link"
 import { DAY_OF_WEEK_LABELS } from "@/lib/schemas/schedule"
-import { lessonLabel } from "@/lib/curriculum"
+import { lessonLabel, formatVietnam, toVietnamWallClock } from "@/lib/curriculum"
 
 type Session = {
   id: string
@@ -30,6 +29,8 @@ type Session = {
   room?: { name: string } | null
   lesson?: { id: string; order: number; title: string; unit: { order: number; title: string } } | null
   _count?: { attendances: number }
+  isForeignTeacher?: boolean
+  surcharge?: number
 }
 
 const sessionStatusMap: Record<
@@ -63,9 +64,9 @@ export function SessionsList({ sessions, onCancel }: SessionsListProps) {
         const d = new Date(row.original.sessionDate)
         return (
           <div className="px-4">
-            <p className="font-medium">{format(d, "dd/MM/yyyy")}</p>
+            <p className="font-medium">{formatVietnam(d, "dd/MM/yyyy")}</p>
             <p className="text-xs text-muted-foreground">
-              {DAY_OF_WEEK_LABELS[d.getDay()]}
+              {DAY_OF_WEEK_LABELS[toVietnamWallClock(d).getDay()]}
             </p>
           </div>
         )
@@ -85,11 +86,18 @@ export function SessionsList({ sessions, onCancel }: SessionsListProps) {
     },
     {
       id: "topic",
+      // Ô tìm kiếm lọc theo cột này nên cần giá trị (tên bài + chủ đề)
+      accessorFn: (s: Session) => [s.lesson ? lessonLabel(s.lesson) : "", s.topic ?? ""].join(" "),
       header: "Bài học / chủ đề",
       cell: ({ row }: any) => {
         const s = row.original as Session
         return (
           <div className="max-w-[280px] text-sm">
+            {s.isForeignTeacher ? (
+              <Badge variant="outline" className="mb-1 border-sky-300 text-sky-700">
+                GV nước ngoài{s.surcharge ? ` · phụ thu ${s.surcharge.toLocaleString("vi-VN")}đ` : ""}
+              </Badge>
+            ) : null}
             {s.lesson ? (
               <p className="font-medium">{lessonLabel(s.lesson)}</p>
             ) : null}

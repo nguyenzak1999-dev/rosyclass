@@ -147,6 +147,8 @@ export function DataTable<TData, TValue>({
                   onClick={(e) => {
                     if (onRowClick) {
                       const target = e.target as HTMLElement
+                      // Menu/hộp thoại render qua portal nằm ngoài hàng nhưng sự kiện click React vẫn nổi lên tới đây
+                      if (!e.currentTarget.contains(target)) return
                       if (target.closest("button") || target.closest("a") || target.closest("[role='button']")) {
                         return
                       }

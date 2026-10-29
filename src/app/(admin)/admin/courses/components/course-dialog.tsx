@@ -36,27 +36,52 @@ interface CourseDialogProps {
   trigger?: React.ReactNode
 }
 
+const EMPTY_COURSE: CourseFormValues = {
+  name: "",
+  slug: "",
+  level: "STARTER",
+  description: "",
+  thumbnail: "",
+  tuitionFee: 0,
+  salePrice: null,
+  sessionFee: null,
+  targetAudience: "",
+  learningOutcomes: "",
+  totalSessions: 10,
+  sessionDurationMinutes: 90,
+  isPublished: true,
+  status: "ACTIVE",
+}
+
+/** Bản ghi DB có null ở các trường chữ (mô tả, ảnh...) mà schema chỉ nhận string: không chuẩn hoá thì nút Lưu im lặng */
+function toFormValues(course: any): CourseFormValues {
+  if (!course) return EMPTY_COURSE
+  return {
+    id: course.id,
+    name: course.name ?? "",
+    slug: course.slug ?? "",
+    level: course.level ?? "STARTER",
+    description: course.description ?? "",
+    thumbnail: course.thumbnail ?? "",
+    tuitionFee: course.tuitionFee ?? 0,
+    salePrice: course.salePrice ?? null,
+    sessionFee: course.sessionFee ?? null,
+    targetAudience: course.targetAudience ?? "",
+    learningOutcomes: course.learningOutcomes ?? "",
+    totalSessions: course.totalSessions ?? 10,
+    sessionDurationMinutes: course.sessionDurationMinutes ?? 90,
+    isPublished: course.isPublished ?? false,
+    status: course.status ?? "ACTIVE",
+  }
+}
+
 export function CourseDialog({ course, trigger }: CourseDialogProps) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, reset } = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema) as any,
-    defaultValues: course || {
-      name: "",
-      slug: "",
-      level: "STARTER",
-      description: "",
-      thumbnail: "",
-      tuitionFee: 0,
-      salePrice: null,
-      targetAudience: "",
-      learningOutcomes: "",
-      totalSessions: 10,
-      sessionDurationMinutes: 90,
-      isPublished: true,
-      status: "ACTIVE",
-    }
+    defaultValues: toFormValues(course)
   })
 
   const isPublished = watch("isPublished")
@@ -64,29 +89,12 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
   const status = watch("status")
   const tuitionFeeVal = watch("tuitionFee")
   const salePriceVal = watch("salePrice")
+  const sessionFeeVal = watch("sessionFee")
 
   // Reset form when dialog opens with new course data
   React.useEffect(() => {
     if (open) {
-      if (course) {
-        reset(course)
-      } else {
-        reset({
-          name: "",
-          slug: "",
-          level: "STARTER",
-          description: "",
-          thumbnail: "",
-          salePrice: null,
-          targetAudience: "",
-          learningOutcomes: "",
-          tuitionFee: 0,
-          totalSessions: 10,
-          sessionDurationMinutes: 90,
-          isPublished: true,
-          status: "ACTIVE",
-        })
-      }
+      reset(toFormValues(course))
     }
   }, [open, course, reset])
 
@@ -111,7 +119,13 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
         <DialogHeader>
           <DialogTitle>{course ? "Sửa khóa học" : "Thêm khóa học mới"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit, (formErrors) => {
+            const first = Object.values(formErrors)[0]
+            toast.error(first?.message ? String(first.message) : "Dữ liệu chưa hợp lệ")
+          })}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Tên khóa học</Label>
@@ -182,9 +196,25 @@ export function CourseDialog({ course, trigger }: CourseDialogProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="targetAudience">Đối tượng học viên</Label>
-              <Input id="targetAudience" {...register("targetAudience")} placeholder="Học sinh cấp 2, người đi làm..." />
+              <Label htmlFor="sessionFee">Đơn giá/buổi – thu theo tháng</Label>
+              <Input
+                id="sessionFee"
+                type="text"
+                inputMode="numeric"
+                value={sessionFeeVal !== undefined && sessionFeeVal !== null ? formatMoneyInput(sessionFeeVal) : ""}
+                onChange={(e) => {
+                  const cleanVal = e.target.value.replace(/\D/g, "")
+                  setValue("sessionFee", cleanVal ? parseInt(cleanVal, 10) : null, { shouldValidate: true, shouldDirty: true })
+                }}
+                placeholder="VD: 150.000"
+              />
+              {errors.sessionFee && <p className="text-sm text-destructive">{errors.sessionFee.message}</p>}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="targetAudience">Đối tượng học viên</Label>
+            <Input id="targetAudience" {...register("targetAudience")} placeholder="Học sinh cấp 2, người đi làm..." />
           </div>
 
           <div className="space-y-2">

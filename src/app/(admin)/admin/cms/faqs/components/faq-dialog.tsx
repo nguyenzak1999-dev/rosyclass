@@ -26,17 +26,37 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { upsertFaq, type FaqFormValues } from "../actions"
 
+const statusItems = [
+  { value: "ACTIVE", label: "Đang hiện" },
+  { value: "INACTIVE", label: "Ẩn" },
+  { value: "DRAFT", label: "Nháp" },
+  { value: "PUBLISHED", label: "Xuất bản" },
+]
+
+function toFormValues(faq?: Faq): FaqFormValues {
+  return faq
+    ? {
+        id: faq.id,
+        question: faq.question,
+        answer: faq.answer,
+        category: faq.category ?? "",
+        position: faq.position,
+        status: faq.status,
+      }
+    : { question: "", answer: "", category: "", position: 0, status: "ACTIVE" }
+}
+
 export function FaqDialog({ faq }: { faq?: Faq }) {
   const [open, setOpen] = useState(false)
   const { register, handleSubmit, setValue, watch, reset, formState } = useForm<FaqFormValues>({
-    defaultValues: faq || {
-      question: "",
-      answer: "",
-      category: "",
-      position: 0,
-      status: "ACTIVE",
-    },
+    defaultValues: toFormValues(faq),
   })
+
+  // Mỗi lần mở lấy lại dữ liệu mới nhất (sau khi lưu, form không được giữ giá trị cũ)
+  const handleOpenChange = (next: boolean) => {
+    if (next) reset(toFormValues(faq))
+    setOpen(next)
+  }
 
   const status = watch("status")
 
@@ -45,14 +65,13 @@ export function FaqDialog({ faq }: { faq?: Faq }) {
     if (result.success) {
       toast.success(faq ? "Đã cập nhật FAQ" : "Đã tạo FAQ")
       setOpen(false)
-      reset()
     } else {
       toast.error(result.error)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           faq ? (
@@ -89,7 +108,7 @@ export function FaqDialog({ faq }: { faq?: Faq }) {
             </div>
             <div className="space-y-2">
               <Label>Trạng thái</Label>
-              <Select value={status} onValueChange={(value) => setValue("status", value as FaqFormValues["status"])}>
+              <Select value={status} items={statusItems} onValueChange={(value) => setValue("status", value as FaqFormValues["status"])}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

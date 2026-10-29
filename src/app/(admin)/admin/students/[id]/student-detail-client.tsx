@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Activity, Calendar, CreditCard, GraduationCap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 
 import { PersonalInfoTab } from "./tabs/personal-info-tab"
 import { ClassesTab } from "./tabs/classes-tab"
@@ -14,13 +14,15 @@ import { ScheduleTab } from "./tabs/schedule-tab"
 import { AttendanceTab } from "./tabs/attendance-tab"
 import { ScoresTab } from "./tabs/scores-tab"
 import { PaymentsTab } from "./tabs/payments-tab"
-import { NotesTab } from "./tabs/notes-tab"
+import { NotesTab, type StudentNote } from "./tabs/notes-tab"
 import { DocumentsTab } from "./tabs/documents-tab"
 import { ActivityTab } from "./tabs/activity-tab"
 
 interface StudentDetailClientProps {
   student: any
   availableClasses?: any[]
+  notes?: StudentNote[]
+  siblings?: { id: string; fullName: string; code: string | null }[]
 }
 
 const statusLabelMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -32,7 +34,7 @@ const statusLabelMap: Record<string, { label: string; variant: "default" | "seco
   DROPPED: { label: "Đã nghỉ", variant: "destructive" },
 }
 
-export function StudentDetailClient({ student, availableClasses = [] }: StudentDetailClientProps) {
+export function StudentDetailClient({ student, availableClasses = [], notes = [], siblings = [] }: StudentDetailClientProps) {
   const activeClass = student.classStudents?.find((cs: any) => cs.status === 'ACTIVE')
   const statusCfg = statusLabelMap[student.status] || { label: student.status, variant: "outline" }
 
@@ -128,7 +130,7 @@ export function StudentDetailClient({ student, availableClasses = [] }: StudentD
                 </CardHeader>
                 <CardContent>
                   <div className="text-xl font-bold">
-                    {student.joinedAt ? format(new Date(student.joinedAt), "dd/MM/yyyy") : "—"}
+                    {student.joinedAt ? formatVietnam(new Date(student.joinedAt), "dd/MM/yyyy") : "—"}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {student.parent ? `Phụ huynh: ${student.parent.fullName}` : "Chưa liên kết phụ huynh"}
@@ -151,6 +153,23 @@ export function StudentDetailClient({ student, availableClasses = [] }: StudentD
                       <p className="font-medium">{student.parent.fullName}</p>
                       <p className="text-muted-foreground">{student.parent.phone} • {student.parent.relationship || "Phụ huynh"}</p>
                       {student.parent.email && <p className="text-muted-foreground">{student.parent.email}</p>}
+                      <div className="pt-2">
+                        <p className="text-xs font-medium text-muted-foreground">Anh chị em (cùng SĐT phụ huynh)</p>
+                        {siblings.length > 0 ? (
+                          <ul className="mt-1 space-y-0.5">
+                            {siblings.map((sibling) => (
+                              <li key={sibling.id}>
+                                <Link href={`/admin/students/${sibling.id}`} className="text-primary hover:underline">
+                                  {sibling.fullName}
+                                </Link>
+                                {sibling.code ? <span className="text-muted-foreground"> · {sibling.code}</span> : null}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-muted-foreground italic">Chưa có</p>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">Chưa liên kết thông tin phụ huynh</p>
@@ -192,7 +211,7 @@ export function StudentDetailClient({ student, availableClasses = [] }: StudentD
 
           {/* TAB 8: Notes */}
           <TabsContent value="notes">
-            <NotesTab student={student} />
+            <NotesTab student={student} notes={notes} />
           </TabsContent>
 
           {/* TAB 9: Documents */}

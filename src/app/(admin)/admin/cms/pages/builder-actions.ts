@@ -31,6 +31,9 @@ function revalidatePagePaths(...slugs: string[]) {
   revalidatePath("/admin/cms/pages")
 }
 
+const CONFLICT_ERROR =
+  "Trang vừa được người khác lưu. Hãy tải lại trang để xem bản mới trước khi lưu, tránh ghi đè thay đổi của họ."
+
 function slugError(slug: string, currentSlug?: string) {
   if (slug === currentSlug) return null
   if (isReservedSlug(slug)) return `Slug "${slug}" đã được hệ thống sử dụng, vui lòng chọn slug khác`
@@ -69,10 +72,7 @@ export async function savePageBuilder(input: {
     }
 
     if (input.expectedUpdatedAt && existing.updatedAt.toISOString() !== input.expectedUpdatedAt) {
-      return {
-        success: false,
-        error: "Trang vừa được người khác lưu. Hãy tải lại trang để xem bản mới trước khi lưu, tránh ghi đè thay đổi của họ.",
-      }
+      return { success: false, error: CONFLICT_ERROR }
     }
 
     const meta = metaResult.data
@@ -128,11 +128,18 @@ export async function savePageBuilder(input: {
 }
 
 /** Gỡ trang khỏi website: chuyển về DRAFT, giữ nội dung mới nhất (bản nháp nếu có) */
-export async function unpublishPage(id: string): Promise<ActionResult<{ page: SavedPageState }>> {
+export async function unpublishPage(
+  id: string,
+  // updatedAt của bản editor đang mở; gỡ xuất bản sẽ chép bản nháp đè lên nội dung nên cũng phải chặn ghi đè
+  expectedUpdatedAt?: string
+): Promise<ActionResult<{ page: SavedPageState }>> {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
     const existing = await prisma.page.findUnique({ where: { id: z.string().min(1).parse(id) } })
     if (!existing || existing.slug === SITE_SETTINGS_SLUG) return { success: false, error: "Không tìm thấy trang" }
+    if (expectedUpdatedAt && existing.updatedAt.toISOString() !== expectedUpdatedAt) {
+      return { success: false, error: CONFLICT_ERROR }
+    }
 
     const current = parsePageDocument(existing.content)
     const doc: PageDocument = { version: 1, blocks: current.draft?.blocks ?? current.blocks }

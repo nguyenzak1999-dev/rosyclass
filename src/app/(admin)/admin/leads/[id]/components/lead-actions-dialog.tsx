@@ -27,6 +27,7 @@ import {
 } from "@/app/(admin)/admin/leads/actions"
 import { type ConvertLeadToStudentFormValues } from "@/lib/schemas/lead"
 import { toast } from "sonner"
+import { vietnamDateKey, vietnamDayRange } from "@/lib/curriculum"
 
 interface LeadActionsDialogProps {
   open: "book" | "convert" | null
@@ -76,14 +77,14 @@ export function LeadActionsDialog({
       setConvertStatus("WAITING_CLASS")
     }
     if (open === "book") {
-      const tomorrow = new Date()
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      setTestDate(tomorrow.toISOString().split("T")[0])
+      // "Ngày mai" theo giờ VN (toISOString là ngày UTC, lệch 1 ngày từ 0h–7h sáng)
+      setTestDate(vietnamDateKey(vietnamDayRange(new Date(), 1).start))
       setTestNotes("")
     }
   }, [open, lead])
 
   const handleBook = async () => {
+    if (bookSubmitting) return
     if (!testDate) {
       toast.error("Vui lòng chọn ngày test")
       return
@@ -105,6 +106,7 @@ export function LeadActionsDialog({
   }
 
   const handleConvert = async () => {
+    if (convertSubmitting) return
     setConvertSubmitting(true)
     const res = await convertLeadToStudent({
       leadId: lead.id,
@@ -200,6 +202,12 @@ export function LeadActionsDialog({
                     value={convertStatus}
                     onValueChange={(v) => setConvertStatus(v as ConvertLeadToStudentFormValues["status"])}
                     disabled={convertSubmitting}
+                    items={[
+                      { value: "WAITING_CLASS", label: "Chờ xếp lớp" },
+                      { value: "ACTIVE", label: "Đang học" },
+                      { value: "RESERVED", label: "Bảo lưu" },
+                      { value: "PAUSED", label: "Tạm dừng" },
+                    ]}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -252,6 +260,10 @@ export function LeadActionsDialog({
                     value={convertParentId}
                     onValueChange={(v) => setConvertParentId(v as string)}
                     disabled={convertSubmitting}
+                    items={[
+                      { value: "none", label: "— Không liên kết —" },
+                      ...parents.map((p) => ({ value: p.id, label: `${p.fullName} (${p.phone})` })),
+                    ]}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Chọn phụ huynh" />

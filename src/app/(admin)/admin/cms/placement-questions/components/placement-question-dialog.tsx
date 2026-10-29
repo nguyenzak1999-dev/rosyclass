@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import type { PlacementQuestion } from "@/generated/prisma/client"
 import { Pencil, Plus } from "lucide-react"
@@ -26,9 +26,9 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { upsertPlacementQuestion, type PlacementQuestionFormValues } from "../actions"
-import { KID_COURSE_LEVELS } from "@/lib/course-levels"
+import { courseLevelOptions } from "@/lib/course-levels"
 
-const courseLevels = KID_COURSE_LEVELS.map((level) => [level.value, level.label] as const)
+const answerItems = ["A", "B", "C", "D"].map((label, index) => ({ value: String(index), label }))
 
 function parseOptions(question?: PlacementQuestion) {
   if (!question) return ["", "", "", ""]
@@ -40,11 +40,9 @@ function parseOptions(question?: PlacementQuestion) {
   }
 }
 
-export function PlacementQuestionDialog({ question }: { question?: PlacementQuestion }) {
-  const [open, setOpen] = useState(false)
-  const options = useMemo(() => parseOptions(question), [question])
-  const { register, handleSubmit, setValue, watch, reset, formState } = useForm<PlacementQuestionFormValues>({
-    defaultValues: question
+function toFormValues(question?: PlacementQuestion): PlacementQuestionFormValues {
+  const options = parseOptions(question)
+  return question
       ? {
           id: question.id,
           type: question.type,
@@ -69,22 +67,37 @@ export function PlacementQuestionDialog({ question }: { question?: PlacementQues
           order: 0,
           level: null,
           isPublished: true,
-        },
+        }
+}
+
+export function PlacementQuestionDialog({ question }: { question?: PlacementQuestion }) {
+  const [open, setOpen] = useState(false)
+  const { register, handleSubmit, setValue, watch, reset, formState } = useForm<PlacementQuestionFormValues>({
+    defaultValues: toFormValues(question),
   })
+
+  // Mỗi lần mở lấy lại dữ liệu mới nhất (sau khi lưu, form không được giữ giá trị cũ)
+  const handleOpenChange = (next: boolean) => {
+    if (next) reset(toFormValues(question))
+    setOpen(next)
+  }
+
+  const level = watch("level")
+  // Cấp độ trẻ em, cộng cấp độ cũ nếu câu hỏi đang dùng (để không hiện mã thô)
+  const levelItems = [{ value: "none", label: "Không gắn cấp độ" }, ...courseLevelOptions(level)]
 
   const onSubmit = async (values: PlacementQuestionFormValues) => {
     const result = await upsertPlacementQuestion(values)
     if (result.success) {
       toast.success(question ? "Đã cập nhật câu hỏi" : "Đã tạo câu hỏi")
       setOpen(false)
-      reset()
     } else {
       toast.error(result.error)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           question ? (
@@ -114,16 +127,16 @@ export function PlacementQuestionDialog({ question }: { question?: PlacementQues
             <div className="space-y-2">
               <Label>Cấp độ gợi ý</Label>
               <Select
-                value={watch("level") || "none"}
+                value={level || "none"}
+                items={levelItems}
                 onValueChange={(value) => setValue("level", value === "none" ? null : value as PlacementQuestionFormValues["level"])}
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Không gắn cấp độ</SelectItem>
-                  {courseLevels.map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  {levelItems.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -154,7 +167,7 @@ export function PlacementQuestionDialog({ question }: { question?: PlacementQues
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Đáp án đúng</Label>
-              <Select value={String(watch("correctIndex"))} onValueChange={(value) => setValue("correctIndex", Number(value))}>
+              <Select value={String(watch("correctIndex"))} items={answerItems} onValueChange={(value) => setValue("correctIndex", Number(value))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

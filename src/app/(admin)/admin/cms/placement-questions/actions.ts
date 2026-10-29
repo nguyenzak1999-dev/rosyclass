@@ -14,8 +14,8 @@ const placementQuestionSchema = z.object({
   optionB: z.string().min(1, "Lựa chọn B là bắt buộc"),
   optionC: z.string().min(1, "Lựa chọn C là bắt buộc"),
   optionD: z.string().min(1, "Lựa chọn D là bắt buộc"),
-  correctIndex: z.coerce.number().min(0).max(3),
-  order: z.coerce.number().default(0),
+  correctIndex: z.coerce.number().int().min(0, "Đáp án đúng không hợp lệ").max(3, "Đáp án đúng không hợp lệ"),
+  order: z.coerce.number().int("Thứ tự phải là số nguyên").default(0),
   level: z.enum([
     "KIDS",
     "STARTER",
@@ -38,7 +38,9 @@ export type PlacementQuestionFormValues = z.infer<typeof placementQuestionSchema
 export async function upsertPlacementQuestion(data: PlacementQuestionFormValues) {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
-    const parsed = placementQuestionSchema.parse(data)
+    const result = placementQuestionSchema.safeParse(data)
+    if (!result.success) return { success: false, error: result.error.issues[0]?.message || "Dữ liệu câu hỏi không hợp lệ" }
+    const parsed = result.data
     const payload = {
       type: parsed.type,
       question: parsed.question,

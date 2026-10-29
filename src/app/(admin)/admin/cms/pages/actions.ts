@@ -17,8 +17,16 @@ export async function upsertPage(data: PageFormValues) {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
     const parsedData = pageSchema.parse(data)
-    const { id, content, ...fields } = parsedData
-    const slug = fields.slug.trim().toLowerCase()
+    const { id, content, ...rest } = parsedData
+    const slug = rest.slug.trim().toLowerCase()
+    // Ô SEO để trống lưu null (giống page builder) để trang dùng tiêu đề/mô tả mặc định
+    const fields = {
+      ...rest,
+      title: rest.title.trim(),
+      seoTitle: rest.seoTitle?.trim() || null,
+      seoDescription: rest.seoDescription?.trim() || null,
+    }
+    if (!fields.title) return { success: false, error: "Tiêu đề là bắt buộc" }
 
     if (!PAGE_SLUG_RE.test(slug)) {
       return { success: false, error: "Slug chỉ gồm chữ thường không dấu, số và dấu gạch ngang" }

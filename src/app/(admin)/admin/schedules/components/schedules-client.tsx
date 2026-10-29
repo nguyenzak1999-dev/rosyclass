@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { DataTable } from "@/components/ui/data-table"
 import { columns, type ScheduleData } from "./columns"
 import { Input } from "@/components/ui/input"
@@ -110,7 +110,7 @@ export function SchedulesClient({ schedules }: SchedulesClientProps) {
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                           <Calendar className="h-3.5 w-3.5 text-primary" />
-                          <span>{format(new Date(schedule.sessionDate), "dd/MM/yyyy")}</span>
+                          <span>{formatVietnam(new Date(schedule.sessionDate), "dd/MM/yyyy")}</span>
                         </div>
                         <h3 className="font-semibold text-base truncate text-primary mt-1" onClick={() => router.push(`/admin/classes/${schedule.class?.id}`)}>
                           {schedule.class?.name || "—"}

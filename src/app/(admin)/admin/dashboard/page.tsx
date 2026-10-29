@@ -10,26 +10,20 @@ import { StudentGrowthChart } from "./components/student-growth-chart"
 import { TeacherHoursChart } from "./components/teacher-hours-chart"
 import { Users, BookOpen, DollarSign, BarChart2 } from "lucide-react"
 import { AGE_GROUP_LABELS, courseAgeGroup } from "@/lib/course-levels"
+import { formatVietnam, toVietnamWallClock, vietnamDateKey, vietnamDayRange, vietnamMonthStart } from "@/lib/curriculum"
 
 const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"]
 
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
-}
-
-function monthStart(date: Date, offset = 0) {
-  return new Date(date.getFullYear(), date.getMonth() + offset, 1)
-}
-
 function buildMonthSeries(now: Date, count: number) {
   return Array.from({ length: count }, (_, index) => {
-    const date = monthStart(now, index - count + 1)
+    // Theo giờ VN: Worker chạy UTC nên tính tháng theo giờ máy sẽ lệch 7 tiếng
+    const date = vietnamMonthStart(now, index - count + 1)
     return {
-      key: `${date.getFullYear()}-${date.getMonth()}`,
-      label: `T${date.getMonth() + 1}`,
-      longLabel: `Tháng ${date.getMonth() + 1}`,
+      key: formatVietnam(date, "yyyy-MM"),
+      label: `T${formatVietnam(date, "M")}`,
+      longLabel: `Tháng ${formatVietnam(date, "M")}`,
       start: date,
-      end: monthStart(date, 1),
+      end: vietnamMonthStart(date, 1),
     }
   })
 }
@@ -47,16 +41,16 @@ function getCourseGroupLabel(level?: string | null) {
 
 export default async function DashboardPage() {
   const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const startOfMonth = vietnamMonthStart(now)
   const monthSeries = buildMonthSeries(now, 12)
   const sixMonthSeries = buildMonthSeries(now, 6)
   const twelveMonthsAgo = monthSeries[0].start
   const sevenDays = Array.from({ length: 7 }, (_, index) => {
-    const date = startOfDay(new Date(now.getTime() - (6 - index) * 24 * 60 * 60 * 1000))
+    const date = vietnamDayRange(now, index - 6).start
     return {
       date,
-      label: dayNames[date.getDay()],
-      key: date.toISOString().slice(0, 10),
+      label: dayNames[toVietnamWallClock(date).getDay()],
+      key: vietnamDateKey(date),
     }
   })
 
@@ -75,8 +69,12 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     prisma.student.count({ where: { status: "ACTIVE" } }),
     prisma.class.count({ where: { status: "ACTIVE" } }),
+    // Doanh thu = tiền đã thu (kể cả phiếu mới thu một phần), không tính phiếu đã hoàn / huỷ
     prisma.payment.aggregate({
-      where: { status: "PAID", paymentDate: { gte: startOfMonth } },
+      where: {
+        status: { in: ["PAID", "PARTIAL"] },
+        OR: [{ paymentDate: { gte: startOfMonth } }, { paymentDate: null, createdAt: { gte: startOfMonth } }],
+      },
       _sum: { paidAmount: true }
     }),
     prisma.attendance.groupBy({
@@ -101,9 +99,9 @@ export default async function DashboardPage() {
     }),
     prisma.payment.findMany({
       where: {
-        createdAt: {
-          gte: twelveMonthsAgo,
-        },
+        status: { in: ["PAID", "PARTIAL"] },
+        // Gom theo ngày thu: phiếu tạo trước 12 tháng nhưng mới thu vẫn phải được tính
+        OR: [{ paymentDate: { gte: twelveMonthsAgo } }, { paymentDate: null, createdAt: { gte: twelveMonthsAgo } }],
       },
       include: {
         course: {
@@ -114,9 +112,9 @@ export default async function DashboardPage() {
       },
     }),
     prisma.payment.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
+      // Giao dịch = lần thu tiền gần nhất (phiếu chưa thu đồng nào thì hiện 0đ, không có ý nghĩa)
+      where: { paidAmount: { gt: 0 }, status: { in: ["PAID", "PARTIAL"] } },
+      orderBy: [{ paymentDate: "desc" }, { updatedAt: "desc" }],
       take: 5,
       include: {
         student: {
@@ -149,6 +147,7 @@ export default async function DashboardPage() {
       },
     }),
     prisma.classStudent.findMany({
+      where: { status: "ACTIVE" },
       include: {
         class: {
           include: {
@@ -163,8 +162,10 @@ export default async function DashboardPage() {
     }),
     prisma.classSession.findMany({
       where: {
+        // Giờ dạy đã diễn ra: không cộng các buổi đã lên lịch trong tương lai
         sessionDate: {
           gte: twelveMonthsAgo,
+          lt: vietnamDayRange(now, 1).start,
         },
         status: {
           in: ["SCHEDULED", "COMPLETED"],
@@ -184,7 +185,10 @@ export default async function DashboardPage() {
     }),
   ])
 
-  const presentCount = weeklyAttendance.find(a => a.status === "PRESENT")?._count ?? 0
+  // Đi muộn vẫn tính là có mặt (giống biểu đồ chuyên cần bên dưới)
+  const presentCount = weeklyAttendance
+    .filter((a) => a.status === "PRESENT" || a.status === "LATE")
+    .reduce((sum, a) => sum + a._count, 0)
   const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0
 
   const revenueAmount = monthlyRevenue._sum.paidAmount ?? 0
@@ -251,7 +255,7 @@ export default async function DashboardPage() {
 
   const realAttendanceData = sevenDays.map((day) => {
     const dayRows = weeklyAttendanceRows.filter(
-      (attendance) => startOfDay(attendance.session.sessionDate).toISOString().slice(0, 10) === day.key
+      (attendance) => vietnamDateKey(attendance.session.sessionDate) === day.key
     )
     const present = dayRows.filter((attendance) => attendance.status === "PRESENT" || attendance.status === "LATE").length
     return {
@@ -310,7 +314,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-chart-2">{revenueFormatted}</div>
-            <p className="text-xs text-muted-foreground">Tháng {now.getMonth() + 1}/{now.getFullYear()}</p>
+            <p className="text-xs text-muted-foreground">Tháng {formatVietnam(now, "M/yyyy")}</p>
           </CardContent>
         </Card>
         <Card>

@@ -97,6 +97,9 @@ export function PageBuilderEditor({
   const [saving, setSaving] = useState<"draft" | "publish" | "unpublish" | null>(null)
   const [confirmUnpublish, setConfirmUnpublish] = useState(false)
   const [scrollTarget, setScrollTarget] = useState<{ id: string; nonce: number } | null>(null)
+  // Khoá đồng bộ: bấm 2 lần/Ctrl+S liên tiếp trước khi state "saving" kịp render sẽ gửi 2 request,
+  // request sau bị báo nhầm là "người khác vừa lưu"
+  const savingRef = useRef(false)
 
   const dirty = useMemo(() => snapshotOf(blocks, meta) !== saved, [blocks, meta, saved])
   const selectedBlock = blocks.find((block) => block.id === rawSelectedId) ?? null
@@ -207,7 +210,7 @@ export function PageBuilderEditor({
   // ---------------------------------------------------------------------------
 
   const save = async (mode: "draft" | "publish") => {
-    if (readOnly || saving) return
+    if (readOnly || savingRef.current) return
     const blocksResult = validateBlocks(blocks)
     if (!blocksResult.success) {
       toast.error(blocksResult.error)
@@ -223,6 +226,7 @@ export function PageBuilderEditor({
 
     const metaAtSave = meta
     const normalizedMeta = metaResult.data
+    savingRef.current = true
     setSaving(mode)
     try {
       const result = await savePageBuilder({ id: page.id, meta: normalizedMeta, blocks, mode, expectedUpdatedAt: baseUpdatedAt })
@@ -245,14 +249,17 @@ export function PageBuilderEditor({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Không thể lưu trang")
     } finally {
+      savingRef.current = false
       setSaving(null)
     }
   }
 
   const handleUnpublish = async () => {
+    if (savingRef.current) return
+    savingRef.current = true
     setSaving("unpublish")
     try {
-      const result = await unpublishPage(page.id)
+      const result = await unpublishPage(page.id, baseUpdatedAt)
       if (!result.success) {
         toast.error(result.error)
         return
@@ -261,7 +268,10 @@ export function PageBuilderEditor({
       setBaseUpdatedAt(result.page.updatedAt)
       toast.success("Đã gỡ trang khỏi website")
       setConfirmUnpublish(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể gỡ xuất bản trang")
     } finally {
+      savingRef.current = false
       setSaving(null)
     }
   }

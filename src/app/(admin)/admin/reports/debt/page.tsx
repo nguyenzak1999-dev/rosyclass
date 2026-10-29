@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { AlertCircle, TrendingDown, CalendarClock } from "lucide-react"
-import { format, differenceInDays } from "date-fns"
+import { differenceInDays } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import Link from "next/link"
 
@@ -183,7 +184,7 @@ export default async function DebtReportPage() {
                         <p className="text-xs text-muted-foreground">
                           {p.class?.name || p.course?.name || "—"} · Hạn:{" "}
                           {p.dueDate
-                            ? format(new Date(p.dueDate), "dd/MM/yyyy", { locale: vi })
+                            ? formatVietnam(new Date(p.dueDate), "dd/MM/yyyy", { locale: vi })
                             : "—"}
                         </p>
                       </div>

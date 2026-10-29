@@ -9,6 +9,8 @@ import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
+const ENTITY_STATUSES = ["ACTIVE", "INACTIVE", "DRAFT", "PUBLISHED"] as const
+
 interface PageProps {
   searchParams: Promise<{
     status?: string
@@ -19,8 +21,10 @@ export default async function BlogAdminPage({ searchParams }: PageProps) {
   const filters = await searchParams
 
   const where: Prisma.BlogPostWhereInput = {}
-  if (filters.status) {
-    where.status = filters.status as Prisma.EnumEntityStatusFilter
+  // Giá trị lạ trên URL (vd: ?status=abc) làm Prisma ném lỗi enum, nên chỉ lọc khi hợp lệ
+  const status = ENTITY_STATUSES.find((value) => value === filters.status)
+  if (status) {
+    where.status = status
   }
 
   const posts = await prisma.blogPost.findMany({
@@ -50,7 +54,7 @@ export default async function BlogAdminPage({ searchParams }: PageProps) {
         </Button>
       </div>
 
-      <BlogFilters currentStatus={filters.status || ""} />
+      <BlogFilters currentStatus={status || ""} />
 
       <DataTable
         columns={columns}

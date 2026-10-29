@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
+import { formatVietnam, VIETNAM_TIME_ZONE } from "@/lib/curriculum"
 
 interface ExportExcelButtonProps {
   data: any[]
@@ -18,7 +19,7 @@ function formatVND(amount: number): string {
 
 function formatDate(value: Date | string | null): string {
   if (!value) return "—"
-  return new Intl.DateTimeFormat("vi-VN").format(new Date(value))
+  return new Intl.DateTimeFormat("vi-VN", { timeZone: VIETNAM_TIME_ZONE }).format(new Date(value))
 }
 
 export function ExportExcelButton({ data }: ExportExcelButtonProps) {
@@ -30,6 +31,7 @@ export function ExportExcelButton({ data }: ExportExcelButtonProps) {
       }
       const XLSX = await import("xlsx")
       const exportData = data.map((p) => ({
+        "Mã phiếu": p.receiptCode || p.id,
         "Học viên": p.student?.fullName || "—",
         "Lớp": p.class?.name || "—",
         "Khóa học": p.course?.name || "—",
@@ -44,6 +46,7 @@ export function ExportExcelButton({ data }: ExportExcelButtonProps) {
 
       const ws = XLSX.utils.json_to_sheet(exportData)
       ws["!cols"] = [
+        { wch: 22 }, // Mã phiếu
         { wch: 25 }, // HV
         { wch: 25 }, // Lớp
         { wch: 30 }, // Khóa
@@ -58,10 +61,7 @@ export function ExportExcelButton({ data }: ExportExcelButtonProps) {
 
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, ws, "Thanh toán")
-      const day = String(new Date().getDate()).padStart(2, "0")
-      const month = String(new Date().getMonth() + 1).padStart(2, "0")
-      const year = new Date().getFullYear()
-      XLSX.writeFile(wb, `Thanh-toan_${day}-${month}-${year}.xlsx`)
+      XLSX.writeFile(wb, `Thanh-toan_${formatVietnam(new Date(), "dd-MM-yyyy")}.xlsx`)
       toast.success(`Đã xuất ${data.length} phiếu thanh toán`)
     } catch (error) {
       console.error("Export error:", error)

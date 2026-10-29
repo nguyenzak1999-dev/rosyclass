@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { startOfMonth, endOfMonth, subMonths, addMonths, format } from "date-fns"
+import { formatVietnam, vietnamMonthStart } from "@/lib/curriculum"
 import { TrendingUp, Wallet, BarChart3 } from "lucide-react"
 import { RevenueTrendChart } from "../components/revenue-trend-chart"
 
@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic"
 
 function buildMonthSeries(now: Date, count: number) {
   return Array.from({ length: count }, (_, index) => {
-    const start = startOfMonth(addMonths(subMonths(now, count - 1), index))
-    const end = addMonths(start, 1)
-    return { start, end, label: `T${start.getMonth() + 1}` }
+    const start = vietnamMonthStart(now, index - (count - 1))
+    const end = vietnamMonthStart(now, index - (count - 1) + 1)
+    return { start, end, label: `T${formatVietnam(start, "M")}` }
   })
 }
 
@@ -20,8 +20,9 @@ export default async function RevenueReportPage() {
   const months = buildMonthSeries(now, 6)
 
   const [allPayments, courses] = await Promise.all([
+    // Phiếu đã huỷ không phát sinh doanh thu
     prisma.payment.findMany({
-      where: { createdAt: { gte: months[0].start } },
+      where: { createdAt: { gte: months[0].start }, status: { not: "CANCELLED" } },
       include: {
         student: { select: { id: true, fullName: true } },
         course: { select: { name: true } },
@@ -64,7 +65,7 @@ export default async function RevenueReportPage() {
   // Top HV đóng nhiều nhất
   const studentPaidMap = new Map<string, { name: string; paid: number; count: number }>()
   for (const p of allPayments) {
-    if (p.paidAmount <= 0) continue
+    if (p.paidAmount <= 0 || p.status === "REFUNDED") continue
     const key = p.student.id
     const existing = studentPaidMap.get(key) || {
       name: p.student.fullName,
@@ -82,7 +83,7 @@ export default async function RevenueReportPage() {
   // Doanh thu theo khóa học
   const courseRevenueMap = new Map<string, { name: string; revenue: number }>()
   for (const p of allPayments) {
-    if (!p.course) continue
+    if (!p.course || p.status === "REFUNDED") continue
     const key = p.course.name
     const existing = courseRevenueMap.get(key) || { name: key, revenue: 0 }
     existing.revenue += p.paidAmount
@@ -97,7 +98,7 @@ export default async function RevenueReportPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Báo cáo doanh thu</h1>
         <p className="text-sm text-muted-foreground">
-          Tổng quan 6 tháng gần nhất (từ {format(months[0].start, "MM/yyyy")} đến {format(months[months.length - 1].start, "MM/yyyy")})
+          Tổng quan 6 tháng gần nhất (từ {formatVietnam(months[0].start, "MM/yyyy")} đến {formatVietnam(months[months.length - 1].start, "MM/yyyy")})
         </p>
       </div>
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
+import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
@@ -125,8 +126,12 @@ function ActionsCell({ course }: { course: CourseData }) {
             Sao chép ID khóa học
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>Xem chi tiết</DropdownMenuItem>
-          <DropdownMenuItem>Quản lý lớp học</DropdownMenuItem>
+          <DropdownMenuItem render={<a href={`/khoa-hoc/${course.slug}`} target="_blank" rel="noreferrer" />}>
+            Xem trên website
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href={`/admin/classes?courseId=${course.id}`} />}>
+            Quản lý lớp học
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"

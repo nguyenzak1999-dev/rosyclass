@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import SessionDetailClient from "./session-detail-client"
-import { lessonLabel } from "@/lib/curriculum"
+import { lessonLabel, formatVietnamDate } from "@/lib/curriculum"
 
 export default async function SessionDetailPage({
   params,
@@ -95,7 +95,7 @@ export default async function SessionDetailPage({
               {session.class.name}
             </Link>
             {" · "}
-            {new Date(session.sessionDate).toLocaleDateString("vi-VN")}
+            {formatVietnamDate(session.sessionDate)}
             {" · "}
             {session.startTime} - {session.endTime}
           </p>

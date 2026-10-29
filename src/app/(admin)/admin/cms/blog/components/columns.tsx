@@ -5,7 +5,7 @@ import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { ArrowUpDown, ExternalLink, Pencil, Trash2 } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -61,7 +61,7 @@ export const columns: ColumnDef<BlogPostData>[] = [
     header: "Ngày xuất bản",
     cell: ({ row }) => {
       const date = row.getValue("publishedAt") as Date | null
-      return <div className="text-sm">{date ? format(new Date(date), "dd/MM/yyyy") : "—"}</div>
+      return <div className="text-sm">{date ? formatVietnam(new Date(date), "dd/MM/yyyy") : "—"}</div>
     },
   },
   {
@@ -69,7 +69,7 @@ export const columns: ColumnDef<BlogPostData>[] = [
     header: "Ngày tạo",
     cell: ({ row }) => {
       const date = row.getValue("createdAt") as Date
-      return <div className="text-sm">{format(new Date(date), "dd/MM/yyyy")}</div>
+      return <div className="text-sm">{formatVietnam(new Date(date), "dd/MM/yyyy")}</div>
     },
   },
   {

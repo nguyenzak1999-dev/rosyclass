@@ -11,7 +11,7 @@ const faqSchema = z.object({
   question: z.string().min(5, "Câu hỏi phải có ít nhất 5 ký tự"),
   answer: z.string().min(5, "Câu trả lời phải có ít nhất 5 ký tự"),
   category: z.string().optional().nullable(),
-  position: z.coerce.number().default(0),
+  position: z.coerce.number().int("Thứ tự phải là số nguyên").default(0),
   status: z.enum(["ACTIVE", "INACTIVE", "DRAFT", "PUBLISHED"]).default("ACTIVE"),
 })
 
@@ -20,12 +20,14 @@ export type FaqFormValues = z.infer<typeof faqSchema>
 export async function upsertFaq(data: FaqFormValues) {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
-    const parsed = faqSchema.parse(data)
+    const result = faqSchema.safeParse(data)
+    if (!result.success) return { success: false, error: result.error.issues[0]?.message || "Dữ liệu FAQ không hợp lệ" }
+    const parsed = result.data
 
     const payload = {
-      question: parsed.question,
-      answer: parsed.answer,
-      category: parsed.category || null,
+      question: parsed.question.trim(),
+      answer: parsed.answer.trim(),
+      category: parsed.category?.trim() || null,
       position: parsed.position,
       status: parsed.status,
     }

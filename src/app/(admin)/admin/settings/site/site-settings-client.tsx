@@ -14,6 +14,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Globe, Phone, MapPin, Search, Share2, Building2, Save, LayoutTemplate, CreditCard, QrCode } from "lucide-react"
 import { ImageUploader } from "@/components/ui/image-uploader"
 
+// Các trường form này quản lý. Chỉ gửi đúng các trường này: gửi cả object (giá trị lúc mở trang)
+// sẽ ghi đè nội dung trang chủ / thanh toán vừa sửa ở nơi khác
+const SITE_FORM_FIELDS = [
+  "siteName", "tagline", "logoUrl", "faviconUrl",
+  "address", "phone", "email", "workingHours", "googleMapEmbedUrl",
+  "legalName", "taxCode", "legalRepresentative", "copyright",
+  "facebook", "youtube", "zalo", "tiktok",
+  "seoTitle", "seoDescription", "ogImage",
+] as const satisfies ReadonlyArray<keyof SiteSettings>
+
 export default function SiteSettingsClient({ settings }: { settings: SiteSettings }) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -28,7 +38,8 @@ export default function SiteSettingsClient({ settings }: { settings: SiteSetting
 
   const onSubmit = async (data: SiteSettings) => {
     setIsSubmitting(true)
-    const result = await saveSiteSettings(data)
+    const patch = Object.fromEntries(SITE_FORM_FIELDS.map((key) => [key, data[key] ?? ""])) as Partial<SiteSettings>
+    const result = await saveSiteSettings(patch)
     setIsSubmitting(false)
 
     if (result.success) {

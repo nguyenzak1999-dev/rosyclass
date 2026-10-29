@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getCurrentAdminUser, hasPermission, PERMISSIONS } from "@/lib/auth/permissions"
 import { prisma } from "@/lib/prisma"
-import { deleteStoredImage, storeImage } from "@/lib/media-storage"
+import { deleteStoredImage, MediaStorageNotConfiguredError, sanitizeMediaFolder, storeImage } from "@/lib/media-storage"
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Có lỗi xảy ra"
@@ -15,15 +15,18 @@ export async function POST(req: NextRequest) {
     }
 
     const formData = await req.formData()
-    const file = formData.get("file") as File | null
-    const folder = (formData.get("folder") as string) || "general"
+    const rawFile = formData.get("file")
+    const file = rawFile instanceof File ? rawFile : null
+    const rawFolder = formData.get("folder")
+    // Lưu cùng tên thư mục đã làm sạch như trên Cloudinary để lọc theo thư mục khớp nhau
+    const folder = sanitizeMediaFolder(typeof rawFolder === "string" ? rawFolder : "")
 
     if (!file) {
       return NextResponse.json({ error: "Không có file được tải lên" }, { status: 400 })
     }
 
     // Validate file type
-    if (!file.type.startsWith("image/")) {
+    if (!file.type?.startsWith("image/")) {
       return NextResponse.json({ error: "Chỉ chấp nhận file ảnh" }, { status: 400 })
     }
 
@@ -45,6 +48,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, media })
   } catch (error: unknown) {
     console.error("[UPLOAD_ERROR]", error)
+    if (error instanceof MediaStorageNotConfiguredError) {
+      return NextResponse.json({ error: error.message }, { status: 503 })
+    }
     return NextResponse.json({ error: getErrorMessage(error) || "Có lỗi xảy ra khi tải lên" }, { status: 500 })
   }
 }

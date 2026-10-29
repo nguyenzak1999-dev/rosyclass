@@ -42,10 +42,10 @@ export default async function ParentDetailPage({
     return notFound()
   }
 
-  // Lấy tất cả HV ACTIVE chưa có PH (hoặc chưa có PH hiện tại) để cho phép thêm
+  // HV chưa nghỉ / chưa học xong, chưa thuộc PH này (kể cả HV chờ xếp lớp vừa chuyển từ lead)
   const availableStudents = await prisma.student.findMany({
     where: {
-      status: "ACTIVE",
+      status: { notIn: ["DROPPED", "COMPLETED"] },
       OR: [
         { parentId: null },
         { parentId: { not: parent.id } },

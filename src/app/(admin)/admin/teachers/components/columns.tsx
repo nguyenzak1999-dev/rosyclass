@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal, ExternalLink, Trash2 } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import Link from "next/link"
 import { TeacherDialog } from "./teacher-dialog"
 import {
@@ -107,7 +107,7 @@ export const columns: ColumnDef<StaffData>[] = [
     header: "Ngày tham gia",
     cell: ({ row }) => {
       const date = row.getValue("createdAt") as Date
-      return <div>{format(new Date(date), "dd/MM/yyyy")}</div>
+      return <div>{formatVietnam(new Date(date), "dd/MM/yyyy")}</div>
     },
   },
   {
@@ -151,7 +151,8 @@ function ActionsCell({ user }: { user: StaffData }) {
   const teacherId = user.teacherProfile?.id
 
   return (
-    <div className="flex items-center justify-end gap-1">
+    // Dialog/menu render qua portal nhưng sự kiện React vẫn nổi lên hàng (hàng có onRowClick chuyển trang)
+    <div className="flex items-center justify-end gap-1" onClick={(event) => event.stopPropagation()}>
       {teacherId && (
         <Button variant="ghost" size="sm" render={<Link href={`/admin/teachers/${teacherId}`} />}>
           <ExternalLink className="w-4 h-4 mr-1" /> Hồ sơ
@@ -192,7 +193,6 @@ function ActionsCell({ user }: { user: StaffData }) {
               Xem hồ sơ giáo viên
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem>Phân quyền</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"

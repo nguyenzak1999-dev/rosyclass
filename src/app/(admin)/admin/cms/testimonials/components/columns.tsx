@@ -29,7 +29,7 @@ export const columns: ColumnDef<Testimonial>[] = [
     header: "Nội dung",
     cell: ({ row }) => (
       <div className="line-clamp-2 max-w-[560px] text-sm italic">
-        "{row.original.content}"
+        &ldquo;{row.original.content}&rdquo;
       </div>
     ),
   },

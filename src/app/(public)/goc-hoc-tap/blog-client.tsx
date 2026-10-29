@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "motion/react"
 import { ArrowRight, BookOpen, Calendar } from "lucide-react"
 import Link from "next/link"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { EmptyState, PageHero, RosyMascot, toneAt, toneClasses } from "@/components/kids"
@@ -79,7 +79,7 @@ export default function BlogClient({ posts }: { posts: BlogCardData[] }) {
                       <div className="flex min-w-0 flex-1 flex-col justify-center py-1">
                         <div className="mb-3 flex items-center text-[14px] font-semibold text-kid-ink-soft">
                           <Calendar className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                          {format(new Date(post.publishedAt || post.createdAt), "dd MMM, yyyy", { locale: vi })}
+                          {formatVietnam(new Date(post.publishedAt || post.createdAt), "dd MMM, yyyy", { locale: vi })}
                         </div>
                         <h2 className="mb-3 text-[22px] leading-snug font-extrabold text-kid-ink">
                           {/* Link phủ cả thẻ để bấm ở đâu cũng mở bài */}

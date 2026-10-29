@@ -3,7 +3,8 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { leadSchema, type LeadFormValues } from "@/lib/schemas/lead"
+import { z } from "zod"
+import { leadSchema } from "@/lib/schemas/lead"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,6 +27,54 @@ import { upsertLead } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
+// Ô tuổi là chuỗi trong form (bỏ trống được); đổi sang số khi gửi
+const leadFormSchema = leadSchema.extend({
+  age: z.string().trim().regex(/^\d{0,3}$/, "Tuổi không hợp lệ").optional().nullable(),
+})
+
+type LeadDialogValues = z.infer<typeof leadFormSchema>
+
+const LEAD_STATUS_ITEMS = [
+  { value: "NEW", label: "Mới" },
+  { value: "CONTACTED", label: "Đã liên hệ" },
+  { value: "NO_ANSWER", label: "Không nghe máy" },
+  { value: "CONSULTED", label: "Đã tư vấn" },
+  { value: "PLACEMENT_TEST_BOOKED", label: "Đã đặt lịch test" },
+  { value: "TESTED", label: "Đã test" },
+  { value: "WAITING_FOR_PAYMENT", label: "Chờ thanh toán" },
+  { value: "ENROLLED", label: "Đã nhập học" },
+  { value: "LOST", label: "Không quan tâm (Lost)" },
+]
+
+const EMPTY_LEAD_FORM: LeadDialogValues = {
+  fullName: "",
+  phone: "",
+  email: "",
+  age: "",
+  parentName: "",
+  parentPhone: "",
+  status: "NEW",
+  notes: "",
+}
+
+/** Bản ghi lead (null từ DB, lead từ form công khai thường thiếu nhiều trường) → giá trị form */
+function toLeadFormValues(lead: any): LeadDialogValues {
+  return {
+    id: lead.id,
+    fullName: lead.fullName || "",
+    phone: lead.phone || "",
+    email: lead.email || "",
+    age: lead.age == null ? "" : String(lead.age),
+    parentName: lead.parentName || "",
+    parentPhone: lead.parentPhone || "",
+    learningGoal: lead.learningGoal || "",
+    currentLevel: lead.currentLevel || "",
+    source: lead.source || "",
+    status: lead.status || "NEW",
+    notes: lead.notes || "",
+  }
+}
+
 interface LeadDialogProps {
   lead?: any
   trigger?: React.ReactNode
@@ -35,35 +84,21 @@ export function LeadDialog({ lead, trigger }: LeadDialogProps) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   
-  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, reset } = useForm<LeadFormValues>({
-    resolver: zodResolver(leadSchema) as any,
-    defaultValues: lead || {
-      fullName: "",
-      phone: "",
-      email: "",
-      status: "NEW",
-    }
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, reset } = useForm<LeadDialogValues>({
+    resolver: zodResolver(leadFormSchema) as any,
+    defaultValues: lead ? toLeadFormValues(lead) : EMPTY_LEAD_FORM
   })
 
   const status = watch("status")
 
   React.useEffect(() => {
     if (open) {
-      if (lead) {
-        reset(lead)
-      } else {
-        reset({
-          fullName: "",
-          phone: "",
-          email: "",
-          status: "NEW",
-        })
-      }
+      reset(lead ? toLeadFormValues(lead) : EMPTY_LEAD_FORM)
     }
   }, [open, lead, reset])
 
-  const onSubmit = async (data: LeadFormValues) => {
-    const result = await upsertLead(data)
+  const onSubmit = async (data: LeadDialogValues) => {
+    const result = await upsertLead({ ...data, age: data.age ? Number(data.age) : null })
     if (result.success) {
       toast.success(lead ? "Cập nhật thành công!" : "Thêm mới thành công!")
       setOpen(false)
@@ -102,7 +137,8 @@ export function LeadDialog({ lead, trigger }: LeadDialogProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="age">Tuổi</Label>
-              <Input id="age" type="number" {...register("age")} />
+              <Input id="age" type="number" min={0} {...register("age")} />
+              {errors.age && <p className="text-sm text-destructive">{errors.age.message}</p>}
             </div>
           </div>
 
@@ -119,20 +155,14 @@ export function LeadDialog({ lead, trigger }: LeadDialogProps) {
 
           <div className="space-y-2">
             <Label htmlFor="status">Trạng thái</Label>
-            <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
+            <Select value={status} onValueChange={(value: any) => setValue("status", value)} items={LEAD_STATUS_ITEMS}>
               <SelectTrigger>
                 <SelectValue placeholder="Chọn trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="NEW">Mới</SelectItem>
-                <SelectItem value="CONTACTED">Đã liên hệ</SelectItem>
-                <SelectItem value="NO_ANSWER">Không nghe máy</SelectItem>
-                <SelectItem value="CONSULTED">Đã tư vấn</SelectItem>
-                <SelectItem value="PLACEMENT_TEST_BOOKED">Đã đặt lịch test</SelectItem>
-                <SelectItem value="TESTED">Đã test</SelectItem>
-                <SelectItem value="WAITING_FOR_PAYMENT">Chờ thanh toán</SelectItem>
-                <SelectItem value="ENROLLED">Đã nhập học</SelectItem>
-                <SelectItem value="LOST">Không quan tâm (Lost)</SelectItem>
+                {LEAD_STATUS_ITEMS.map((item) => (
+                  <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

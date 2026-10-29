@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@/generated/prisma/client"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import {
   markAttendanceSchema,
@@ -12,6 +13,8 @@ import {
 } from "@/lib/schemas/attendance"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage } from "@/lib/errors"
+import { parseVietnamDateKey, vietnamDayRange } from "@/lib/curriculum"
+import { syncMakeUpLessons } from "@/lib/make-up"
 
 /**
  * Lưu điểm danh hàng loạt cho 1 buổi học.
@@ -49,40 +52,38 @@ export async function markAttendance(data: MarkAttendanceFormValues) {
       where: { classId: session.classId, status: "ACTIVE" }
     })
 
-    // Thực hiện lưu điểm danh trong 1 transaction
-    await prisma.$transaction(async (tx) => {
-      // 1. Upsert từng attendance record
-      for (const row of parsed.attendances) {
-        await tx.attendance.upsert({
-          where: {
-            sessionId_studentId: {
-              sessionId: session.id,
-              studentId: row.studentId
-            }
-          },
-          create: {
+    // Lưu điểm danh bằng batch transaction (D1 không hỗ trợ interactive transaction)
+    const operations: Prisma.PrismaPromise<unknown>[] = parsed.attendances.map((row) =>
+      prisma.attendance.upsert({
+        where: {
+          sessionId_studentId: {
             sessionId: session.id,
-            studentId: row.studentId,
-            status: row.status,
-            note: row.note || null
-          },
-          update: {
-            status: row.status,
-            note: row.note || null
+            studentId: row.studentId
           }
-        })
-      }
-
-      // 2. Cập nhật trạng thái session nếu điểm danh đủ sĩ số active
-      if (totalActiveStudents > 0 && parsed.attendances.length >= totalActiveStudents && session.status === "SCHEDULED") {
-        await tx.classSession.update({
-          where: { id: session.id },
-          data: { status: "COMPLETED" }
-        })
-      }
-    })
+        },
+        create: {
+          sessionId: session.id,
+          studentId: row.studentId,
+          status: row.status,
+          note: row.note || null
+        },
+        update: {
+          status: row.status,
+          note: row.note || null
+        }
+      })
+    )
+    // Cập nhật trạng thái session nếu điểm danh đủ sĩ số active
+    const markCompleted =
+      totalActiveStudents > 0 && parsed.attendances.length >= totalActiveStudents && session.status === "SCHEDULED"
+    if (markCompleted) {
+      operations.push(prisma.classSession.update({ where: { id: session.id }, data: { status: "COMPLETED" } }))
+    }
+    await prisma.$transaction(operations)
+    await syncMakeUpLessons(session.id, parsed.attendances)
 
     revalidatePath(`/admin/attendance/${session.id}`)
+    revalidatePath("/admin/make-up")
     revalidatePath(`/admin/schedules/${session.id}`)
     revalidatePath(`/admin/schedules`)
     revalidatePath(`/admin/classes/${session.classId}`)
@@ -127,7 +128,8 @@ export async function createMakeUpSession(data: CreateMakeUpSessionFormValues) {
         scheduleId: original.scheduleId,
         teacherId: original.teacherId,
         roomId: original.roomId,
-        sessionDate: new Date(parsed.sessionDate),
+        // "YYYY-MM-DD" → 00:00 giờ VN, cùng quy ước với buổi sinh từ lịch cố định
+        sessionDate: parseVietnamDateKey(parsed.sessionDate) ?? new Date(parsed.sessionDate),
         startTime: parsed.startTime,
         endTime: parsed.endTime,
         status: "MAKE_UP",
@@ -306,22 +308,16 @@ export async function cancelBookedMakeUp(studentId: string, sessionId: string) {
 export async function getAvailableSessionsForMakeUp(studentId: string) {
   try {
     await requirePermission(PERMISSIONS.attendanceWrite)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    // "Hôm nay" theo giờ Việt Nam (Worker chạy UTC)
+    const today = vietnamDayRange().start
 
-    // Lấy các buổi học học viên đã tham gia hoặc đã có lịch (lớp chính hoặc học bù)
-    const existingAttendances = await prisma.attendance.findMany({
-      where: { studentId },
-      select: { sessionId: true }
-    })
-    const existingSessionIds = existingAttendances.map((a) => a.sessionId)
-
-    // Lấy các buổi học tương lai
+    // Lấy các buổi học tương lai mà HV chưa có lịch (lớp chính hoặc học bù).
+    // Dùng điều kiện quan hệ thay cho notIn danh sách id: D1 giới hạn ~100 tham số mỗi câu lệnh
     const sessions = await prisma.classSession.findMany({
       where: {
         sessionDate: { gte: today },
         status: "SCHEDULED",
-        id: { notIn: existingSessionIds.length > 0 ? existingSessionIds : [""] }
+        attendances: { none: { studentId } }
       },
       include: {
         class: {

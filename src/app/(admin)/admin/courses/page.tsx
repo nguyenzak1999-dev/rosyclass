@@ -5,6 +5,7 @@ import { CourseDialog } from "./components/course-dialog"
 import { ExportExcelButton } from "./components/export-excel-button"
 import { CourseFilters } from "./components/course-filters"
 import { Prisma } from "@/generated/prisma/client"
+import { courseSchema } from "@/lib/schemas/course"
 
 export const dynamic = "force-dynamic"
 
@@ -20,10 +21,11 @@ export default async function CoursesPage({ searchParams }: PageProps) {
   const filters = await searchParams
   // Build Prisma where clause
   const where: Prisma.CourseWhereInput = {}
-  if (filters.level) {
+  // Giá trị lạ trên URL làm Prisma ném lỗi enum và sập trang: chỉ lọc khi hợp lệ
+  if (filters.level && (courseSchema.shape.level.options as readonly string[]).includes(filters.level)) {
     where.level = filters.level as Prisma.EnumCourseLevelFilter
   }
-  if (filters.status) {
+  if (filters.status && (courseSchema.shape.status.unwrap().options as readonly string[]).includes(filters.status)) {
     where.status = filters.status as Prisma.EnumEntityStatusFilter
   }
   if (filters.isPublished === "true") {

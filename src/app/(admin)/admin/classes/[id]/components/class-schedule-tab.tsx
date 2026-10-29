@@ -5,11 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
-import { Plus, Wand2, Trash2, Pencil, CalendarOff, BookOpenCheck } from "lucide-react"
+import { Plus, Wand2, Trash2, Pencil, CalendarOff, BookOpenCheck, Globe2 } from "lucide-react"
 import Link from "next/link"
 import { DAY_OF_WEEK_LABELS } from "@/lib/schemas/schedule"
 import { ScheduleFormDialog } from "./schedule-form-dialog"
 import { GenerateSessionsDialog } from "./generate-sessions-dialog"
+import { ExtraSessionDialog } from "./extra-session-dialog"
 import { SessionsList } from "./sessions-list"
 import { deleteClassSchedule, cancelSession, assignLessonsToSessions } from "@/app/(admin)/admin/classes/actions"
 import { toast } from "sonner"
@@ -39,6 +40,8 @@ type Session = {
   room?: { name: string } | null
   lesson?: { id: string; order: number; title: string; unit: { order: number; title: string } } | null
   _count?: { attendances: number }
+  isForeignTeacher?: boolean
+  surcharge?: number
 }
 
 interface ClassScheduleTabProps {
@@ -62,6 +65,7 @@ export function ClassScheduleTab({
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null)
   const [generateOpen, setGenerateOpen] = useState(false)
+  const [extraOpen, setExtraOpen] = useState(false)
   const [deletingScheduleId, setDeletingScheduleId] = useState<string | null>(null)
   const [cancellingSessionId, setCancellingSessionId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -140,7 +144,10 @@ export function ClassScheduleTab({
               Cấu hình các thứ + giờ học lặp lại hàng tuần cho lớp này.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" onClick={() => setExtraOpen(true)}>
+              <Globe2 className="w-4 h-4 mr-2" /> Buổi GV nước ngoài
+            </Button>
             <Button
               variant="outline"
               onClick={() => setGenerateOpen(true)}
@@ -262,6 +269,13 @@ export function ClassScheduleTab({
         schedule={editingSchedule}
         teachers={teachers}
         rooms={rooms}
+      />
+      <ExtraSessionDialog
+        open={extraOpen}
+        onOpenChange={setExtraOpen}
+        classId={classId}
+        teachers={teachers}
+        defaultTimes={schedules[0] ? { startTime: schedules[0].startTime, endTime: schedules[0].endTime } : undefined}
       />
       <GenerateSessionsDialog
         open={generateOpen}

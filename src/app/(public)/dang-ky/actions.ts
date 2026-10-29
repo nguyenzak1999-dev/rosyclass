@@ -17,6 +17,13 @@ export async function submitRegistrationForm(data: {
   notes?: string
 }) {
   try {
+    // Form công khai: kiểm tra lại ở server, không chỉ dựa vào trình duyệt
+    const studentName = data.studentName?.trim().slice(0, 120)
+    const phone = data.phone?.trim().slice(0, 20)
+    if (!studentName || !phone) {
+      return { success: false, error: "Ba mẹ vui lòng điền họ tên của bé và số điện thoại nhé!" }
+    }
+
     const notesParts = [
       data.currentLevel ? `Trình độ hiện tại: ${data.currentLevel}` : null,
       data.hearAboutUs ? `Biết đến qua: ${data.hearAboutUs}` : null,
@@ -37,9 +44,9 @@ export async function submitRegistrationForm(data: {
 
     const lead = await prisma.lead.create({
       data: {
-        fullName: data.studentName,
-        phone: data.phone,
-        email: data.email || null,
+        fullName: studentName,
+        phone,
+        email: data.email?.trim() || null,
         parentName: data.parentName || null,
         parentPhone: data.parentPhone || null,
         learningGoal: data.learningGoal || null,

@@ -17,8 +17,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const folder = searchParams.get("folder") || undefined
     const search = searchParams.get("search") || undefined
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "24")
+    // page/limit sai (NaN, 0, âm) làm Prisma ném lỗi skip/take → chặn về khoảng hợp lệ
+    const rawPage = Number.parseInt(searchParams.get("page") || "1", 10)
+    const rawLimit = Number.parseInt(searchParams.get("limit") || "24", 10)
+    const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 24
     const skip = (page - 1) * limit
 
     const where: Prisma.MediaFileWhereInput = {}
@@ -43,9 +46,10 @@ export async function GET(req: NextRequest) {
       files,
       total,
       page,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     })
   } catch (error: unknown) {
+    console.error("[MEDIA_LIST_ERROR]", error)
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }

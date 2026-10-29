@@ -10,7 +10,8 @@ import { markAttendance } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Info, CalendarOff } from "lucide-react"
-import { format, differenceInDays } from "date-fns"
+import { differenceInDays } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 
 interface StudentAttendance {
   id: string
@@ -57,8 +58,13 @@ export default function AttendanceFormClient({
   const isFutureSession = daysDiff > 0
 
   const updateRow = useCallback(
-    (studentId: string, data: { status: AttendanceStatus; note: string | null }) => {
-      setAttendance((prev) => ({ ...prev, [studentId]: data }))
+    (studentId: string, data: { status: AttendanceStatus; note: string | null } | null) => {
+      setAttendance((prev) => {
+        const next = { ...prev }
+        if (data) next[studentId] = data
+        else delete next[studentId]
+        return next
+      })
     },
     []
   )
@@ -66,7 +72,8 @@ export default function AttendanceFormClient({
   const markAllPresent = () => {
     const next: Record<string, { status: AttendanceStatus; note: string | null }> = {}
     for (const s of students) {
-      next[s.id] = { status: "PRESENT", note: null }
+      // Giữ ghi chú đã nhập
+      next[s.id] = { status: "PRESENT", note: attendance[s.id]?.note ?? null }
     }
     setAttendance(next)
     toast.info(`Đã đánh dấu ${students.length} học viên là CÓ MẶT (chưa lưu)`)
@@ -89,14 +96,18 @@ export default function AttendanceFormClient({
     }
 
     setIsSubmitting(true)
-    const res = await markAttendance({ sessionId, attendances: rows })
-    setIsSubmitting(false)
-
-    if (res.success) {
-      toast.success(`Đã lưu điểm danh ${res.data?.count ?? 0} học viên`)
-      router.refresh()
-    } else {
-      toast.error(res.error)
+    try {
+      const res = await markAttendance({ sessionId, attendances: rows })
+      if (res.success) {
+        toast.success(`Đã lưu điểm danh ${res.data?.count ?? 0} học viên`)
+        router.refresh()
+      } else {
+        toast.error(res.error)
+      }
+    } catch {
+      toast.error("Không thể lưu điểm danh, vui lòng thử lại")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -119,7 +130,7 @@ export default function AttendanceFormClient({
           <Info className="h-4 w-4" />
           <AlertTitle>Điểm danh sớm</AlertTitle>
           <AlertDescription>
-            Buổi học này còn {daysDiff} ngày nữa mới diễn ra ({format(new Date(sessionDate), "dd/MM/yyyy")}).
+            Buổi học này còn {daysDiff} ngày nữa mới diễn ra ({formatVietnam(new Date(sessionDate), "dd/MM/yyyy")}).
             Bạn có thể điểm danh trước nếu cần.
           </AlertDescription>
         </Alert>
@@ -145,8 +156,7 @@ export default function AttendanceFormClient({
                 studentId={student.id}
                 studentName={student.fullName}
                 studentPhone={student.phone}
-                initialStatus={student.attendance?.status || null}
-                initialNote={student.attendance?.note || null}
+                value={attendance[student.id] ?? null}
                 onChange={(data) => updateRow(student.id, data)}
                 disabled={isReadOnly}
               />

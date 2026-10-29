@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { FileText, GraduationCap, Clock, User, Pencil } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 
 type TimelineItem = {
@@ -64,7 +64,7 @@ export function LeadTimelineTab({ timeline }: LeadTimelineTabProps) {
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <p className="font-medium text-sm">{item.title}</p>
                       <Badge variant="outline" className="text-xs">
-                        {format(new Date(item.date), "dd/MM/yyyy HH:mm", { locale: vi })}
+                        {formatVietnam(new Date(item.date), "dd/MM/yyyy HH:mm", { locale: vi })}
                       </Badge>
                     </div>
                     {item.description && (

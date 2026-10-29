@@ -9,7 +9,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,7 +75,7 @@ export const columns: ColumnDef<PageData>[] = [
     header: "Ngày tạo",
     cell: ({ row }) => {
       const date = row.getValue("createdAt") as Date
-      return <div>{format(new Date(date), "dd/MM/yyyy HH:mm")}</div>
+      return <div>{formatVietnam(new Date(date), "dd/MM/yyyy HH:mm")}</div>
     },
   },
   {

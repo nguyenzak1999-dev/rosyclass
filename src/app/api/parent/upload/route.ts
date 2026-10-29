@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getParentSession } from "@/lib/auth/parent-session"
 import { HOMEWORK_MAX_BYTES } from "@/lib/curriculum"
+import { isPrismaUniqueError } from "@/lib/errors"
 import { isMediaStorageConfigured, MediaStorageNotConfiguredError, storeMedia } from "@/lib/media-storage"
 
 export const dynamic = "force-dynamic"
@@ -79,10 +80,23 @@ export async function POST(request: NextRequest) {
     status: "SUBMITTED",
     ...(media ? { mediaUrl: media.url, mediaType: media.type } : {}),
   }
-  if (existing) {
-    await prisma.homeworkSubmission.update({ where: { id: existing.id }, data: values })
-  } else {
-    await prisma.homeworkSubmission.create({ data: { ...values, homeworkId: homework.id, studentId: student.id } })
+  try {
+    if (existing) {
+      await prisma.homeworkSubmission.update({ where: { id: existing.id }, data: values })
+    } else {
+      await prisma.homeworkSubmission.create({ data: { ...values, homeworkId: homework.id, studentId: student.id } })
+    }
+  } catch (error) {
+    // Bấm gửi hai lần hoặc cô vừa ghi nhận "làm trên lớp": bài đã có thì cập nhật (trừ khi cô đã chấm)
+    if (!isPrismaUniqueError(error)) {
+      console.error("[PARENT_SUBMIT_ERROR]", error)
+      return fail("Chưa gửi được bài. Ba mẹ thử lại sau ít phút nhé.", 500)
+    }
+    const updated = await prisma.homeworkSubmission.updateMany({
+      where: { homeworkId: homework.id, studentId: student.id, status: { not: "REVIEWED" } },
+      data: values,
+    })
+    if (updated.count === 0) return fail("Cô đã chấm bài này rồi ạ.", 409)
   }
 
   return NextResponse.json({ success: true }, { headers: { "Cache-Control": "no-store" } })

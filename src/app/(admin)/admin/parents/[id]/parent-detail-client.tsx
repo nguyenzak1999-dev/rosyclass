@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Users, GraduationCap, Wallet, UserPlus, Trash2, ExternalLink, UserMinus, MapPin } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -348,7 +348,7 @@ export default function ParentDetailClient({
                         <p className="text-xs text-muted-foreground">
                           {p.class?.name || p.course?.name || "—"} ·{" "}
                           {p.dueDate
-                            ? `Hạn: ${format(new Date(p.dueDate), "dd/MM/yyyy", { locale: vi })}`
+                            ? `Hạn: ${formatVietnam(new Date(p.dueDate), "dd/MM/yyyy", { locale: vi })}`
                             : "Không có hạn"}
                         </p>
                       </div>
@@ -384,6 +384,7 @@ export default function ParentDetailClient({
                 value={selectedStudentId}
                 onValueChange={(v) => setSelectedStudentId(v as string)}
                 disabled={isLinking}
+                items={availableStudents.map((s) => ({ value: s.id, label: `${s.fullName}${s.phone ? ` (${s.phone})` : ""}` }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn học viên..." />
@@ -406,7 +407,7 @@ export default function ParentDetailClient({
             </div>
             {availableStudents.length === 0 && (
               <p className="text-xs text-muted-foreground">
-                Tất cả học viên ACTIVE đã có phụ huynh khác.
+                Không còn học viên nào để liên kết thêm.
               </p>
             )}
           </div>

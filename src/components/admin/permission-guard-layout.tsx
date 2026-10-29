@@ -9,6 +9,7 @@ const permissionBySegment: Record<string, PermissionCode> = {
   dashboard: PERMISSIONS.dashboardRead,
   homework: PERMISSIONS.attendanceRead,
   leads: PERMISSIONS.leadsRead,
+  "make-up": PERMISSIONS.attendanceRead,
   media: PERMISSIONS.mediaRead,
   parents: PERMISSIONS.parentsRead,
   payments: PERMISSIONS.paymentsRead,

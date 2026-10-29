@@ -18,21 +18,48 @@ import {
 } from "@/lib/schemas/lead"
 import { notifyAdmins } from "@/lib/admin-notifications"
 import { revalidatePath } from "next/cache"
-import { getErrorMessage } from "@/lib/errors"
+import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
+import { formatVietnamDate } from "@/lib/curriculum"
 
-export async function upsertLead(data: LeadFormValues) {
+/** "" → null để xoá được giá trị; undefined giữ nguyên (form không có ô đó) */
+function optionalText(value: string | null | undefined) {
+  if (value === undefined) return undefined
+  return value?.trim() || null
+}
+
+export async function upsertLead(data: Omit<LeadFormValues, "age"> & { age?: number | string | null }) {
   try {
     await requirePermission(PERMISSIONS.leadsWrite)
-    const parsedData = leadSchema.parse(data)
+    // z.coerce.number() biến "" / null thành 0: tuổi bỏ trống phải lưu là null
+    const rawAge = data.age === "" || data.age === null ? undefined : data.age
+    const parsedData = leadSchema.parse({ ...data, age: rawAge })
+    if (parsedData.age !== undefined && (!Number.isInteger(parsedData.age) || parsedData.age < 0 || parsedData.age > 120)) {
+      return { success: false, error: "Tuổi không hợp lệ" }
+    }
+
+    const payload = {
+      fullName: parsedData.fullName.trim(),
+      phone: parsedData.phone.trim(),
+      email: optionalText(parsedData.email),
+      age: parsedData.age ?? null,
+      parentName: optionalText(parsedData.parentName),
+      parentPhone: optionalText(parsedData.parentPhone),
+      learningGoal: optionalText(parsedData.learningGoal),
+      currentLevel: optionalText(parsedData.currentLevel),
+      source: optionalText(parsedData.source),
+      status: parsedData.status,
+      notes: optionalText(parsedData.notes),
+    }
 
     if (parsedData.id) {
       await prisma.lead.update({
         where: { id: parsedData.id },
-        data: { ...parsedData }
+        data: payload
       })
+      revalidatePath(`/admin/leads/${parsedData.id}`)
     } else {
       await prisma.lead.create({
-        data: { ...parsedData }
+        data: payload
       })
     }
 
@@ -47,7 +74,12 @@ export async function upsertLead(data: LeadFormValues) {
 export async function deleteLead(id: string) {
   try {
     await requirePermission(PERMISSIONS.leadsWrite)
-    await prisma.lead.delete({ where: { id } })
+    // Khoá ngoại của PlacementTest là SET NULL: xoá luôn bài test chỉ thuộc lead này (đúng như hộp xác nhận báo),
+    // giữ lại bài test đã gắn với học viên
+    await prisma.$transaction([
+      prisma.placementTest.deleteMany({ where: { leadId: id, studentId: null } }),
+      prisma.lead.delete({ where: { id } }),
+    ])
     revalidatePath("/admin/leads")
     return { success: true }
   } catch (error: unknown) {
@@ -124,7 +156,7 @@ export async function bookPlacementTest(data: BookPlacementTestFormValues) {
     // Notify admin
     notifyAdmins(
       "Lịch placement test mới",
-      `Lead ${lead.fullName} đã đặt lịch test vào ${new Date(parsed.testDate).toLocaleDateString("vi-VN")}`,
+      `Lead ${lead.fullName} đã đặt lịch test vào ${formatVietnamDate(parsed.testDate)}`,
       `/admin/leads/${parsed.leadId}`
     )
 
@@ -209,10 +241,10 @@ export async function convertLeadToStudent(data: ConvertLeadToStudentFormValues)
       return { success: false, error: "Lead này đã được chuyển thành học viên" }
     }
 
-    // Tạo student + update lead trong transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Sinh mã học viên tự động
-      const lastStudent = await tx.student.findFirst({
+    // D1 không hỗ trợ interactive transaction ($transaction(async tx => …) ném lỗi):
+    // sinh mã trước rồi ghi student + cập nhật lead trong một batch transaction
+    const generateCode = async () => {
+      const lastStudent = await prisma.student.findFirst({
         where: {
           code: {
             startsWith: "HV",
@@ -221,6 +253,7 @@ export async function convertLeadToStudent(data: ConvertLeadToStudentFormValues)
         orderBy: {
           code: "desc",
         },
+        select: { code: true },
       })
 
       let nextNum = 1
@@ -230,32 +263,40 @@ export async function convertLeadToStudent(data: ConvertLeadToStudentFormValues)
           nextNum = parseInt(match[1], 10) + 1
         }
       }
-      const studentCode = `HV${String(nextNum).padStart(4, "0")}`
+      return `HV${String(nextNum).padStart(4, "0")}`
+    }
 
-      // 2. Tạo Student
-      const student = await tx.student.create({
-        data: {
-          code: studentCode,
-          fullName: parsed.fullName || lead.fullName,
-          phone: lead.phone,
-          email: parsed.email || lead.email || null,
-          currentLevel: parsed.currentLevel || lead.currentLevel || null,
-          learningGoal: parsed.learningGoal || lead.learningGoal || null,
-          source: lead.source || null,
-          status: parsed.status,
-          parentId: parsed.parentId || null,
-          joinedAt: new Date(),
-        },
-      })
-
-      // 3. Update lead
-      await tx.lead.update({
-        where: { id: parsed.leadId },
-        data: { status: "ENROLLED" },
-      })
-
-      return { studentId: student.id }
-    })
+    const studentId = crypto.randomUUID()
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await prisma.$transaction([
+          prisma.student.create({
+            data: {
+              id: studentId,
+              code: await generateCode(),
+              fullName: parsed.fullName || lead.fullName,
+              phone: lead.phone,
+              email: parsed.email || lead.email || null,
+              currentLevel: parsed.currentLevel || lead.currentLevel || null,
+              learningGoal: parsed.learningGoal || lead.learningGoal || null,
+              source: lead.source || null,
+              status: parsed.status,
+              parentId: parsed.parentId || null,
+              joinedAt: new Date(),
+            },
+          }),
+          prisma.lead.update({
+            where: { id: parsed.leadId },
+            data: { status: "ENROLLED" },
+          }),
+        ])
+        break
+      } catch (error) {
+        // Trùng mã học viên do người khác vừa tạo: thử lại với mã mới
+        if (!isPrismaUniqueError(error) || attempt >= 2) throw error
+      }
+    }
+    const result = { studentId }
 
     // Notify admin
     notifyAdmins(
@@ -307,7 +348,7 @@ export async function recordTestResult(data: RecordTestResultFormValues) {
       : null
 
     const scoreLine =
-      parsed.totalScore !== null
+      parsed.totalScore != null
         ? `Tổng điểm: ${parsed.totalScore}/10`
         : "Chưa có điểm tổng"
     const levelLine = parsed.levelResult ? `Level gợi ý: ${parsed.levelResult}` : ""
@@ -315,9 +356,10 @@ export async function recordTestResult(data: RecordTestResultFormValues) {
       parsed.teacherComment ? `\nGV nhận xét: ${parsed.teacherComment}` : ""
     }`
 
-    await prisma.$transaction(async (tx) => {
+    // Batch transaction (D1 không hỗ trợ interactive transaction)
+    await prisma.$transaction([
       // Update test scores
-      await tx.placementTest.update({
+      prisma.placementTest.update({
         where: { id: parsed.placementTestId },
         data: {
           listeningScore: parsed.listeningScore ?? null,
@@ -329,28 +371,28 @@ export async function recordTestResult(data: RecordTestResultFormValues) {
           suggestedCourseId: parsed.suggestedCourseId ?? null,
           teacherComment: parsed.teacherComment ?? null,
         },
-      })
-
+      }),
       // Update lead status + currentLevel
-      await tx.lead.update({
-        where: { id: test.leadId! },
+      prisma.lead.update({
+        where: { id: test.leadId },
         data: {
           status: "TESTED",
           ...(parsed.levelResult && { currentLevel: parsed.levelResult }),
         },
-      })
-
+      }),
       // Ghi log
-      if (currentUser) {
-        await tx.leadNote.create({
-          data: {
-            leadId: test.leadId!,
-            content: noteContent,
-            createdById: currentUser.id,
-          },
-        })
-      }
-    })
+      ...(currentUser
+        ? [
+            prisma.leadNote.create({
+              data: {
+                leadId: test.leadId,
+                content: noteContent,
+                createdById: currentUser.id,
+              },
+            }),
+          ]
+        : []),
+    ])
 
     notifyAdmins(
       "Kết quả placement test",

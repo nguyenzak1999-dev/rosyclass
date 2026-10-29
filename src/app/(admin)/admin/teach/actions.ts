@@ -6,6 +6,7 @@ import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { getErrorMessage } from "@/lib/errors"
 import { PRAISE_TAGS } from "@/lib/curriculum"
 import { teachSessionSchema, type TeachSessionValues } from "@/lib/schemas/curriculum"
+import { syncMakeUpLessons } from "@/lib/make-up"
 
 /**
  * Lưu màn hình "Lên lớp": điểm danh + sao/khen/cảm xúc/nhận xét của từng bé.
@@ -50,6 +51,7 @@ export async function saveTeachSession(data: TeachSessionValues) {
         update: { status: row.status },
       })
     }
+    await syncMakeUpLessons(session.id, attendances)
 
     for (const row of feedbacks) {
       const values = {
@@ -78,6 +80,7 @@ export async function saveTeachSession(data: TeachSessionValues) {
     }
 
     revalidatePath(`/admin/teach`)
+    revalidatePath("/admin/make-up")
     revalidatePath(`/admin/teach/${session.id}`)
     revalidatePath(`/admin/attendance/${session.id}`)
     revalidatePath(`/admin/schedules/${session.id}`)

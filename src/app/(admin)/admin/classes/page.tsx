@@ -5,6 +5,8 @@ import { Prisma } from "@/generated/prisma/client"
 
 export const dynamic = "force-dynamic"
 
+const CLASS_STATUSES = ["UPCOMING", "ACTIVE", "COMPLETED", "PAUSED", "CANCELLED"]
+
 interface PageProps {
   searchParams: Promise<{
     status?: string
@@ -17,7 +19,8 @@ interface PageProps {
 export default async function ClassesPage({ searchParams }: PageProps) {
   const filters = await searchParams
   const where: Prisma.ClassWhereInput = {}
-  if (filters.status) {
+  // Bỏ qua trạng thái lạ trên URL thay vì để Prisma báo lỗi
+  if (filters.status && CLASS_STATUSES.includes(filters.status)) {
     where.status = filters.status as Prisma.EnumClassStatusFilter
   }
   if (filters.courseId) {
@@ -44,6 +47,8 @@ export default async function ClassesPage({ searchParams }: PageProps) {
         roomId: true,
         curriculumId: true,
         maxStudents: true,
+        sessionFee: true,
+        isOneOnOne: true,
         status: true,
         notes: true,
         startDate: true,

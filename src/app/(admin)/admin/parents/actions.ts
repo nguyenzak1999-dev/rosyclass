@@ -8,13 +8,32 @@ import { getErrorMessage } from "@/lib/errors"
 import { getSiteUrl } from "@/lib/seo"
 import { generateParentToken, hashParentToken } from "@/lib/auth/parent-session"
 import { createParentLinkSchema, type CreateParentLinkValues } from "@/lib/schemas/homework"
+import { findParentsByPhone } from "@/lib/monthly-billing"
 
 export async function upsertParent(data: ParentFormValues) {
   try {
     await requirePermission(PERMISSIONS.parentsWrite)
     const parsedData = parentSchema.parse(data)
 
-    const { studentIds, ...restData } = parsedData
+    const { studentIds, id: _id, ...rest } = parsedData
+    // "" → null để trường trống lưu đúng là không có giá trị
+    const restData = {
+      fullName: rest.fullName.trim(),
+      phone: rest.phone.trim(),
+      email: rest.email?.trim() || null,
+      relationship: rest.relationship?.trim() || null,
+      address: rest.address?.trim() || null,
+      notes: rest.notes?.trim() || null,
+    }
+
+    // Anh chị em được liên kết qua SĐT phụ huynh: một SĐT chỉ thuộc một hồ sơ, bé thứ hai gắn vào hồ sơ đã có
+    const samePhone = await findParentsByPhone(restData.phone, parsedData.id)
+    if (samePhone.length > 0) {
+      return {
+        success: false,
+        error: `SĐT ${restData.phone} đã thuộc phụ huynh ${samePhone[0].fullName}. Mở hồ sơ đó để gắn thêm bé (anh chị em).`,
+      }
+    }
 
     if (parsedData.id) {
       await prisma.parent.update({
@@ -42,6 +61,8 @@ export async function upsertParent(data: ParentFormValues) {
     }
 
     revalidatePath("/admin/parents")
+    if (parsedData.id) revalidatePath(`/admin/parents/${parsedData.id}`)
+    revalidatePath("/admin/students")
     return { success: true }
   } catch (error: unknown) {
     console.error("Parent upsert error:", error)
@@ -54,6 +75,7 @@ export async function deleteParent(id: string) {
     await requirePermission(PERMISSIONS.parentsWrite)
     await prisma.parent.delete({ where: { id } })
     revalidatePath("/admin/parents")
+    revalidatePath("/admin/students")
     return { success: true }
   } catch (error: unknown) {
     console.error("Parent delete error:", error)

@@ -5,10 +5,11 @@ import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { StudentDialog } from "./student-dialog"
 import Link from "next/link"
 import type { StudentFormValues } from "@/lib/schemas/student"
+import { toStudentFormInput } from "./student-form"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { deleteStudent } from "../actions"
 import { toast } from "sonner"
@@ -32,6 +33,13 @@ export type StudentData = {
   phone: string | null
   status: StudentFormValues["status"]
   currentLevel: string | null
+  dateOfBirth: Date | null
+  gender: string | null
+  address: string | null
+  learningGoal: string | null
+  source: string | null
+  notes: string | null
+  parentId: string | null
   parentName: string | undefined
   className: string | undefined
   courseName: string | undefined
@@ -103,7 +111,7 @@ export const getColumns = (parents: any[]): ColumnDef<StudentData>[] => [
     header: "Ngày nhập học",
     cell: ({ row }) => {
       const date = row.getValue("joinedAt") as Date
-      return <div>{date ? format(new Date(date), "dd/MM/yyyy") : "—"}</div>
+      return <div>{date ? formatVietnam(new Date(date), "dd/MM/yyyy") : "—"}</div>
     },
   },
   {
@@ -130,18 +138,12 @@ function ActionsCell({ student, parents }: { student: StudentData; parents: any[
     }
   }
 
-  const dialogStudent: StudentFormValues = {
-    id: student.id,
-    code: student.code || "",
-    fullName: student.fullName,
-    email: student.email || "",
-    phone: student.phone || "",
-    status: student.status,
-    currentLevel: student.currentLevel || undefined,
-  }
+  const dialogStudent = useMemo(() => toStudentFormInput(student), [student])
 
   return (
-    <div className="flex items-center justify-end gap-1">
+    // Dropdown / dialog render qua portal nhưng sự kiện React vẫn nổi lên TableRow (onRowClick):
+    // chặn lại để bấm "Xóa", gõ vào form sửa... không bị chuyển sang trang chi tiết
+    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
       <StudentDialog 
         student={dialogStudent}
         parents={parents}
@@ -177,7 +179,7 @@ function ActionsCell({ student, parents }: { student: StudentData; parents: any[
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Xoá học viên này?"
-        description="Lưu ý: Hành động này không thể hoàn tác. Học viên và tất cả lịch sử học tập, học phí, điểm danh liên quan sẽ bị xóa khỏi hệ thống."
+        description="Lưu ý: Hành động này không thể hoàn tác. Học viên cùng lịch sử lớp học, điểm danh, bài tập liên quan sẽ bị xóa khỏi hệ thống. Học viên đã có phiếu thu học phí thì không xoá được."
         confirmText="Xoá"
         variant="destructive"
         onConfirm={handleDelete}

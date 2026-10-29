@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { GraduationCap, Clock, DollarSign, TrendingUp, Calendar } from "lucide-react"
-import { startOfMonth, endOfMonth, subMonths, format } from "date-fns"
+import { formatVietnam, vietnamMonthStart } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import Link from "next/link"
+import { calculateSessionHours } from "@/lib/payroll-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -19,8 +20,10 @@ function formatVND(amount: number): string {
 
 export default async function TeacherWorkloadReportPage() {
   const now = new Date()
-  const monthStart = startOfMonth(subMonths(now, 1))
-  const monthEnd = endOfMonth(now)
+  const monthStart = vietnamMonthStart(now, -1)
+  // Mốc cuối (không tính): 00:00 giờ VN ngày 1 tháng sau
+  const nextMonthStart = vietnamMonthStart(now, 1)
+  const monthEnd = new Date(nextMonthStart.getTime() - 1)
 
   const teachers = await prisma.teacher.findMany({
     include: {
@@ -38,23 +41,19 @@ export default async function TeacherWorkloadReportPage() {
   const sessions = await prisma.classSession.findMany({
     where: {
       status: "COMPLETED",
-      sessionDate: { gte: monthStart, lte: monthEnd },
+      sessionDate: { gte: monthStart, lt: nextMonthStart },
     },
-    include: {
-      class: {
-        select: { course: { select: { sessionDurationMinutes: true } } },
-      },
-    },
+    select: { teacherId: true, startTime: true, endTime: true },
   })
 
   // Group by teacher
   const teacherStats = teachers.map((teacher) => {
     const teacherSessions = sessions.filter((s) => s.teacherId === teacher.id)
-    const totalMinutes = teacherSessions.reduce(
-      (sum, s) => sum + (s.class.course.sessionDurationMinutes || 90),
+    // Tính giờ theo giờ bắt đầu/kết thúc thực tế của buổi, giống bảng lương
+    const totalHours = teacherSessions.reduce(
+      (sum, s) => sum + calculateSessionHours(s.startTime, s.endTime),
       0
     )
-    const totalHours = totalMinutes / 60
     const baseSalary = totalHours * teacher.hourlyRate
     return {
       id: teacher.id,
@@ -93,7 +92,7 @@ export default async function TeacherWorkloadReportPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Báo cáo khối lượng giảng dạy</h1>
         <p className="text-sm text-muted-foreground">
-          Tổng quan tháng {format(monthStart, "MM/yyyy")} - {format(monthEnd, "MM/yyyy")} · {totalMonthlySessions} buổi · {totalMonthlyHours.toFixed(1)} giờ
+          Tổng quan tháng {formatVietnam(monthStart, "MM/yyyy")} - {formatVietnam(monthEnd, "MM/yyyy")} · {totalMonthlySessions} buổi · {totalMonthlyHours.toFixed(1)} giờ
         </p>
       </div>
 

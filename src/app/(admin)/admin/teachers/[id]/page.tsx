@@ -3,7 +3,8 @@ import { notFound } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, Mail, Phone, Award, GraduationCap } from "lucide-react"
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
+import { vietnamDayRange, vietnamMonthStart, vietnamWeekStart } from "@/lib/curriculum"
+import { calculateSessionHours } from "@/lib/payroll-utils"
 import TeacherProfileClient from "./teacher-profile-client"
 
 export default async function TeacherProfilePage({
@@ -31,16 +32,17 @@ export default async function TeacherProfilePage({
   }
 
   const now = new Date()
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 }) // T2
-  const weekEnd = endOfWeek(now, { weekStartsOn: 1 })
-  const monthStart = startOfMonth(now)
-  const monthEnd = endOfMonth(now)
+  // Mốc theo giờ VN; mốc cuối không tính (00:00 thứ Hai tuần sau / ngày 1 tháng sau)
+  const weekStart = vietnamWeekStart(now)
+  const weekEnd = vietnamWeekStart(now, 1)
+  const monthStart = vietnamMonthStart(now)
+  const monthEnd = vietnamMonthStart(now, 1)
 
   const [weeklySessions, monthlyCompletedSessions, upcomingSessions] = await Promise.all([
     prisma.classSession.findMany({
       where: {
         teacherId: teacher.id,
-        sessionDate: { gte: weekStart, lte: weekEnd },
+        sessionDate: { gte: weekStart, lt: weekEnd },
         status: { not: "CANCELLED" },
       },
       orderBy: [{ sessionDate: "asc" }, { startTime: "asc" }],
@@ -52,15 +54,16 @@ export default async function TeacherProfilePage({
     prisma.classSession.count({
       where: {
         teacherId: teacher.id,
-        sessionDate: { gte: monthStart, lte: monthEnd },
+        sessionDate: { gte: monthStart, lt: monthEnd },
         status: "COMPLETED",
       },
     }),
     prisma.classSession.findMany({
       where: {
         teacherId: teacher.id,
-        sessionDate: { gte: now },
-        status: "SCHEDULED",
+        // Từ đầu ngày hôm nay (giờ VN): buổi hôm nay lưu lúc 00:00 nên lọc "gte: now" sẽ bỏ sót
+        sessionDate: { gte: vietnamDayRange(now).start },
+        status: { in: ["SCHEDULED", "MAKE_UP"] },
       },
       orderBy: [{ sessionDate: "asc" }, { startTime: "asc" }],
       take: 10,
@@ -71,21 +74,20 @@ export default async function TeacherProfilePage({
     }),
   ])
 
-  // Tính lương cơ bản tháng này
-  // Mỗi buổi COMPLETED = hourlyRate × sessionDurationMinutes/60
+  // Tính lương cơ bản tháng này: giờ dạy thực tế (giờ bắt đầu → kết thúc) của các buổi COMPLETED, giống bảng lương
   const sessionsThisMonth = await prisma.classSession.findMany({
     where: {
       teacherId: teacher.id,
-      sessionDate: { gte: monthStart, lte: monthEnd },
+      sessionDate: { gte: monthStart, lt: monthEnd },
       status: "COMPLETED",
     },
-    include: { class: { select: { course: { select: { sessionDurationMinutes: true } } } } },
+    select: { startTime: true, endTime: true },
   })
-  const totalMinutesThisMonth = sessionsThisMonth.reduce(
-    (sum, s) => sum + (s.class.course.sessionDurationMinutes || 90),
+  const totalHoursThisMonth = sessionsThisMonth.reduce(
+    (sum, s) => sum + calculateSessionHours(s.startTime, s.endTime),
     0
   )
-  const baseSalaryThisMonth = (totalMinutesThisMonth / 60) * teacher.hourlyRate
+  const baseSalaryThisMonth = totalHoursThisMonth * teacher.hourlyRate
 
   // Format data
   const stats = {

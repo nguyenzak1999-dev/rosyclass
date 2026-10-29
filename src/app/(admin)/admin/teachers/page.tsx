@@ -6,7 +6,8 @@ export default async function TeachersPage() {
     where: {
       role: {
         code: {
-          in: ['SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STAFF']
+          // Đủ các vai trò mà form nhân sự cho phép tạo, nếu không tư vấn viên / kế toán vừa tạo sẽ không hiện ra
+          in: ['SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STAFF', 'CONSULTANT', 'ACCOUNTANT']
         }
       }
     },

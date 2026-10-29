@@ -27,46 +27,44 @@ interface ParentDialogProps {
   trigger?: React.ReactNode
 }
 
+const EMPTY_PARENT_FORM: ParentFormValues = {
+  fullName: "",
+  phone: "",
+  email: "",
+  relationship: "",
+  address: "",
+  notes: "",
+  studentIds: []
+}
+
+/** Bản ghi phụ huynh (trường trống là null trong DB) → giá trị form; zod không nhận null cho chuỗi tuỳ chọn */
+function toParentFormValues(parent: any): ParentFormValues {
+  return {
+    id: parent.id,
+    fullName: parent.fullName || "",
+    phone: parent.phone || "",
+    email: parent.email || "",
+    relationship: parent.relationship || "",
+    address: parent.address || "",
+    notes: parent.notes || "",
+    studentIds: parent.students?.map((s: any) => s.id) || []
+  }
+}
+
 export function ParentDialog({ initialData, students = [], trigger }: ParentDialogProps) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue, watch } = useForm<ParentFormValues>({
     resolver: zodResolver(parentSchema) as any,
-    defaultValues: initialData ? {
-      ...initialData,
-      studentIds: initialData.students?.map((s: any) => s.id) || []
-    } : {
-      fullName: "",
-      phone: "",
-      email: "",
-      relationship: "",
-      address: "",
-      notes: "",
-      studentIds: []
-    }
+    defaultValues: initialData ? toParentFormValues(initialData) : EMPTY_PARENT_FORM
   })
 
   const selectedStudentIds = watch("studentIds") || []
 
   React.useEffect(() => {
     if (open) {
-      if (initialData) {
-        reset({
-          ...initialData,
-          studentIds: initialData.students?.map((s: any) => s.id) || []
-        })
-      } else {
-        reset({
-          fullName: "",
-          phone: "",
-          email: "",
-          relationship: "",
-          address: "",
-          notes: "",
-          studentIds: []
-        })
-      }
+      reset(initialData ? toParentFormValues(initialData) : EMPTY_PARENT_FORM)
     }
   }, [open, initialData, reset])
 
@@ -110,6 +108,7 @@ export function ParentDialog({ initialData, students = [], trigger }: ParentDial
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" {...register("email")} />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
           </div>
 

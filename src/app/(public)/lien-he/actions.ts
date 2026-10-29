@@ -11,6 +11,13 @@ export async function submitContactForm(data: {
   message?: string
 }) {
   try {
+    // Form công khai: kiểm tra lại ở server, không chỉ dựa vào trình duyệt
+    const fullName = data.fullName?.trim().slice(0, 120)
+    const phone = data.phone?.trim().slice(0, 20)
+    if (!fullName || !phone) {
+      return { success: false, error: "Ba mẹ vui lòng điền họ tên và số điện thoại nhé!" }
+    }
+
     const notes = [
       data.courseInterest ? `Quan tâm khóa: ${data.courseInterest}` : null,
       data.message ? `Lời nhắn: ${data.message}` : null,
@@ -20,9 +27,9 @@ export async function submitContactForm(data: {
 
     const lead = await prisma.lead.create({
       data: {
-        fullName: data.fullName,
-        phone: data.phone,
-        email: data.email || null,
+        fullName,
+        phone,
+        email: data.email?.trim() || null,
         source: "Contact Form",
         notes: notes || null,
         status: "NEW",

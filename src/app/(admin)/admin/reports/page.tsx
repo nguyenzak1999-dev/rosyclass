@@ -17,18 +17,16 @@ import {
   Briefcase,
 } from "lucide-react"
 import Link from "next/link"
+import { formatVietnam, vietnamMonthStart } from "@/lib/curriculum"
 
-function monthStart(date: Date, offset = 0) {
-  return new Date(date.getFullYear(), date.getMonth() + offset, 1)
-}
-
+// Tháng theo giờ VN: Worker chạy UTC nên new Date(y, m, 1) là 07:00 sáng ngày 1 giờ VN
 function buildMonthSeries(now: Date, count: number) {
   return Array.from({ length: count }, (_, index) => {
-    const date = monthStart(now, index - count + 1)
+    const date = vietnamMonthStart(now, index - count + 1)
     return {
-      label: `T${date.getMonth() + 1}`,
+      label: `T${formatVietnam(date, "M")}`,
       start: date,
-      end: monthStart(date, 1),
+      end: vietnamMonthStart(date, 1),
     }
   })
 }
@@ -48,8 +46,12 @@ export default async function ReportsPage() {
 
   const [payments, students, attendances, leads, activeClasses, debtStats] =
     await Promise.all([
+      // Phiếu huỷ không phải doanh thu; lấy cả phiếu tạo trước kỳ nhưng thu tiền trong kỳ
       prisma.payment.findMany({
-        where: { createdAt: { gte: startDate } },
+        where: {
+          status: { not: "CANCELLED" },
+          OR: [{ createdAt: { gte: startDate } }, { paymentDate: { gte: startDate } }],
+        },
       }),
       prisma.student.findMany({
         where: { createdAt: { gte: startDate } },
@@ -79,8 +81,13 @@ export default async function ReportsPage() {
     ])
 
   // === KPI Cards (6 tháng gần nhất) ===
-  const totalRevenue6m = payments.reduce((s, p) => s + p.totalAmount, 0)
-  const totalCollected6m = payments.reduce((s, p) => s + p.paidAmount, 0)
+  const totalRevenue6m = payments
+    .filter((p) => p.createdAt >= startDate)
+    .reduce((s, p) => s + p.totalAmount, 0)
+  // Đã thu: không tính tiền đã hoàn lại
+  const totalCollected6m = payments
+    .filter((p) => p.status !== "REFUNDED" && (p.paymentDate || p.createdAt) >= startDate)
+    .reduce((s, p) => s + p.paidAmount, 0)
   const totalDebt = debtStats._sum.remainingAmount || 0
   const totalActiveClasses = activeClasses.length
   const totalActiveStudents = activeClasses.reduce(
@@ -112,6 +119,7 @@ export default async function ReportsPage() {
       .reduce((s, p) => s + p.totalAmount, 0),
     collected: payments
       .filter((p) => {
+        if (p.status === "REFUNDED") return false
         const date = p.paymentDate || p.createdAt
         return date >= month.start && date < month.end
       })

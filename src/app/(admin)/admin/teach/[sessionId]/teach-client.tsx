@@ -202,7 +202,7 @@ export function TeachClient({
             comment: draft.comment.trim() || null,
           }
         }),
-    })
+    }).catch(() => ({ success: false as const, error: "Không thể lưu buổi học, vui lòng thử lại", data: undefined }))
     setSaving(false)
 
     if (!result.success || !result.data) {

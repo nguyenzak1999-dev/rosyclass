@@ -19,6 +19,7 @@ import {
 } from "@/components/kids"
 import { createPageMetadata, JsonLd } from "@/lib/seo"
 import { prisma } from "@/lib/prisma"
+import { formatVietnamDate } from "@/lib/curriculum"
 
 interface TeacherDetailPageProps {
   params: Promise<{ id: string }>
@@ -26,8 +27,9 @@ interface TeacherDetailPageProps {
 
 export async function generateMetadata(props: TeacherDetailPageProps): Promise<Metadata> {
   const { id } = await props.params
-  const teacher = await prisma.teacher.findUnique({
-    where: { id },
+  // Cùng điều kiện với trang: hồ sơ đã ẩn không lộ tên trong tiêu đề trang 404
+  const teacher = await prisma.teacher.findFirst({
+    where: { id, status: "ACTIVE" },
     select: {
       fullName: true,
       bio: true,
@@ -70,6 +72,8 @@ export default async function TeacherDetailPage(props: TeacherDetailPageProps) {
             select: {
               name: true,
               slug: true,
+              isPublished: true,
+              status: true,
             },
           },
         },
@@ -198,7 +202,12 @@ export default async function TeacherDetailPage(props: TeacherDetailPageProps) {
               {teacher.classes.length > 0 ? teacher.classes.map((classItem, i) => (
                 <Link
                   key={classItem.id}
-                  href={`/khoa-hoc/${classItem.course.slug}`}
+                  // Khoá học chưa hiển thị trên website thì trỏ về lịch khai giảng thay vì trang 404
+                  href={
+                    classItem.course.isPublished && ["ACTIVE", "PUBLISHED"].includes(classItem.course.status)
+                      ? `/khoa-hoc/${classItem.course.slug}`
+                      : "/lich-khai-giang"
+                  }
                   className={`kid-border kid-shadow kid-pop kid-focus block rounded-kid p-5 ${toneClasses[toneAt(i)].soft}`}
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -212,7 +221,7 @@ export default async function TeacherDetailPage(props: TeacherDetailPageProps) {
                   </div>
                   <p className="mt-4 flex items-center text-[15px] font-semibold text-kid-ink">
                     <CalendarDays className="mr-2 h-4 w-4" aria-hidden="true" />
-                    {classItem.startDate ? classItem.startDate.toLocaleDateString("vi-VN") : "Chưa cập nhật ngày khai giảng"}
+                    {classItem.startDate ? formatVietnamDate(classItem.startDate) : "Chưa cập nhật ngày khai giảng"}
                   </p>
                 </Link>
               )) : (

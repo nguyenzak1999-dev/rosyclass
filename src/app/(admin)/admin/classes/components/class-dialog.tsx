@@ -27,6 +27,8 @@ import {
 import { upsertClass } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { vietnamDateKey } from "@/lib/curriculum"
+import { formatMoneyInput, parseMoneyInput } from "@/lib/utils"
 
 interface ClassDialogProps {
   initialData?: ClassFormValues
@@ -45,6 +47,8 @@ const DEFAULT_CLASS_FORM_VALUES: ClassFormValues = {
   name: "",
   courseId: "",
   maxStudents: 15,
+  sessionFee: null,
+  isOneOnOne: false,
   startDate: null,
   expectedEndDate: null,
   status: "UPCOMING",
@@ -87,6 +91,8 @@ export function ClassDialog({
   })
 
   const status = useWatch({ control, name: "status" })
+  const sessionFee = useWatch({ control, name: "sessionFee" })
+  const isOneOnOne = useWatch({ control, name: "isOneOnOne" })
   const courseId = useWatch({ control, name: "courseId" })
   const teacherId = useWatch({ control, name: "teacherId" })
   const teachingAssistantId = useWatch({ control, name: "teachingAssistantId" })
@@ -274,6 +280,39 @@ export function ClassDialog({
           </div>
 
           <div className="space-y-3">
+            <p className="text-sm font-medium">Học phí theo tháng</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="sessionFee">Đơn giá/buổi (VNĐ)</Label>
+                <Input
+                  id="sessionFee"
+                  inputMode="numeric"
+                  placeholder="Trống = theo khoá học"
+                  value={sessionFee !== null && sessionFee !== undefined ? formatMoneyInput(sessionFee) : ""}
+                  onChange={(event) => {
+                    const raw = event.target.value.replace(/\D/g, "")
+                    setValue("sessionFee", raw ? parseMoneyInput(raw) : null, { shouldDirty: true, shouldValidate: true })
+                  }}
+                />
+                {errors.sessionFee && <p className="text-sm text-destructive">{errors.sessionFee.message}</p>}
+                <p className="text-xs text-muted-foreground">Phiếu thu tháng = số buổi trong tháng × đơn giá.</p>
+              </div>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3">
+                <Checkbox
+                  checked={isOneOnOne}
+                  onCheckedChange={(value) => setValue("isOneOnOne", value === true, { shouldDirty: true })}
+                />
+                <span className="space-y-1">
+                  <span className="block text-sm font-medium">Lớp học riêng 1-1</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Học riêng với giáo viên Việt Nam; phiếu thu ghi &ldquo;Học 1-1&rdquo; và không thu buổi GV nước ngoài.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-3">
             <p className="text-sm font-medium">Nhân sự</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -453,5 +492,6 @@ function normalizeClassFormValues(initialData?: ClassFormValues): ClassFormValue
 
 function toDateInputValue(value: Date | string | null | undefined) {
   if (!value) return null
-  return new Date(value).toISOString().slice(0, 10)
+  // Ngày theo giờ VN: ngày lưu lúc 00:00 giờ VN (17:00 UTC hôm trước) không bị lùi một ngày
+  return vietnamDateKey(value)
 }

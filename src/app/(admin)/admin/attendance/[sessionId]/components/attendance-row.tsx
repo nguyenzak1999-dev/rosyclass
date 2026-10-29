@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Check, X, Clock, HelpCircle, RotateCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
 
 export type AttendanceStatus =
   | "PRESENT"
@@ -17,9 +16,10 @@ interface AttendanceRowProps {
   studentId: string
   studentName: string
   studentPhone: string | null
-  initialStatus: AttendanceStatus | null
-  initialNote: string | null
-  onChange: (data: { status: AttendanceStatus; note: string | null }) => void
+  /** Trạng thái đang chọn (do form cha giữ để "Tất cả có mặt" / "Đặt lại" hiển thị đúng) */
+  value: { status: AttendanceStatus; note: string | null } | null
+  /** null = bỏ chọn học viên này */
+  onChange: (data: { status: AttendanceStatus; note: string | null } | null) => void
   disabled?: boolean
 }
 
@@ -69,23 +69,23 @@ export function AttendanceRow({
   studentId,
   studentName,
   studentPhone,
-  initialStatus,
-  initialNote,
+  value,
   onChange,
   disabled = false,
 }: AttendanceRowProps) {
-  const [status, setStatus] = useState<AttendanceStatus | null>(initialStatus)
-  const [note, setNote] = useState<string>(initialNote || "")
+  const status = value?.status ?? null
+  const note = value?.note ?? ""
 
   const handleStatus = (newStatus: AttendanceStatus) => {
-    // Click lại nút đang active → bỏ chọn
-    const finalStatus = status === newStatus ? null : newStatus
-    setStatus(finalStatus)
-    onChange({ status: finalStatus || "PRESENT", note: note || null })
+    // Click lại nút đang active → bỏ chọn (không lưu học viên này)
+    if (status === newStatus) {
+      onChange(null)
+      return
+    }
+    onChange({ status: newStatus, note: note || null })
   }
 
   const handleNote = (newNote: string) => {
-    setNote(newNote)
     if (status) {
       onChange({ status, note: newNote || null })
     }

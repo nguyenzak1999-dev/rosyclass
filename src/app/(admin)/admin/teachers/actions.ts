@@ -6,6 +6,9 @@ import { teacherSchema, type TeacherFormValues } from "@/lib/schemas/teacher"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 import type { Prisma } from "@/generated/prisma/client"
+import { hashPassword } from "@/lib/auth/password"
+import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth/session"
+import { cookies } from "next/headers"
 
 // Vai trò quản trị: chỉ SUPER_ADMIN được gán hoặc chỉnh tài khoản mang các vai trò này
 const PRIVILEGED_ROLES = ["SUPER_ADMIN", "ADMIN"]
@@ -29,10 +32,23 @@ async function privilegeError(actor: { id: string; roleCode: string }, targetUse
   return null
 }
 
-export async function upsertTeacher(data: TeacherFormValues) {
+const MIN_PASSWORD_LENGTH = 8
+
+/**
+ * `password` (tuỳ chọn) đặt mật khẩu đăng nhập; trước đây tài khoản tạo ở đây mang hash giả nên không bao giờ đăng nhập được.
+ */
+export async function upsertTeacher(data: TeacherFormValues, password?: string) {
   try {
     const actor = await requirePermission(PERMISSIONS.teachersWrite)
-    const parsedData = teacherSchema.parse(data)
+    const parsed = teacherSchema.parse(data)
+    // Đăng nhập tra email dạng chữ thường: lưu khác kiểu chữ thì tài khoản không đăng nhập được
+    const parsedData = { ...parsed, email: parsed.email.trim().toLowerCase() }
+
+    const newPassword = password?.trim() ? password : undefined
+    if (newPassword && newPassword.length < MIN_PASSWORD_LENGTH) {
+      return { success: false, error: `Mật khẩu phải có ít nhất ${MIN_PASSWORD_LENGTH} ký tự` }
+    }
+    const passwordHash = newPassword ? await hashPassword(newPassword) : undefined
 
     const denied = await privilegeError(actor, parsedData.id, parsedData.roleCode)
     if (denied) return { success: false, error: denied }
@@ -56,7 +72,8 @@ export async function upsertTeacher(data: TeacherFormValues) {
           phone: parsedData.phone,
           status: parsedData.status,
           roleId: role.id,
-          avatar: parsedData.avatar
+          avatar: parsedData.avatar,
+          ...(passwordHash ? { passwordHash } : {})
         }
       })
 
@@ -90,7 +107,8 @@ export async function upsertTeacher(data: TeacherFormValues) {
           status: parsedData.status,
           roleId: role.id,
           avatar: parsedData.avatar,
-          passwordHash: "dummy_hash_for_now"
+          // Không nhập mật khẩu: hash giả, tài khoản chưa đăng nhập được cho tới khi được đặt mật khẩu
+          passwordHash: passwordHash ?? "dummy_hash_for_now"
         }
       })
 
@@ -113,7 +131,14 @@ export async function upsertTeacher(data: TeacherFormValues) {
       }
     }
 
+    // Tự đổi mật khẩu của mình: cấp lại cookie phiên, nếu không phiên hiện tại bị vô hiệu ngay
+    if (passwordHash && parsedData.id === actor.id) {
+      const cookieStore = await cookies()
+      cookieStore.set(SESSION_COOKIE, await createSessionToken(actor.id, passwordHash), sessionCookieOptions)
+    }
+
     revalidatePath("/admin/teachers")
+    revalidatePath("/admin/payroll")
     return { success: true }
   } catch (error: unknown) {
     console.error("Teacher upsert error:", error)
@@ -131,20 +156,35 @@ export async function deleteTeacher(userId: string) {
     const denied = await privilegeError(actor, userId)
     if (denied) return { success: false, error: denied }
 
-    // Delete Teacher profile first if exists
     const teacher = await prisma.teacher.findUnique({
-      where: { userId }
+      where: { userId },
+      select: {
+        id: true,
+        _count: { select: { classes: true, sessions: true, schedules: true, payrolls: true } }
+      }
     })
+    // D1 không có transaction: kiểm tra trước để không xoá dở dang (mất hồ sơ GV nhưng tài khoản còn)
+    if (teacher) {
+      const { classes, sessions, schedules, payrolls } = teacher._count
+      if (classes + sessions + schedules + payrolls > 0) {
+        return {
+          success: false,
+          error: "Giáo viên đã có lớp, buổi dạy hoặc bảng lương. Hãy chuyển sang \"Tạm ngưng\" thay vì xoá."
+        }
+      }
+    }
+
+    // Xoá tài khoản trước: nếu tài khoản còn dữ liệu liên kết thì lỗi ở đây và chưa có gì bị xoá
+    // (Teacher.userId là ON DELETE SET NULL nên xoá User không vướng hồ sơ giáo viên)
+    await prisma.user.delete({
+      where: { id: userId }
+    })
+
     if (teacher) {
       await prisma.teacher.delete({
         where: { id: teacher.id }
       })
     }
-
-    // Then delete User
-    await prisma.user.delete({
-      where: { id: userId }
-    })
 
     revalidatePath("/admin/teachers")
     return { success: true }

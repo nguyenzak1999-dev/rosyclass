@@ -29,6 +29,7 @@ import {
   LayoutGrid,
   List,
 } from "lucide-react"
+import { VIETNAM_TIME_ZONE } from "@/lib/curriculum"
 
 interface ClassesClientProps {
   classes: ClassData[]
@@ -277,6 +278,8 @@ function ClassGridCard({
             name: classData.name,
             courseId: classData.courseId,
             maxStudents: classData.maxStudents,
+            sessionFee: classData.sessionFee ?? null,
+            isOneOnOne: classData.isOneOnOne ?? false,
             startDate: classData.startDate as Date | null,
             expectedEndDate: classData.expectedEndDate as Date | null,
             status: classData.status,
@@ -324,5 +327,5 @@ function ClassMetaItem({
 
 function formatDate(value: Date | string | null) {
   if (!value) return "—"
-  return new Intl.DateTimeFormat("vi-VN").format(new Date(value))
+  return new Intl.DateTimeFormat("vi-VN", { timeZone: VIETNAM_TIME_ZONE }).format(new Date(value))
 }

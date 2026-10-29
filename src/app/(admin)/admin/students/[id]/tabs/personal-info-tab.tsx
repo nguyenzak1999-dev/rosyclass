@@ -3,7 +3,14 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { studentSchema, type StudentFormValues } from "@/lib/schemas/student"
+import {
+  GENDER_ITEMS,
+  STUDENT_STATUS_ITEMS,
+  studentFormSchema,
+  toStudentFormInput,
+  toStudentPayload,
+  type StudentFormInput,
+} from "../../components/student-form"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -15,29 +22,16 @@ import { useRouter } from "next/navigation"
 
 export function PersonalInfoTab({ student }: { student: any }) {
   const router = useRouter()
-  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<StudentFormValues>({
-    resolver: zodResolver(studentSchema) as any,
-    defaultValues: {
-      id: student.id,
-      code: student.code || "",
-      fullName: student.fullName,
-      email: student.email || "",
-      phone: student.phone || "",
-      gender: student.gender || "",
-      address: student.address || "",
-      currentLevel: student.currentLevel || "",
-      learningGoal: student.learningGoal || "",
-      source: student.source || "",
-      status: student.status,
-      notes: student.notes || "",
-    }
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<StudentFormInput>({
+    resolver: zodResolver(studentFormSchema) as any,
+    defaultValues: toStudentFormInput(student),
   })
 
   const status = watch("status")
   const gender = watch("gender")
 
-  const onSubmit = async (data: StudentFormValues) => {
-    const result = await upsertStudent(data as any)
+  const onSubmit = async (data: StudentFormInput) => {
+    const result = await upsertStudent(toStudentPayload(data))
     if (result.success) {
       toast.success("Cập nhật thông tin thành công!")
       router.refresh()
@@ -68,7 +62,7 @@ export function PersonalInfoTab({ student }: { student: any }) {
 
             <div className="space-y-2">
               <Label htmlFor="status">Trạng thái</Label>
-              <Select value={status} onValueChange={(val: any) => setValue("status", val)}>
+              <Select value={status} onValueChange={(val: any) => setValue("status", val)} items={STUDENT_STATUS_ITEMS}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
@@ -96,16 +90,21 @@ export function PersonalInfoTab({ student }: { student: any }) {
 
             <div className="space-y-2">
               <Label htmlFor="gender">Giới tính</Label>
-              <Select value={gender} onValueChange={(val: any) => setValue("gender", val)}>
+              <Select value={gender || ""} onValueChange={(val: any) => setValue("gender", val)} items={GENDER_ITEMS}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn giới tính" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="MALE">Nam</SelectItem>
-                  <SelectItem value="FEMALE">Nữ</SelectItem>
-                  <SelectItem value="OTHER">Khác</SelectItem>
+                  {GENDER_ITEMS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dateOfBirth">Ngày sinh</Label>
+              <Input id="dateOfBirth" type="date" {...register("dateOfBirth")} />
             </div>
 
             <div className="space-y-2">

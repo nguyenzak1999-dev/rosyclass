@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from "date-fns"
-import { MessageSquare, Plus, User } from "lucide-react"
+import { formatVietnam } from "@/lib/curriculum"
+import { MessageSquare, Plus, Trash2, User } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { addStudentNote, deleteStudentNote } from "../actions"
 
 const noteTypeMap: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
   CONSULTATION: { label: "Tư vấn", variant: "default" },
@@ -22,44 +23,62 @@ const noteTypeMap: Record<string, { label: string; variant: "default" | "seconda
   FOLLOW_UP: { label: "Nhắc việc", variant: "secondary" },
 }
 
-async function createStudentNote(studentId: string, data: { type: string; content: string }) {
-  // Placeholder: would call a server action
-  // For now we just show success
-  return { success: true }
+const NOTE_TYPE_ITEMS = [
+  { value: "CONSULTATION", label: "Tư vấn" },
+  { value: "TEACHER_COMMENT", label: "Nhận xét giáo viên" },
+  { value: "PARENT_FEEDBACK", label: "Phản hồi phụ huynh" },
+  { value: "INTERNAL", label: "Ghi chú nội bộ" },
+  { value: "FOLLOW_UP", label: "Nhắc việc cần theo dõi" },
+]
+
+export type StudentNote = {
+  id: string
+  type: string
+  content: string
+  createdAt: Date | string
+  author: string
 }
 
-export function NotesTab({ student }: { student: any }) {
+export function NotesTab({ student, notes = [] }: { student: any; notes?: StudentNote[] }) {
   const router = useRouter()
-  // Notes could be stored in a separate table – for now we show student.notes as single note
-  // and allow adding more via a local-state list (persisted later)
   const [open, setOpen] = React.useState(false)
   const [type, setType] = React.useState("INTERNAL")
   const [content, setContent] = React.useState("")
-  const [localNotes, setLocalNotes] = React.useState<any[]>([])
   const [loading, setLoading] = React.useState(false)
+  const [deletingId, setDeletingId] = React.useState<string | null>(null)
 
   const handleAdd = async () => {
-    if (!content.trim()) return
+    if (!content.trim() || loading) return
     setLoading(true)
-    // In a real system: await createStudentNote(student.id, { type, content })
-    const newNote = {
-      id: Date.now().toString(),
-      type,
-      content,
-      createdAt: new Date(),
-      author: "Admin",
+    const result = await addStudentNote(student.id, { type, content })
+    setLoading(false)
+    if (!result.success) {
+      toast.error(result.error)
+      return
     }
-    setLocalNotes(prev => [newNote, ...prev])
     toast.success("Đã thêm ghi chú!")
     setOpen(false)
     setContent("")
     setType("INTERNAL")
-    setLoading(false)
+    router.refresh()
   }
 
-  const allNotes = [...localNotes]
+  const handleDelete = async (noteId: string) => {
+    if (!confirm("Xoá ghi chú này?")) return
+    setDeletingId(noteId)
+    const result = await deleteStudentNote(noteId)
+    setDeletingId(null)
+    if (!result.success) {
+      toast.error(result.error)
+      return
+    }
+    toast.success("Đã xoá ghi chú")
+    router.refresh()
+  }
+
+  const allNotes: (StudentNote & { removable?: boolean })[] = notes.map((note) => ({ ...note, removable: true }))
   if (student.notes) {
-    allNotes.push({ id: "initial", type: "INTERNAL", content: student.notes, createdAt: student.joinedAt, author: "Hệ thống" })
+    allNotes.push({ id: "initial", type: "INTERNAL", content: student.notes, createdAt: student.joinedAt, author: "Hồ sơ học viên" })
   }
 
   return (
@@ -78,14 +97,12 @@ export function NotesTab({ student }: { student: any }) {
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label>Loại ghi chú</Label>
-                <Select value={type} onValueChange={(value) => value && setType(value)}>
+                <Select value={type} onValueChange={(value) => value && setType(value)} items={NOTE_TYPE_ITEMS}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CONSULTATION">Tư vấn</SelectItem>
-                    <SelectItem value="TEACHER_COMMENT">Nhận xét giáo viên</SelectItem>
-                    <SelectItem value="PARENT_FEEDBACK">Phản hồi phụ huynh</SelectItem>
-                    <SelectItem value="INTERNAL">Ghi chú nội bộ</SelectItem>
-                    <SelectItem value="FOLLOW_UP">Nhắc việc cần theo dõi</SelectItem>
+                    {NOTE_TYPE_ITEMS.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -130,10 +147,21 @@ export function NotesTab({ student }: { student: any }) {
                         <span className="text-sm font-medium">{note.author}</span>
                         <Badge variant={cfg.variant as any} className="text-xs">{cfg.label}</Badge>
                         <span className="text-xs text-muted-foreground ml-auto">
-                          {note.createdAt ? format(new Date(note.createdAt), "dd/MM/yyyy HH:mm") : ""}
+                          {note.createdAt ? formatVietnam(new Date(note.createdAt), "dd/MM/yyyy HH:mm") : ""}
                         </span>
+                        {note.removable && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                            disabled={deletingId === note.id}
+                            onClick={() => handleDelete(note.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
-                      <p className="text-sm text-foreground leading-relaxed">{note.content}</p>
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{note.content}</p>
                     </div>
                   </div>
                 )

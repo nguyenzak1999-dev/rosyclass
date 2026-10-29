@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 import * as XLSX from "xlsx"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 
 export function ExportExcelButton({ data }: { data: any[] }) {
   const handleExport = () => {
@@ -22,7 +22,7 @@ export function ExportExcelButton({ data }: { data: any[] }) {
       "Khóa học": item.courseName || "",
       "Trình độ hiện tại": item.currentLevel || "",
       "Tên Phụ huynh": item.parentName || "",
-      "Ngày nhập học": item.joinedAt ? format(new Date(item.joinedAt), "dd/MM/yyyy") : "",
+      "Ngày nhập học": item.joinedAt ? formatVietnam(new Date(item.joinedAt), "dd/MM/yyyy") : "",
     }))
 
     // Tạo Worksheet từ JSON
@@ -46,7 +46,7 @@ export function ExportExcelButton({ data }: { data: any[] }) {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "Danh sách học viên")
 
-    const dateStr = format(new Date(), "dd-MM-yyyy")
+    const dateStr = formatVietnam(new Date(), "dd-MM-yyyy")
     XLSX.writeFile(wb, `Danh_Sach_Hoc_Vien_${dateStr}.xlsx`)
   }
 

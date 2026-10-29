@@ -21,32 +21,44 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { upsertTestimonial, type TestimonialFormValues } from "../actions"
 
+function toFormValues(testimonial?: Testimonial): TestimonialFormValues {
+  return testimonial
+    ? {
+        id: testimonial.id,
+        authorName: testimonial.authorName,
+        authorTitle: testimonial.authorTitle ?? "",
+        content: testimonial.content,
+        avatar: testimonial.avatar ?? "",
+        rating: testimonial.rating,
+        isPublished: testimonial.isPublished,
+      }
+    : { authorName: "", authorTitle: "", content: "", avatar: "", rating: 5, isPublished: true }
+}
+
 export function TestimonialDialog({ testimonial }: { testimonial?: Testimonial }) {
   const [open, setOpen] = useState(false)
   const { register, handleSubmit, setValue, watch, reset, formState } = useForm<TestimonialFormValues>({
-    defaultValues: testimonial || {
-      authorName: "",
-      authorTitle: "",
-      content: "",
-      avatar: "",
-      rating: 5,
-      isPublished: true,
-    },
+    defaultValues: toFormValues(testimonial),
   })
+
+  // Mỗi lần mở lấy lại dữ liệu mới nhất (sau khi lưu, form không được giữ giá trị cũ)
+  const handleOpenChange = (next: boolean) => {
+    if (next) reset(toFormValues(testimonial))
+    setOpen(next)
+  }
 
   const onSubmit = async (values: TestimonialFormValues) => {
     const result = await upsertTestimonial(values)
     if (result.success) {
       toast.success(testimonial ? "Đã cập nhật cảm nhận" : "Đã tạo cảm nhận")
       setOpen(false)
-      reset()
     } else {
       toast.error(result.error)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           testimonial ? (

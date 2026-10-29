@@ -3,7 +3,14 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { studentSchema, type StudentFormValues } from "@/lib/schemas/student"
+import {
+  EMPTY_STUDENT_FORM,
+  GENDER_ITEMS,
+  STUDENT_STATUS_ITEMS,
+  studentFormSchema,
+  toStudentPayload,
+  type StudentFormInput,
+} from "./student-form"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,8 +32,18 @@ import { upsertStudent } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
+const SOURCE_ITEMS = [
+  { value: "none", label: "-- Trống --" },
+  { value: "Facebook", label: "Facebook" },
+  { value: "Website", label: "Website" },
+  { value: "Người quen giới thiệu", label: "Người quen giới thiệu" },
+  { value: "Biển hiệu/Tờ rơi", label: "Biển hiệu/Tờ rơi" },
+  { value: "Khác", label: "Khác" },
+]
+
 interface StudentDialogProps {
-  student?: StudentFormValues
+  /** Giá trị form đầy đủ (toStudentFormInput) để sửa không làm trống các trường không hiển thị */
+  student?: StudentFormInput
   parents?: any[]
   trigger?: React.ReactNode
 }
@@ -35,17 +52,9 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   
-  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, reset } = useForm<StudentFormValues>({
-    resolver: zodResolver(studentSchema) as any,
-    defaultValues: student || {
-      fullName: "",
-      email: "",
-      phone: "",
-      status: "ACTIVE",
-      gender: "",
-      address: "",
-      source: "",
-    }
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, reset } = useForm<StudentFormInput>({
+    resolver: zodResolver(studentFormSchema) as any,
+    defaultValues: student || EMPTY_STUDENT_FORM,
   })
 
   const status = watch("status")
@@ -56,32 +65,12 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
 
   React.useEffect(() => {
     if (open) {
-      if (student) {
-        // If dateOfBirth is a Date object, convert to YYYY-MM-DD for native date input
-        const formattedData = { ...student }
-        if (formattedData.dateOfBirth && typeof formattedData.dateOfBirth === 'object') {
-          // Keep it as Date object, the input type="date" expects string YYYY-MM-DD
-          // We can let react-hook-form handle it if we coerce it to string manually for the input
-          // Wait, zod says dateOfBirth is Date, but input type date expects "YYYY-MM-DD"
-        }
-        reset(formattedData)
-      } else {
-        reset({
-          fullName: "",
-          email: "",
-          phone: "",
-          status: "ACTIVE",
-          gender: "",
-          address: "",
-          source: "",
-        })
-      }
+      reset(student || EMPTY_STUDENT_FORM)
     }
   }, [open, student, reset])
 
-  const onSubmit = async (data: StudentFormValues) => {
-    // If dateOfBirth comes back as string from input, it will be coerced to Date by zod
-    const result = await upsertStudent(data as any)
+  const onSubmit = async (data: StudentFormInput) => {
+    const result = await upsertStudent(toStudentPayload(data))
     if (result.success) {
       toast.success(student ? "Cập nhật thành công!" : "Thêm mới thành công!")
       setOpen(false)
@@ -127,20 +116,14 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateOfBirth">Ngày sinh</Label>
-              <Input 
-                id="dateOfBirth" 
-                type="date" 
-                {...register("dateOfBirth")} 
-                // Simple trick to format date object to YYYY-MM-DD
-                defaultValue={student?.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : ""}
-              />
+              <Input id="dateOfBirth" type="date" {...register("dateOfBirth")} />
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="gender">Giới tính</Label>
-              <Select value={gender || ""} onValueChange={(value: any) => setValue("gender", value)}>
+              <Select value={gender || ""} onValueChange={(value: any) => setValue("gender", value)} items={GENDER_ITEMS}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn giới tính" />
                 </SelectTrigger>
@@ -153,7 +136,7 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Trạng thái</Label>
-              <Select value={status} onValueChange={(value: any) => setValue("status", value)}>
+              <Select value={status} onValueChange={(value: any) => setValue("status", value)} items={STUDENT_STATUS_ITEMS}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
@@ -195,7 +178,7 @@ export function StudentDialog({ student, parents = [], trigger }: StudentDialogP
             </div>
             <div className="space-y-2">
               <Label htmlFor="source">Nguồn học viên</Label>
-              <Select value={source || "none"} onValueChange={(value: any) => setValue("source", value === "none" ? null : value)}>
+              <Select value={source || "none"} onValueChange={(value: any) => setValue("source", value === "none" ? "" : value)} items={SOURCE_ITEMS}>
                 <SelectTrigger>
                   <SelectValue placeholder="Nguồn đến từ đâu" />
                 </SelectTrigger>

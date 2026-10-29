@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { Plus, GraduationCap, Users, Clock, BookOpen } from "lucide-react"
 import { addStudentToClass, removeStudentFromClass } from "../actions"
 import { toast } from "sonner"
@@ -154,7 +154,7 @@ export function ClassesTab({ student, availableClasses = [] }: ClassesTabProps) 
                       <span className="flex items-center gap-1">
                         <Users className="h-3 w-3" /> {cs.class._count?.students || "?"}/{cs.class.maxStudents} học viên
                       </span>
-                      <span>Tham gia: {format(new Date(cs.joinedAt), "dd/MM/yyyy")}</span>
+                      <span>Tham gia: {formatVietnam(new Date(cs.joinedAt), "dd/MM/yyyy")}</span>
                     </div>
                   </div>
                   <Button size="sm" variant="destructive" onClick={() => handleDropClass(cs.classId)}>
@@ -183,7 +183,7 @@ export function ClassesTab({ student, availableClasses = [] }: ClassesTabProps) 
                       <Badge variant="secondary">{cs.status}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">{cs.class.course?.name}</p>
-                    <p className="text-xs text-muted-foreground">Tham gia: {format(new Date(cs.joinedAt), "dd/MM/yyyy")}</p>
+                    <p className="text-xs text-muted-foreground">Tham gia: {formatVietnam(new Date(cs.joinedAt), "dd/MM/yyyy")}</p>
                   </div>
                 </div>
               ))}

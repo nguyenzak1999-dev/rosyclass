@@ -170,6 +170,7 @@ export function TeachersClient({ staff }: TeachersClientProps) {
                         Hồ sơ
                       </Button>
                     )}
+                    <span onClick={(event) => event.stopPropagation()}>
                     <TeacherDialog
                       teacher={{
                         id: member.id,
@@ -187,6 +188,7 @@ export function TeachersClient({ staff }: TeachersClientProps) {
                       }}
                       trigger={<Button variant="ghost" size="sm">Sửa</Button>}
                     />
+                    </span>
                   </CardFooter>
                 </Card>
               )

@@ -90,7 +90,8 @@ export function PayrollClient({
     startTransition(async () => {
       const res = await calculateAllPayrolls(month, year)
       if (res.success) {
-        toast.success(`Đã tính lương cho ${res.updated}/${res.total} giáo viên`)
+        const skipped = "skippedPaid" in res && res.skippedPaid ? ` (bỏ qua ${res.skippedPaid} phiếu đã trả lương)` : ""
+        toast.success(`Đã tính lương cho ${res.updated}/${res.total} giáo viên${skipped}`)
         router.refresh()
       } else {
         toast.error(res.error)
@@ -296,7 +297,10 @@ export function PayrollClient({
             data={teachers}
             searchKey="fullName"
             searchPlaceholder="Tìm giáo viên..."
-            onRowClick={(row) => setSelectedTeacherId(row.id)}
+            onRowClick={(row) => {
+              setMode("view")
+              setSelectedTeacherId(row.id)
+            }}
           />
         </CardContent>
       </Card>

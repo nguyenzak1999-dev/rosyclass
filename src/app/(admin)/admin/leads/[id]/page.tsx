@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft, User, Phone, Mail, Calendar } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import LeadDetailClient from "./lead-detail-client"
@@ -18,7 +18,7 @@ export default async function LeadDetailPage({
   const lead = await prisma.lead.findUnique({
     where: { id },
     include: {
-      interestedCourse: { select: { id: true, name: true, level: true } },
+      interestedCourse: { select: { id: true, name: true, level: true, slug: true, isPublished: true } },
       assignedTo: { select: { id: true, fullName: true, email: true } },
       leadNotes: {
         orderBy: { createdAt: "desc" },
@@ -122,7 +122,7 @@ export default async function LeadDetailPage({
             )}
             <span className="flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
-              {format(lead.createdAt, "dd/MM/yyyy HH:mm", { locale: vi })}
+              {formatVietnam(lead.createdAt, "dd/MM/yyyy HH:mm", { locale: vi })}
             </span>
           </div>
         </div>

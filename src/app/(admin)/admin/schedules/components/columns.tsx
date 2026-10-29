@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal, ExternalLink, CalendarCheck, Copy } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import Link from "next/link"
 import {
   DropdownMenu,
@@ -54,7 +54,7 @@ export const columns: ColumnDef<ScheduleData>[] = [
       const date = row.getValue("sessionDate") as Date
       return (
         <div className="font-medium px-4">
-          {format(new Date(date), "dd/MM/yyyy")}
+          {formatVietnam(new Date(date), "dd/MM/yyyy")}
         </div>
       )
     },

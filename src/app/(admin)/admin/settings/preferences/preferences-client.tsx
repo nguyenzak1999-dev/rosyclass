@@ -13,10 +13,7 @@ import {
   Laptop, 
   Moon, 
   Sun, 
-  Smartphone,
-  LogOut,
   Key,
-  ShieldAlert,
   Save,
   Camera,
   Type
@@ -37,6 +34,7 @@ import { ADMIN_COLORS, getPrimaryForeground, resolveAdminPrimaryColor } from "@/
 import type { AdminUser } from "@/lib/auth/permission-definitions"
 import type { SiteSettings } from "@/lib/site-settings"
 import { saveSiteSettings } from "../site/actions"
+import { changeOwnPassword } from "./actions"
 import { CreditCard } from "lucide-react"
 
 const TABS = [
@@ -70,9 +68,17 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
-export default function PreferencesClient({ user, siteSettings }: { user: AdminUser, siteSettings: SiteSettings }) {
+export default function PreferencesClient({
+  user,
+  siteSettings,
+  canManagePayment = false,
+}: {
+  user: AdminUser
+  siteSettings: SiteSettings
+  canManagePayment?: boolean
+}) {
   const { theme, setTheme } = useTheme()
-  const [activeTab, setActiveTab] = useState("payment")
+  const [activeTab, setActiveTab] = useState("profile")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Appearance state
@@ -133,16 +139,44 @@ export default function PreferencesClient({ user, siteSettings }: { user: AdminU
   const [paymentBankAccountNo, setPaymentBankAccountNo] = useState(siteSettings.paymentBankAccountNo || "")
   const [paymentBankAccountName, setPaymentBankAccountName] = useState(siteSettings.paymentBankAccountName || "")
 
+  // Security State
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  const handleChangePassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!currentPassword || !newPassword) {
+      toast.error("Vui lòng nhập đủ mật khẩu hiện tại và mật khẩu mới")
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Xác nhận mật khẩu mới không khớp")
+      return
+    }
+    setIsChangingPassword(true)
+    const result = await changeOwnPassword({ currentPassword, newPassword })
+    setIsChangingPassword(false)
+    if (result.success) {
+      toast.success("Đã đổi mật khẩu. Các thiết bị khác sẽ phải đăng nhập lại.")
+      setCurrentPassword("")
+      setNewPassword("")
+      setConfirmPassword("")
+    } else {
+      toast.error(result.error)
+    }
+  }
+
   const handleSavePaymentSettings = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
     setIsSubmitting(true)
-    const newSettings = {
-      ...siteSettings,
-      paymentBankCode,
-      paymentBankAccountNo,
-      paymentBankAccountName
-    }
-    const result = await saveSiteSettings(newSettings)
+    // Chỉ gửi 3 trường thanh toán: gửi cả cấu hình lúc mở trang sẽ ghi đè thay đổi ở trang Cài đặt website
+    const result = await saveSiteSettings({
+      paymentBankCode: paymentBankCode.trim(),
+      paymentBankAccountNo: paymentBankAccountNo.trim(),
+      paymentBankAccountName: paymentBankAccountName.trim()
+    })
     setIsSubmitting(false)
     if (result.success) {
       toast.success("Đã lưu thông tin tài khoản VietQR!")
@@ -165,7 +199,7 @@ export default function PreferencesClient({ user, siteSettings }: { user: AdminU
         {/* Sidebar Navigation */}
         <aside className="w-full lg:w-1/4">
           <nav className="flex lg:flex-col gap-2 overflow-x-auto pb-4 lg:pb-0 hide-scrollbar">
-            {TABS.map((tab) => {
+            {TABS.filter((tab) => tab.id !== "payment" || canManagePayment).map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
               return (
@@ -211,7 +245,7 @@ export default function PreferencesClient({ user, siteSettings }: { user: AdminU
                 </div>
               </div>
               
-              <form onSubmit={handleSave} className="space-y-4">
+              <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">Họ và đệm</Label>
@@ -231,11 +265,7 @@ export default function PreferencesClient({ user, siteSettings }: { user: AdminU
                   <Label htmlFor="bio">Tiểu sử</Label>
                   <Textarea id="bio" defaultValue={`Vai trò: ${user.roleName}`} className="min-h-[100px]" readOnly />
                 </div>
-                <div className="flex justify-end pt-4">
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
-                  </Button>
-                </div>
+                <p className="text-xs text-muted-foreground">Thông tin hồ sơ được quản lý ở mục Nhân sự; liên hệ quản trị viên để thay đổi.</p>
               </form>
             </div>
           )}
@@ -394,7 +424,8 @@ export default function PreferencesClient({ user, siteSettings }: { user: AdminU
                 </div>
               </div>
               <div className="flex justify-end pt-4">
-                <Button onClick={handleSave} disabled={isSubmitting}>Lưu thông báo</Button>
+                {/* Chưa có hệ thống gửi email/push: không giả vờ lưu */}
+                <Button disabled>Sắp ra mắt</Button>
               </div>
             </div>
           )}
@@ -412,57 +443,25 @@ export default function PreferencesClient({ user, siteSettings }: { user: AdminU
                   <CardTitle className="text-base flex items-center gap-2"><Key className="w-4 h-4" /> Đổi mật khẩu</CardTitle>
                   <CardDescription>Bạn nên sử dụng mật khẩu mạnh với ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password">Mật khẩu hiện tại</Label>
-                    <Input id="current-password" type="password" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">Mật khẩu mới</Label>
-                    <Input id="new-password" type="password" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Xác nhận mật khẩu mới</Label>
-                    <Input id="confirm-password" type="password" />
-                  </div>
-                  <Button variant="outline" className="mt-2" onClick={handleSave}>Cập nhật mật khẩu</Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2"><ShieldAlert className="w-4 h-4" /> Xác thực 2 bước (2FA)</CardTitle>
-                  <CardDescription>Bảo vệ tài khoản với một mã xác nhận gửi tới điện thoại của bạn.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Trạng thái: <Badge variant="secondary">Đang tắt</Badge></p>
-                  </div>
-                  <Button variant="default">Bật 2FA</Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2"><Smartphone className="w-4 h-4" /> Phiên đăng nhập</CardTitle>
-                  <CardDescription>Các thiết bị đang đăng nhập vào tài khoản của bạn.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">MacBook Pro - Chrome</p>
-                      <p className="text-xs text-muted-foreground">Đà Nẵng, Việt Nam • Đang hoạt động</p>
+                <CardContent>
+                  <form onSubmit={handleChangePassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="current-password">Mật khẩu hiện tại</Label>
+                      <Input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                     </div>
-                    <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 border-0">Hiện tại</Badge>
-                  </div>
-                  <Separator />
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">iPhone 14 Pro Max - Safari</p>
-                      <p className="text-xs text-muted-foreground">Hà Nội, Việt Nam • 2 giờ trước</p>
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">Mật khẩu mới</Label>
+                      <Input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                     </div>
-                    <Button variant="ghost" size="sm" className="text-destructive h-8 px-2"><LogOut className="w-4 h-4 mr-1"/> Đăng xuất</Button>
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Xác nhận mật khẩu mới</Label>
+                      <Input id="confirm-password" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Đổi mật khẩu sẽ đăng xuất tài khoản này trên các thiết bị khác.</p>
+                    <Button type="submit" variant="outline" className="mt-2" disabled={isChangingPassword}>
+                      {isChangingPassword ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
+                    </Button>
+                  </form>
                 </CardContent>
               </Card>
             </div>
@@ -520,12 +519,13 @@ export default function PreferencesClient({ user, siteSettings }: { user: AdminU
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button onClick={handleSave} disabled={isSubmitting}>Lưu cấu hình vùng</Button>
+                {/* Hệ thống luôn dùng tiếng Việt và giờ Việt Nam: chưa có chỗ lưu cấu hình này */}
+                <Button disabled>Sắp ra mắt</Button>
               </div>
             </div>
           )}
 
-          {activeTab === "payment" && (
+          {activeTab === "payment" && canManagePayment && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div>
                 <h3 className="text-lg font-medium">Cấu hình thanh toán (VietQR)</h3>

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, memo, useContext, useLayoutEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type Ref } from "react"
+import { createContext, memo, useContext, useId, useLayoutEffect, useMemo, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type Ref } from "react"
 import {
   closestCenter,
   DndContext,
@@ -101,6 +101,8 @@ export function BuilderCanvas({
   )
   const ctx = useMemo<BlockRenderContext>(() => ({ mode: "editor", data }), [data])
   const activeBlock = activeId ? blocks.find((block) => block.id === activeId) : null
+  // id cố định để aria-describedby của dnd-kit khớp giữa server và client
+  const dndId = useId()
 
   const handleDragStart = (event: DragStartEvent) => setActiveId(String(event.active.id))
   const handleDragEnd = (event: DragEndEvent) => {
@@ -110,6 +112,7 @@ export function BuilderCanvas({
 
   return (
     <DndContext
+      id={dndId}
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}

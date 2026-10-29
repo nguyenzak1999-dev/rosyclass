@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Send, User } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import { addLeadNote } from "@/app/(admin)/admin/leads/actions"
 import { toast } from "sonner"
@@ -25,11 +25,13 @@ interface LeadNotesTabProps {
 
 export function LeadNotesTab({ leadId, initialNotes }: LeadNotesTabProps) {
   const router = useRouter()
-  const [notes, setNotes] = useState<LeadNote[]>(initialNotes)
+  // Lấy thẳng từ props: router.refresh() sau khi thêm sẽ đưa ghi chú mới xuống
+  const notes = initialNotes
   const [content, setContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
     if (!content.trim()) {
       toast.error("Vui lòng nhập nội dung ghi chú")
       return
@@ -96,7 +98,7 @@ export function LeadNotesTab({ leadId, initialNotes }: LeadNotesTabProps) {
                     <span>{note.createdBy?.fullName || "—"}</span>
                     <span>·</span>
                     <span>
-                      {format(new Date(note.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
+                      {formatVietnam(new Date(note.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
                     </span>
                   </div>
                 </div>

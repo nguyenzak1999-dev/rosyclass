@@ -33,20 +33,38 @@ interface PaymentDialogProps {
   students: { id: string; fullName: string }[]
 }
 
+const EMPTY_PAYMENT: PaymentFormValues = {
+  studentId: "",
+  totalAmount: 0,
+  paidAmount: 0,
+  paymentMethod: "CASH",
+  status: "UNPAID",
+  note: ""
+}
+
+/** Bản ghi từ DB có null (note, ngày...) mà schema chỉ nhận string/undefined: chuẩn hoá để form không bị chặn âm thầm */
+function toFormValues(data: any): PaymentFormValues {
+  if (!data) return EMPTY_PAYMENT
+  return {
+    id: data.id,
+    studentId: data.studentId ?? data.student?.id ?? "",
+    totalAmount: Number(data.totalAmount) || 0,
+    paidAmount: Number(data.paidAmount) || 0,
+    paymentMethod: data.paymentMethod ?? "CASH",
+    status: data.status ?? "UNPAID",
+    paymentDate: data.paymentDate ? new Date(data.paymentDate) : null,
+    dueDate: data.dueDate ? new Date(data.dueDate) : null,
+    note: data.note ?? ""
+  }
+}
+
 export function PaymentDialog({ initialData, trigger, students }: PaymentDialogProps) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   
   const { register, handleSubmit, setValue, watch, trigger: triggerValidation, formState: { errors, isSubmitting }, reset } = useForm<PaymentFormValues>({
     resolver: zodResolver(paymentSchema) as any,
-    defaultValues: initialData || {
-      studentId: "",
-      totalAmount: 0,
-      paidAmount: 0,
-      paymentMethod: "CASH",
-      status: "UNPAID",
-      note: ""
-    }
+    defaultValues: toFormValues(initialData)
   })
 
   const studentId = watch("studentId")
@@ -57,18 +75,7 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
 
   React.useEffect(() => {
     if (open) {
-      if (initialData) {
-        reset(initialData)
-      } else {
-        reset({
-          studentId: "",
-          totalAmount: 0,
-          paidAmount: 0,
-          paymentMethod: "CASH",
-          status: "UNPAID",
-          note: ""
-        })
-      }
+      reset(toFormValues(initialData))
     }
   }, [open, initialData, reset])
 
@@ -127,6 +134,7 @@ export function PaymentDialog({ initialData, trigger, students }: PaymentDialogP
                 onBlur={() => triggerValidation("totalAmount")}
                 placeholder="0"
               />
+              {errors.totalAmount && <p className="text-sm text-destructive">{errors.totalAmount.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="paidAmount">Đã đóng (VNĐ)</Label>

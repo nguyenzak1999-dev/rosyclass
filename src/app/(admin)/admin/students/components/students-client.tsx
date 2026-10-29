@@ -2,10 +2,11 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { DataTable } from "@/components/ui/data-table"
 import { getColumns } from "./columns"
 import { StudentDialog } from "./student-dialog"
+import { toStudentFormInput } from "./student-form"
 import { ExportExcelButton } from "./export-excel-button"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -159,20 +160,17 @@ export function StudentsClient({ formattedStudents, parents }: StudentsClientPro
                     {student.joinedAt && (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-4 w-4 shrink-0 text-muted-foreground/70" />
-                        <span>Nhập học: {format(new Date(student.joinedAt), "dd/MM/yyyy")}</span>
+                        <span>Nhập học: {formatVietnam(new Date(student.joinedAt), "dd/MM/yyyy")}</span>
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter className="p-4 pt-0 border-t bg-muted/10 flex items-center justify-end gap-2 h-12">
+                  <CardFooter
+                    className="p-4 pt-0 border-t bg-muted/10 flex items-center justify-end gap-2 h-12"
+                    // Dialog sửa render qua portal nhưng sự kiện vẫn nổi lên Card (onClick chuyển trang)
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <StudentDialog 
-                      student={{
-                        id: student.id,
-                        fullName: student.fullName,
-                        email: student.email || "",
-                        phone: student.phone || "",
-                        status: student.status,
-                        currentLevel: student.currentLevel || undefined,
-                      }}
+                      student={toStudentFormInput(student)}
                       parents={parents}
                       trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
                     />

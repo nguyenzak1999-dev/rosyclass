@@ -76,7 +76,7 @@ export function HomeworkDialog({
       dueDate: draft.dueDate,
       sessionId: draft.sessionId,
       lessonId: draft.lessonId ?? null,
-    })
+    }).catch(() => ({ success: false as const, error: "Không thể lưu bài tập, vui lòng thử lại" }))
     setSaving(false)
     if (!result.success) {
       toast.error(result.error)
@@ -135,7 +135,8 @@ export function HomeworkDialog({
                 id="homework-session"
                 className={nativeSelectClass}
                 value={draft.sessionId}
-                onChange={(event) => update({ sessionId: event.target.value })}
+                // Đổi buổi → bỏ bài cũ để máy chủ lấy bài của buổi mới
+                onChange={(event) => update({ sessionId: event.target.value, lessonId: null })}
               >
                 <option value="">— Không gắn buổi —</option>
                 {sessions.map((session) => (

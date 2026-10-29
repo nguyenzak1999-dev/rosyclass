@@ -23,6 +23,8 @@ export const courseSchema = z.object({
   learningOutcomes: z.string().optional(),
   tuitionFee: z.coerce.number().min(0, "Học phí không hợp lệ"),
   salePrice: z.coerce.number().min(0, "Giá ưu đãi không hợp lệ").optional().nullable(),
+  /** Đơn giá mỗi buổi cho học phí thu theo tháng (lớp có thể ghi đè) */
+  sessionFee: z.coerce.number().min(0, "Đơn giá không hợp lệ").optional().nullable(),
   totalSessions: z.coerce.number().min(1, "Số buổi học phải lớn hơn 0"),
   sessionDurationMinutes: z.coerce.number().min(1, "Thời lượng phải lớn hơn 0").default(90),
   isPublished: z.boolean().default(false),

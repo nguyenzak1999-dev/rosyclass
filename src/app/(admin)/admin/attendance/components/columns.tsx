@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, CalendarCheck, ExternalLink } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam, toVietnamWallClock } from "@/lib/curriculum"
 import Link from "next/link"
 import { DAY_OF_WEEK_LABELS } from "@/lib/schemas/schedule"
 
 export type AttendanceSessionData = {
   id: string
+  classId: string
   sessionDate: string | Date
   startTime: string
   endTime: string
@@ -39,9 +40,9 @@ export const columns: ColumnDef<AttendanceSessionData>[] = [
       const d = new Date(row.original.sessionDate)
       return (
         <div className="px-4 font-medium">
-          {format(d, "dd/MM/yyyy")}
+          {formatVietnam(d, "dd/MM/yyyy")}
           <div className="text-xs text-muted-foreground">
-            {DAY_OF_WEEK_LABELS[d.getDay()]} · {row.original.startTime} - {row.original.endTime}
+            {DAY_OF_WEEK_LABELS[toVietnamWallClock(d).getDay()]} · {row.original.startTime} - {row.original.endTime}
           </div>
         </div>
       )
@@ -56,7 +57,7 @@ export const columns: ColumnDef<AttendanceSessionData>[] = [
       return (
         <div>
           <Link
-            href={`/admin/classes/${(row.original as any).classId || "#"}`}
+            href={`/admin/classes/${row.original.classId}`}
             className="font-medium hover:underline text-primary"
           >
             {cls.name}

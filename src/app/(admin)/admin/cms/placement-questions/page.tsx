@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { columns } from "./components/columns"
 import { PlacementQuestionDialog } from "./components/placement-question-dialog"
 import { PlacementQuestionFilters } from "./components/placement-question-filters"
-import { Prisma } from "@/generated/prisma/client"
+import { CourseLevel, Prisma } from "@/generated/prisma/client"
 
 export const dynamic = "force-dynamic"
 
@@ -22,8 +22,10 @@ export default async function PlacementQuestionsPage({ searchParams }: PageProps
   if (filters.type) {
     where.type = filters.type
   }
-  if (filters.level) {
-    where.level = filters.level as Prisma.EnumCourseLevelFilter
+  // Giá trị lạ trên URL (vd: ?level=abc) làm Prisma ném lỗi enum, nên chỉ lọc khi hợp lệ
+  const level = Object.values(CourseLevel).find((value) => value === filters.level)
+  if (level) {
+    where.level = level
   }
   if (filters.isPublished === "true") {
     where.isPublished = true
@@ -60,7 +62,7 @@ export default async function PlacementQuestionsPage({ searchParams }: PageProps
 
       <PlacementQuestionFilters
         currentType={filters.type || ""}
-        currentLevel={filters.level || ""}
+        currentLevel={level || ""}
         currentIsPublished={filters.isPublished || ""}
       />
 

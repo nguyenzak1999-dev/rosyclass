@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import { type ClassData } from "./columns"
+import { VIETNAM_TIME_ZONE } from "@/lib/curriculum"
 
 interface ExportExcelButtonProps {
   data: ClassData[]
@@ -67,13 +68,14 @@ export function ExportExcelButton({ data }: ExportExcelButtonProps) {
 }
 
 function formatDate(value: Date | string) {
-  return new Intl.DateTimeFormat("vi-VN").format(new Date(value))
+  return new Intl.DateTimeFormat("vi-VN", { timeZone: VIETNAM_TIME_ZONE }).format(new Date(value))
 }
 
 function formatDateTime(value: Date | string) {
   return new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "short",
     timeStyle: "short",
+    timeZone: VIETNAM_TIME_ZONE,
   }).format(new Date(value))
 }
 

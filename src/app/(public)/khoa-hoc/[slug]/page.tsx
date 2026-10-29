@@ -17,6 +17,7 @@ import {
 } from "@/components/kids"
 import { createPageMetadata, JsonLd } from "@/lib/seo"
 import { prisma } from "@/lib/prisma"
+import { formatVietnamDate } from "@/lib/curriculum"
 
 const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"]
 
@@ -209,7 +210,7 @@ export default async function CourseDetailPage(props: CourseDetailPageProps) {
                     <div className="space-y-3 p-6 text-[15px] text-kid-ink-soft">
                       <p className="flex items-start gap-3">
                         <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-kid-ink" aria-hidden="true" />
-                        {classItem.startDate ? `Khai giảng ${classItem.startDate.toLocaleDateString("vi-VN")}` : "Chưa cập nhật ngày khai giảng"}
+                        {classItem.startDate ? `Khai giảng ${formatVietnamDate(classItem.startDate)}` : "Chưa cập nhật ngày khai giảng"}
                       </p>
                       <p className="flex items-start gap-3">
                         <Clock className="mt-0.5 h-5 w-5 shrink-0 text-kid-ink" aria-hidden="true" />

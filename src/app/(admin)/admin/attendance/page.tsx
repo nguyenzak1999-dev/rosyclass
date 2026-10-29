@@ -1,19 +1,19 @@
 import { prisma } from "@/lib/prisma"
 import { DataTable } from "@/components/ui/data-table"
 import { columns } from "./components/columns"
-import { startOfMonth, endOfMonth, subMonths, addMonths } from "date-fns"
+import { vietnamMonthStart } from "@/lib/curriculum"
 
 export const dynamic = "force-dynamic"
 
 export default async function AttendancePage() {
   // Lấy sessions trong khoảng 1 tháng trước + 1 tháng sau (tháng hiện tại)
   const now = new Date()
-  const rangeStart = startOfMonth(subMonths(now, 1))
-  const rangeEnd = endOfMonth(addMonths(now, 1))
+  const rangeStart = vietnamMonthStart(now, -1)
+  const rangeEnd = vietnamMonthStart(now, 2)
 
   const sessions = await prisma.classSession.findMany({
     where: {
-      sessionDate: { gte: rangeStart, lte: rangeEnd },
+      sessionDate: { gte: rangeStart, lt: rangeEnd },
       status: { not: "CANCELLED" },
     },
     orderBy: { sessionDate: "asc" },
@@ -35,6 +35,7 @@ export default async function AttendancePage() {
     const classStudentsCount = session._count.attendances
     return {
       id: session.id,
+      classId: session.classId,
       sessionDate: session.sessionDate,
       startTime: session.startTime,
       endTime: session.endTime,

@@ -6,15 +6,17 @@ import { getColumns } from "./columns"
 import { PaymentDialog } from "./payment-dialog"
 import { PaymentReceiptDialog } from "./payment-receipt-dialog"
 import { ExportExcelButton } from "./export-excel-button"
+import { MonthlyBillingDialog } from "./monthly-billing-dialog"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import { Wallet, TrendingUp, AlertCircle, CheckCircle2, Search, LayoutGrid, List } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 
 interface PaymentsClientProps {
   payments: any[]
   students: { id: string; fullName: string }[]
+  billingClasses?: { id: string; name: string }[]
   stats: {
     total: number
     totalAmount: number
@@ -39,6 +41,7 @@ function formatVND(amount: number): string {
 export function PaymentsClient({
   payments,
   students,
+  billingClasses = [],
   stats,
   filterSlot,
   siteSettings,
@@ -70,6 +73,10 @@ export function PaymentsClient({
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <ExportExcelButton data={payments} />
+          <MonthlyBillingDialog
+            students={students.map((student) => ({ id: student.id, name: student.fullName }))}
+            classes={billingClasses}
+          />
           <PaymentDialog students={students} />
         </div>
       </div>
@@ -210,7 +217,7 @@ export function PaymentsClient({
                       <Badge className="bg-slate-100 text-slate-800" variant="outline">{payment.paymentMethod}</Badge>
                     </div>
                     <div className="text-xs text-muted-foreground mt-2 border-t pt-2">
-                      Ngày tạo: {format(new Date(payment.createdAt), "dd/MM/yyyy HH:mm")}
+                      Ngày tạo: {formatVietnam(new Date(payment.createdAt), "dd/MM/yyyy HH:mm")}
                     </div>
                   </CardContent>
                   <CardFooter className="p-4 pt-0 border-t bg-muted/10 flex items-center justify-end gap-2 h-12">

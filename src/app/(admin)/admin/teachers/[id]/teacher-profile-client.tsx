@@ -15,7 +15,7 @@ import {
   BookOpen,
   Award,
 } from "lucide-react"
-import { format, addDays, startOfWeek } from "date-fns"
+import { formatVietnam, vietnamDateKey, vietnamDayRange, vietnamWeekStart } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import Link from "next/link"
 import { DAY_OF_WEEK_LABELS } from "@/lib/schemas/schedule"
@@ -79,9 +79,9 @@ export default function TeacherProfileClient({
 }: TeacherProfileClientProps) {
   const statusConfig = teacherStatusMap[teacher.status] || { label: teacher.status, variant: "outline" as const }
 
-  // Group weekly sessions by day
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+  // Group weekly sessions by day (theo giờ VN để server và trình duyệt chia ngày giống nhau)
+  const weekStart = vietnamWeekStart()
+  const weekDays = Array.from({ length: 7 }, (_, i) => vietnamDayRange(weekStart, i).start)
 
   return (
     <div className="space-y-4">
@@ -163,7 +163,7 @@ export default function TeacherProfileClient({
             <CardHeader>
               <CardTitle>Lịch dạy tuần này</CardTitle>
               <CardDescription>
-                Từ {format(weekStart, "dd/MM")} đến {format(addDays(weekStart, 6), "dd/MM/yyyy")}
+                Từ {formatVietnam(weekStart, "dd/MM")} đến {formatVietnam(weekDays[6], "dd/MM/yyyy")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -174,19 +174,13 @@ export default function TeacherProfileClient({
               ) : (
                 <div className="space-y-3">
                   {weekDays.map((day, idx) => {
-                    const dayStart = new Date(day)
-                    dayStart.setHours(0, 0, 0, 0)
-                    const dayEnd = new Date(day)
-                    dayEnd.setHours(23, 59, 59, 999)
-                    const daySessions = weeklySessions.filter((s) => {
-                      const d = new Date(s.sessionDate)
-                      return d >= dayStart && d <= dayEnd
-                    })
+                    const dayKey = vietnamDateKey(day)
+                    const daySessions = weeklySessions.filter((s) => vietnamDateKey(s.sessionDate) === dayKey)
                     if (daySessions.length === 0) return null
                     return (
                       <div key={idx} className="border-l-4 border-primary pl-4 py-2">
                         <p className="text-sm font-semibold mb-2">
-                          {format(day, "EEEE, dd/MM/yyyy", { locale: vi })}
+                          {formatVietnam(day, "EEEE, dd/MM/yyyy", { locale: vi })}
                         </p>
                         <div className="space-y-2">
                           {daySessions.map((session) => (
@@ -235,7 +229,7 @@ export default function TeacherProfileClient({
                     >
                       <div>
                         <p className="font-medium">
-                          {format(new Date(session.sessionDate), "dd/MM/yyyy")} ·{" "}
+                          {formatVietnam(new Date(session.sessionDate), "dd/MM/yyyy")} ·{" "}
                           {session.startTime} - {session.endTime}
                         </p>
                         <p className="text-xs text-muted-foreground">

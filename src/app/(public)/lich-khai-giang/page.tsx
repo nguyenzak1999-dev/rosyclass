@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 import { createPageMetadata } from "@/lib/seo"
+import { vietnamDateKey } from "@/lib/curriculum"
 import { ScheduleClient, type ScheduleLevelGroup } from "@/app/(public)/lich-khai-giang/schedule-client"
 
 export const metadata: Metadata = createPageMetadata({
@@ -57,7 +58,9 @@ export default async function SchedulePage() {
           { startTime: "asc" },
         ],
       },
+      // Chỉ học viên còn học mới chiếm chỗ (HV đã nghỉ / chuyển lớp không tính)
       students: {
+        where: { status: "ACTIVE" },
         select: {
           studentId: true,
         },
@@ -79,7 +82,7 @@ export default async function SchedulePage() {
           courseId: classItem.course.id,
           name: classItem.name || classItem.course.name,
           level: getLevelGroup(classItem.course.level),
-          startDate: classItem.startDate?.toISOString().slice(0, 10) || "",
+          startDate: classItem.startDate ? vietnamDateKey(classItem.startDate) : "",
           schedule: classItem.schedules.length
             ? classItem.schedules.map((schedule) => `${dayNames[schedule.dayOfWeek] || "Lịch học"} ${schedule.startTime}-${schedule.endTime}`).join(", ")
             : "Chưa cập nhật",

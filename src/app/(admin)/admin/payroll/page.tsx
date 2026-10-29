@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { requireAdminUser } from "@/lib/auth/permissions"
 import { PayrollClient } from "./components/payroll-client"
+import { currentPayrollMonth, payrollMonthRange } from "./payroll-month"
 
 export const dynamic = "force-dynamic"
 
@@ -12,12 +13,14 @@ export default async function PayrollPage({ searchParams }: PageProps) {
   await requireAdminUser()
   const filters = await searchParams
 
-  const now = new Date()
-  const month = parseInt(filters.month || String(now.getMonth() + 1))
-  const year = parseInt(filters.year || String(now.getFullYear()))
+  // Mặc định tháng hiện tại theo giờ VN; tham số sai (vd. ?month=abc) quay về mặc định thay vì NaN
+  const current = currentPayrollMonth()
+  const parsedMonth = Number.parseInt(filters.month ?? "", 10)
+  const parsedYear = Number.parseInt(filters.year ?? "", 10)
+  const month = parsedMonth >= 1 && parsedMonth <= 12 ? parsedMonth : current.month
+  const year = parsedYear >= 2000 && parsedYear <= 2100 ? parsedYear : current.year
 
-  const start = new Date(year, month - 1, 1)
-  const end = new Date(year, month, 0, 23, 59, 59)
+  const { start, end } = payrollMonthRange(month, year)
 
   // Query 1: Lấy tất cả giáo viên active + sessions trong tháng
   const teachers = await prisma.teacher.findMany({
@@ -27,7 +30,7 @@ export default async function PayrollPage({ searchParams }: PageProps) {
       sessions: {
         where: {
           status: "COMPLETED",
-          sessionDate: { gte: start, lte: end },
+          sessionDate: { gte: start, lt: end },
         },
         select: { startTime: true, endTime: true },
       },

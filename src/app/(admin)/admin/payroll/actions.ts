@@ -3,7 +3,8 @@
 import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { revalidatePath } from "next/cache"
-import { calculateSessionHours, getMonthRange } from "@/lib/payroll-utils"
+import { calculateSessionHours } from "@/lib/payroll-utils"
+import { payrollMonthRange } from "./payroll-month"
 
 // ============================================================
 // Tính lương cho 1 giáo viên trong 1 tháng
@@ -25,19 +26,22 @@ export async function calculateTeacherPayroll(
 ) {
   await requirePermission(PERMISSIONS.paymentsWrite)
   try {
+    if (!Number.isInteger(month) || month < 1 || month > 12 || !Number.isInteger(year)) {
+      return { success: false, error: "Tháng tính lương không hợp lệ" }
+    }
     const teacher = await prisma.teacher.findUnique({
       where: { id: teacherId },
     })
     if (!teacher) return { success: false, error: "Không tìm thấy giáo viên" }
 
-    const { start, end } = getMonthRange(month, year)
+    const { start, end } = payrollMonthRange(month, year)
 
     // Lấy tất cả buổi học COMPLETED của giáo viên trong tháng
     const sessions = await prisma.classSession.findMany({
       where: {
         teacherId,
         status: "COMPLETED",
-        sessionDate: { gte: start, lte: end },
+        sessionDate: { gte: start, lt: end },
       },
       select: { startTime: true, endTime: true },
     })
@@ -82,10 +86,10 @@ export async function calculateTeacherPayroll(
         hourlyRate,
         baseAmount,
         bonusAmount: finalBonus,
-        bonusReason: overrides?.bonusReason,
+        bonusReason: overrides?.bonusReason || null,
         deductAmount: finalDeduct,
-        deductReason: overrides?.deductReason,
-        notes: overrides?.notes,
+        deductReason: overrides?.deductReason || null,
+        notes: overrides?.notes || null,
         totalAmount,
         status: "DRAFT",
       },
@@ -94,10 +98,11 @@ export async function calculateTeacherPayroll(
         hourlyRate,
         baseAmount,
         bonusAmount: finalBonus,
-        bonusReason: overrides?.bonusReason ?? existing?.bonusReason,
+        // undefined = không gửi (tính hàng loạt) → giữ cũ; chuỗi rỗng = người dùng xoá → null
+        bonusReason: overrides?.bonusReason !== undefined ? overrides.bonusReason || null : existing?.bonusReason,
         deductAmount: finalDeduct,
-        deductReason: overrides?.deductReason ?? existing?.deductReason,
-        notes: overrides?.notes ?? existing?.notes,
+        deductReason: overrides?.deductReason !== undefined ? overrides.deductReason || null : existing?.deductReason,
+        notes: overrides?.notes !== undefined ? overrides.notes || null : existing?.notes,
         totalAmount,
         historyLogs,
       },
@@ -118,21 +123,30 @@ export async function calculateTeacherPayroll(
 export async function calculateAllPayrolls(month: number, year: number) {
   await requirePermission(PERMISSIONS.paymentsWrite)
   try {
-    const teachers = await prisma.teacher.findMany({
-      where: { status: "ACTIVE" },
-      select: { id: true },
-    })
+    const [teachers, paidPayrolls] = await Promise.all([
+      prisma.teacher.findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true },
+      }),
+      prisma.teacherPayroll.findMany({
+        where: { month, year, status: "PAID" },
+        select: { teacherId: true },
+      }),
+    ])
 
-    const results = await Promise.allSettled(
-      teachers.map((t) => calculateTeacherPayroll(t.id, month, year))
-    )
+    // Phiếu đã trả lương là số đã chốt: tính hàng loạt không được âm thầm đổi số tiền (muốn tính lại thì làm từng phiếu)
+    const paidTeacherIds = new Set(paidPayrolls.map((p) => p.teacherId))
+    const pending = teachers.filter((t) => !paidTeacherIds.has(t.id))
 
-    const successCount = results.filter(
-      (r) => r.status === "fulfilled" && (r.value as any).success
-    ).length
+    // Tuần tự: chạy song song nhiều truy vấn D1 cùng lúc dễ lỗi khi có nhiều giáo viên
+    let successCount = 0
+    for (const t of pending) {
+      const res = await calculateTeacherPayroll(t.id, month, year).catch(() => null)
+      if (res?.success) successCount += 1
+    }
 
     revalidatePath("/admin/payroll")
-    return { success: true, total: teachers.length, updated: successCount }
+    return { success: true, total: pending.length, updated: successCount, skippedPaid: paidTeacherIds.size }
   } catch (error) {
     console.error("[calculateAllPayrolls]", error)
     return { success: false, error: "Lỗi khi tính lương hàng loạt" }
@@ -145,6 +159,7 @@ export async function calculateAllPayrolls(month: number, year: number) {
 export async function updatePayrollExtras(
   payrollId: string,
   data: {
+    hourlyRate?: number
     bonusAmount: number
     bonusReason?: string
     deductAmount: number
@@ -157,8 +172,11 @@ export async function updatePayrollExtras(
     const payroll = await prisma.teacherPayroll.findUnique({ where: { id: payrollId } })
     if (!payroll) return { success: false, error: "Không tìm thấy phiếu lương" }
 
+    // Đổi đơn giá/giờ trong form phải được lưu (trước đây bị bỏ qua, xem trước khác số đã lưu)
+    const hourlyRate = data.hourlyRate ?? payroll.hourlyRate
+    const baseAmount = parseFloat((payroll.totalHours * hourlyRate).toFixed(0))
     const totalAmount = parseFloat(
-      (payroll.baseAmount + data.bonusAmount - data.deductAmount).toFixed(0)
+      (baseAmount + data.bonusAmount - data.deductAmount).toFixed(0)
     )
 
     let historyLogs: any[] = Array.isArray(payroll.historyLogs) ? (payroll.historyLogs as any[]) : []
@@ -173,11 +191,13 @@ export async function updatePayrollExtras(
     const updated = await prisma.teacherPayroll.update({
       where: { id: payrollId },
       data: {
+        hourlyRate,
+        baseAmount,
         bonusAmount: data.bonusAmount,
-        bonusReason: data.bonusReason,
+        bonusReason: data.bonusReason || null,
         deductAmount: data.deductAmount,
-        deductReason: data.deductReason,
-        notes: data.notes,
+        deductReason: data.deductReason || null,
+        notes: data.notes || null,
         totalAmount,
         historyLogs,
       },
@@ -197,6 +217,10 @@ export async function updatePayrollExtras(
 export async function markPayrollAsPaid(payrollId: string) {
   await requirePermission(PERMISSIONS.paymentsWrite)
   try {
+    const payroll = await prisma.teacherPayroll.findUnique({ where: { id: payrollId }, select: { status: true } })
+    if (!payroll) return { success: false, error: "Không tìm thấy phiếu lương" }
+    if (payroll.status === "PAID") return { success: false, error: "Phiếu lương này đã được thanh toán" }
+
     const updated = await prisma.teacherPayroll.update({
       where: { id: payrollId },
       data: { status: "PAID", paidAt: new Date() },
@@ -221,7 +245,11 @@ export async function updateTeacherBank(
   try {
     const updated = await prisma.teacher.update({
       where: { id: teacherId },
-      data,
+      data: {
+        bankName: data.bankName.trim() || null,
+        bankAccountNo: data.bankAccountNo.trim() || null,
+        bankAccountName: data.bankAccountName.trim() || null,
+      },
     })
     revalidatePath("/admin/payroll")
     return { success: true, data: updated }
@@ -259,12 +287,12 @@ export async function getPayrollDetail(payrollId: string) {
 
   if (!payroll) return null
 
-  const { start, end } = getMonthRange(payroll.month, payroll.year)
+  const { start, end } = payrollMonthRange(payroll.month, payroll.year)
   const sessions = await prisma.classSession.findMany({
     where: {
       teacherId: payroll.teacherId,
       status: "COMPLETED",
-      sessionDate: { gte: start, lte: end },
+      sessionDate: { gte: start, lt: end },
     },
     include: {
       class: { select: { name: true } },

@@ -13,7 +13,8 @@ import {
   Clock, CheckCircle2, Calculator, Save, ChevronDown, ChevronUp, Pencil,
   Printer, Send, Mail, FileText
 } from "lucide-react"
-import { formatVND, formatHours } from "@/lib/payroll-utils"
+import { calculateSessionHours, formatVND, formatHours } from "@/lib/payroll-utils"
+import { formatVietnam, formatVietnamDate } from "@/lib/curriculum"
 import { formatMoneyInput, parseMoneyInput } from "@/lib/utils"
 import {
   calculateTeacherPayroll,
@@ -114,10 +115,10 @@ export function PayrollDetailSheet({
   const handleToggleSessions = () => {
     if (!showSessions && payroll && sessions.length === 0) {
       setLoadingSessions(true)
-      getPayrollDetail(payroll.id).then((data) => {
-        setSessions(data?.sessions ?? [])
-        setLoadingSessions(false)
-      })
+      getPayrollDetail(payroll.id)
+        .then((data) => setSessions(data?.sessions ?? []))
+        .catch(() => toast.error("Không tải được danh sách buổi dạy"))
+        .finally(() => setLoadingSessions(false))
     }
     setShowSessions((v) => !v)
   }
@@ -132,13 +133,14 @@ export function PayrollDetailSheet({
   // Tính lương (tạo mới hoặc tính lại) — kèm theo toàn bộ form
   const handleCalculate = () => {
     startTransition(async () => {
+      // Gửi cả chuỗi rỗng để xoá được lý do / ghi chú cũ
       const res = await calculateTeacherPayroll(teacher.id, month, year, {
         hourlyRate,
         bonusAmount: bonus,
-        bonusReason: bonusReason || undefined,
+        bonusReason,
         deductAmount: deduct,
-        deductReason: deductReason || undefined,
-        notes: notes || undefined,
+        deductReason,
+        notes,
       })
       if (res.success) {
         toast.success("Đã tính lương và lưu điều chỉnh")
@@ -155,11 +157,12 @@ export function PayrollDetailSheet({
     if (!payroll) return
     startTransition(async () => {
       const res = await updatePayrollExtras(payroll.id, {
+        hourlyRate,
         bonusAmount: bonus,
-        bonusReason: bonusReason || undefined,
+        bonusReason,
         deductAmount: deduct,
-        deductReason: deductReason || undefined,
-        notes: notes || undefined,
+        deductReason,
+        notes,
       })
       if (res.success) {
         toast.success("Đã cập nhật phiếu lương")
@@ -187,9 +190,23 @@ export function PayrollDetailSheet({
     })
   }
 
+  // Form có thay đổi chưa lưu thì số "Thực lãnh" đang hiện khác số trên phiếu
+  const isDirty = !!payroll && (
+    hourlyRate !== payroll.hourlyRate ||
+    bonus !== payroll.bonusAmount ||
+    deduct !== payroll.deductAmount ||
+    bonusReason !== (payroll.bonusReason ?? "") ||
+    deductReason !== (payroll.deductReason ?? "") ||
+    notes !== (payroll.notes ?? "")
+  )
+
   // Xác nhận trả lương
   const handleMarkPaid = () => {
     if (!payroll) return
+    if (isDirty) {
+      toast.error("Bấm \"Lưu điều chỉnh\" trước khi xác nhận trả lương")
+      return
+    }
     startTransition(async () => {
       const res = await markPayrollAsPaid(payroll.id)
       if (res.success) {
@@ -303,6 +320,10 @@ export function PayrollDetailSheet({
         </html>
       `)
       win.document.close()
+      win.addEventListener("load", () => {
+        win.focus()
+        win.print()
+      })
     }
   }
 
@@ -552,16 +573,12 @@ export function PayrollDetailSheet({
                       </div>
                     ) : (
                       sessions.map((s: any) => {
-                        const h = (() => {
-                          const [sh, sm] = s.startTime.split(":").map(Number)
-                          const [eh, em] = s.endTime.split(":").map(Number)
-                          return parseFloat(((eh * 60 + em - sh * 60 - sm) / 60).toFixed(2))
-                        })()
+                        const h = calculateSessionHours(s.startTime, s.endTime)
                         return (
                           <div key={s.id} className="flex items-center justify-between px-3 py-2 text-sm border-b last:border-0 hover:bg-muted/30">
                             <div>
                               <span className="font-medium">
-                                {new Date(s.sessionDate).toLocaleDateString("vi-VN")}
+                                {formatVietnamDate(s.sessionDate)}
                               </span>
                               <span className="text-muted-foreground ml-2 text-xs">
                                 {s.startTime}–{s.endTime}
@@ -589,7 +606,7 @@ export function PayrollDetailSheet({
                     <div key={idx} className="text-xs border-l-2 border-orange-200 pl-2">
                       <div className="text-muted-foreground flex justify-between">
                         <span>{log.action}</span>
-                        <span>{new Date(log.date).toLocaleString("vi-VN")}</span>
+                        <span>{formatVietnam(log.date, "HH:mm dd/MM/yyyy")}</span>
                       </div>
                       <div className="font-medium mt-0.5">{log.details}</div>
                     </div>
@@ -665,14 +682,14 @@ export function PayrollDetailSheet({
                 disabled={isPending}
               >
                 <CheckCircle2 className="h-4 w-4" />
-                Xác nhận đã trả lương ({formatVND(previewTotal)})
+                Xác nhận đã trả lương ({formatVND(isDirty ? previewTotal : payroll.totalAmount)})
               </Button>
             )}
 
             {isPaid && (
               <div className="pt-2 text-center text-sm text-green-600 font-medium flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4" /> 
-                Đã thanh toán {payroll?.paidAt ? new Date(payroll.paidAt).toLocaleDateString("vi-VN") : ""}
+                Đã thanh toán {payroll?.paidAt ? formatVietnamDate(payroll.paidAt) : ""}
               </div>
             )}
           </div>
@@ -695,8 +712,8 @@ export function PayrollDetailSheet({
         <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
           <div><strong>Giáo viên:</strong> {teacher.fullName}</div>
           <div><strong>Trạng thái:</strong> {isPaid ? "Đã thanh toán" : "Phiếu tạm tính"}</div>
-          <div><strong>Ngày in:</strong> {new Date().toLocaleDateString("vi-VN")}</div>
-          <div><strong>Tổng giờ dạy:</strong> {formatHours(displayHours)} giờ</div>
+          <div><strong>Ngày in:</strong> {formatVietnamDate(new Date())}</div>
+          <div><strong>Tổng giờ dạy:</strong> {formatHours(displayHours)}</div>
         </div>
 
         <table className="w-full text-sm border-collapse mb-6" border={1} cellPadding={8} style={{ borderColor: "#ddd" }}>
@@ -710,7 +727,7 @@ export function PayrollDetailSheet({
           <tbody>
             <tr>
               <td className="font-semibold">Lương cơ bản</td>
-              <td>{formatHours(displayHours)} giờ x {formatVND(hourlyRate)}/giờ</td>
+              <td>{formatHours(displayHours)} × {formatVND(hourlyRate)}/giờ</td>
               <td className="text-right">{formatVND(baseAmount)}</td>
             </tr>
             {bonus > 0 && (

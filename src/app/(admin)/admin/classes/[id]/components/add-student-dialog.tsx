@@ -43,19 +43,21 @@ export function AddStudentDialog({
 
   const handleAddStudent = async (studentId: string) => {
     setIsSubmitting(true)
-    const res = await addStudentToClass({
-      classId,
-      studentId,
-      createPayment: true
-    })
-    setIsSubmitting(false)
-
-    if (res.success) {
-      toast.success("Đã thêm học viên vào lớp!")
-      setOpen(false)
-      router.refresh()
-    } else {
-      toast.error(res.error)
+    try {
+      const res = await addStudentToClass({
+        classId,
+        studentId,
+        createPayment: true
+      })
+      if (res.success) {
+        toast.success("Đã thêm học viên vào lớp!")
+        setOpen(false)
+        router.refresh()
+      } else {
+        toast.error(res.error)
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 

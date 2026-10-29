@@ -34,6 +34,8 @@ interface TeacherDialogProps {
 
 export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
   const [open, setOpen] = React.useState(false)
+  // Mật khẩu không nằm trong schema nhân sự: giữ riêng, để trống khi sửa = giữ mật khẩu cũ
+  const [password, setPassword] = React.useState("")
   const router = useRouter()
   
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, reset } = useForm<TeacherFormValues>({
@@ -54,6 +56,7 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
 
   React.useEffect(() => {
     if (open) {
+      setPassword("")
       if (teacher) {
         reset(teacher)
       } else {
@@ -71,7 +74,11 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
   }, [open, teacher, reset])
 
   const onSubmit = async (data: TeacherFormValues) => {
-    const result = await upsertTeacher(data as any)
+    if (password && password.length < 8) {
+      toast.error("Mật khẩu phải có ít nhất 8 ký tự")
+      return
+    }
+    const result = await upsertTeacher(data as any, password || undefined)
     if (result.success) {
       toast.success(teacher ? "Cập nhật thành công!" : "Thêm mới thành công!")
       setOpen(false)
@@ -88,7 +95,14 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
         <DialogHeader>
           <DialogTitle>{teacher ? "Sửa thông tin nhân sự" : "Thêm nhân sự mới"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit, (formErrors) => {
+            // Lỗi ở trường không hiện thông báo (vai trò, trạng thái...) trước đây làm nút Lưu "không phản hồi"
+            const first = Object.values(formErrors)[0]
+            toast.error(first?.message ? String(first.message) : "Dữ liệu chưa hợp lệ")
+          })}
+          className="space-y-4"
+        >
           <div className="space-y-2">
             <Label htmlFor="fullName">Họ và tên</Label>
             <Input id="fullName" {...register("fullName")} placeholder="Nguyễn Văn A" />
@@ -102,6 +116,20 @@ export function TeacherDialog({ teacher, trigger }: TeacherDialogProps) {
           <div className="space-y-2">
             <Label htmlFor="phone">Số điện thoại</Label>
             <Input id="phone" {...register("phone")} placeholder="0901234567" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">{teacher ? "Đặt lại mật khẩu đăng nhập" : "Mật khẩu đăng nhập"}</Label>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder={teacher ? "Để trống nếu không đổi" : "Ít nhất 8 ký tự"}
+            />
+            {!teacher && (
+              <p className="text-xs text-muted-foreground">Để trống thì tài khoản chưa đăng nhập được cho tới khi được đặt mật khẩu.</p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

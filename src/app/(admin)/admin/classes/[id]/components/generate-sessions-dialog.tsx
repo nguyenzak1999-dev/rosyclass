@@ -21,6 +21,7 @@ import {
 import { generateSessions } from "@/app/(admin)/admin/classes/actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { DAY_MS, vietnamDateKey } from "@/lib/curriculum"
 
 interface GenerateSessionsDialogProps {
   open: boolean
@@ -37,18 +38,18 @@ export function GenerateSessionsDialog({
 }: GenerateSessionsDialogProps) {
   const router = useRouter()
 
-  // Default: từ hôm nay đến 30 ngày sau
-  const today = new Date()
-  const in30Days = new Date()
-  in30Days.setDate(today.getDate() + 30)
+  // Default: từ hôm nay đến 30 ngày sau (theo giờ Việt Nam)
+  const defaultRange = () => ({
+    fromDate: vietnamDateKey(new Date()),
+    toDate: vietnamDateKey(new Date(Date.now() + 30 * DAY_MS)),
+  })
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting }, reset } =
     useForm<GenerateSessionsFormValues>({
       resolver: zodResolver(generateSessionsSchema) as any,
       defaultValues: {
         classId,
-        fromDate: today.toISOString().split("T")[0],
-        toDate: in30Days.toISOString().split("T")[0],
+        ...defaultRange(),
         replaceExisting: false,
       },
     })
@@ -57,13 +58,9 @@ export function GenerateSessionsDialog({
 
   React.useEffect(() => {
     if (open) {
-      const t = new Date()
-      const e = new Date()
-      e.setDate(t.getDate() + 30)
       reset({
         classId,
-        fromDate: t.toISOString().split("T")[0],
-        toDate: e.toISOString().split("T")[0],
+        ...defaultRange(),
         replaceExisting: false,
       })
     }

@@ -3,6 +3,7 @@
 import { motion, useReducedMotion } from "motion/react"
 import { ArrowRight, BookOpen, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { courseLevelLabel } from "@/lib/course-levels"
 import { EmptyState, KidButton, PageHero, inkTextOn, toneAt, toneClasses } from "@/components/kids"
 
 // Nghiêng nhẹ xen kẽ cho cảm giác "dán sticker"
@@ -73,7 +74,7 @@ export default function CoursesClient({ courses }: { courses: CourseCardData[] }
                         />
                         <div className="relative">
                           <span className="kid-border-2 mb-4 inline-flex rounded-full bg-white px-3.5 py-1 font-kid-display text-[14px] font-bold text-kid-ink">
-                            {course.targetAudience || course.level}
+                            {course.targetAudience || courseLevelLabel(course.level)}
                           </span>
                           <h2 className="pr-10 text-[28px] leading-tight font-extrabold text-kid-ink md:text-[32px]">{course.name}</h2>
                         </div>

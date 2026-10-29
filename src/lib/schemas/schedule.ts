@@ -125,3 +125,26 @@ export const DAY_OF_WEEK_LABELS: Record<number, string> = {
   5: "Thứ 6",
   6: "Thứ 7",
 }
+
+/**
+ * Schema cho createExtraSession — buổi học thêm ngoài lịch tuần (mặc định: buổi với giáo viên nước ngoài,
+ * thu đơn giá buổi + phụ thu trên phiếu thu tháng).
+ */
+export const extraSessionSchema = z
+  .object({
+    classId: z.string().min(1, "Lớp học là bắt buộc"),
+    /** "YYYY-MM-DD" theo giờ Việt Nam */
+    sessionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Chọn ngày học"),
+    startTime: timeString,
+    endTime: timeString,
+    teacherId: z.string().optional().nullable(),
+    topic: z.string().max(200, "Chủ đề tối đa 200 ký tự").optional().nullable(),
+    isForeignTeacher: z.boolean().default(true),
+    surcharge: z.coerce.number().min(0, "Phụ thu không được âm").max(10_000_000).default(0),
+  })
+  .refine((data) => data.startTime < data.endTime, {
+    message: "Giờ kết thúc phải sau giờ bắt đầu",
+    path: ["endTime"],
+  })
+
+export type ExtraSessionFormValues = z.input<typeof extraSessionSchema>

@@ -1,6 +1,7 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@/generated/prisma/client"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { classSchema, type ClassFormValues } from "@/lib/schemas/class"
 import * as z from "zod"
@@ -8,16 +9,19 @@ import { notifyAdmins } from "@/lib/admin-notifications"
 import { createPaymentForStudent } from "@/app/(admin)/admin/payments/actions"
 import {
   cancelSessionSchema,
+  extraSessionSchema,
   generateSessionsSchema,
   scheduleSchema,
   updateSessionSchema,
   type CancelSessionFormValues,
+  type ExtraSessionFormValues,
   type GenerateSessionsFormValues,
   type ScheduleFormValues,
   type UpdateSessionFormValues
 } from "@/lib/schemas/schedule"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage } from "@/lib/errors"
+import { DAY_MS, formatVietnamDate, parseVietnamDateKey, toVietnamWallClock, vietnamDateKey, vietnamDayRange } from "@/lib/curriculum"
 
 const addStudentToClassSchema = z.object({
   classId: z.string().min(1, "Lớp học là bắt buộc"),
@@ -45,34 +49,51 @@ export async function upsertClass(data: ClassFormValues) {
     }
 
     if (classId) {
-      await prisma.$transaction(async (tx) => {
-        await tx.classStudent.deleteMany({
-          where: {
-            classId,
-            studentId: { notIn: studentIds }
-          }
-        })
-
-        if (studentIds.length > 0) {
-          // SQLite/D1 không hỗ trợ skipDuplicates, nên tự lọc học viên đã có trong lớp
-          const existing = await tx.classStudent.findMany({
-            where: { classId, studentId: { in: studentIds } },
-            select: { studentId: true }
-          })
-          const existingIds = new Set(existing.map((item) => item.studentId))
-          const newStudentIds = studentIds.filter((studentId) => !existingIds.has(studentId))
-
-          if (newStudentIds.length > 0) {
-            await tx.classStudent.createMany({
-              data: newStudentIds.map((studentId) => ({
-                classId,
-                studentId,
-                status: "ACTIVE" as const
-              }))
-            })
-          }
-        }
+      // D1 không hỗ trợ interactive transaction nên tính chênh lệch trước rồi chạy batch.
+      // Chỉ gỡ HV đang ACTIVE bị bỏ chọn; giữ bản ghi DROPPED/COMPLETED làm lịch sử
+      const selectedIds = new Set(studentIds)
+      const existing = await prisma.classStudent.findMany({
+        where: { classId },
+        select: { studentId: true, status: true }
       })
+      const existingById = new Map(existing.map((item) => [item.studentId, item.status]))
+      const removeIds = existing
+        .filter((item) => item.status === "ACTIVE" && !selectedIds.has(item.studentId))
+        .map((item) => item.studentId)
+      // HV từng nghỉ/chuyển lớp được chọn lại → kích hoạt lại thay vì tạo trùng
+      const reactivateIds = studentIds.filter((studentId) => {
+        const status = existingById.get(studentId)
+        return status !== undefined && status !== "ACTIVE"
+      })
+      // SQLite/D1 không hỗ trợ skipDuplicates, nên tự lọc học viên đã có trong lớp
+      const newStudentIds = studentIds.filter((studentId) => !existingById.has(studentId))
+
+      const operations: Prisma.PrismaPromise<unknown>[] = []
+      if (removeIds.length > 0) {
+        operations.push(prisma.classStudent.deleteMany({ where: { classId, studentId: { in: removeIds } } }))
+      }
+      if (reactivateIds.length > 0) {
+        operations.push(
+          prisma.classStudent.updateMany({
+            where: { classId, studentId: { in: reactivateIds } },
+            data: { status: "ACTIVE", joinedAt: new Date() }
+          })
+        )
+      }
+      if (newStudentIds.length > 0) {
+        operations.push(
+          prisma.classStudent.createMany({
+            data: newStudentIds.map((studentId) => ({
+              classId,
+              studentId,
+              status: "ACTIVE" as const
+            }))
+          })
+        )
+      }
+      if (operations.length > 0) {
+        await prisma.$transaction(operations)
+      }
     }
 
     revalidatePath("/admin/classes")
@@ -120,7 +141,7 @@ export async function addStudentToClass(
       }
     })
 
-    if (existing) {
+    if (existing?.status === "ACTIVE") {
       return { success: false, error: "Học viên này đã ở trong lớp" }
     }
 
@@ -143,8 +164,21 @@ export async function addStudentToClass(
       return { success: false, error: "Lớp đã đủ sĩ số tối đa, không thể xếp thêm học viên!" }
     }
 
-    await prisma.classStudent.create({
-      data: { classId, studentId }
+    if (existing) {
+      // HV từng nghỉ/chuyển khỏi lớp → kích hoạt lại bản ghi cũ (khoá @@unique classId + studentId)
+      await prisma.classStudent.update({
+        where: { classId_studentId: { classId, studentId } },
+        data: { status: "ACTIVE", joinedAt: new Date() }
+      })
+    } else {
+      await prisma.classStudent.create({
+        data: { classId, studentId }
+      })
+    }
+    // HV đã có lớp → chuyển khỏi danh sách "chờ xếp lớp"
+    await prisma.student.updateMany({
+      where: { id: studentId, status: { not: "ACTIVE" } },
+      data: { status: "ACTIVE" }
     })
 
     // Tự động tạo payment cho HV (nếu course có học phí > 0)
@@ -331,18 +365,21 @@ export async function generateSessions(data: GenerateSessionsFormValues) {
       return { success: false, error: "Lớp chưa có lịch học cố định nào. Hãy tạo lịch trước." }
     }
 
-    // Chuẩn hoá range: từ 00:00 fromDate đến 23:59 toDate
-    const from = new Date(parsed.fromDate)
-    from.setHours(0, 0, 0, 0)
-    const to = new Date(parsed.toDate)
-    to.setHours(23, 59, 59, 999)
+    // Chuẩn hoá range theo giờ Việt Nam: [00:00 fromDate, 00:00 ngày sau toDate)
+    // Worker chạy UTC nên không dùng setHours/getDay theo giờ máy
+    const from = parseVietnamDateKey(parsed.fromDate)
+    const toStart = parseVietnamDateKey(parsed.toDate)
+    if (!from || !toStart) {
+      return { success: false, error: "Khoảng ngày không hợp lệ" }
+    }
+    const to = new Date(toStart.getTime() + DAY_MS)
 
     // Nếu replaceExisting, xoá SCHEDULED sessions chưa có attendance
     if (parsed.replaceExisting) {
       const futureScheduled = await prisma.classSession.findMany({
         where: {
           classId: parsed.classId,
-          sessionDate: { gte: from, lte: to },
+          sessionDate: { gte: from, lt: to },
           status: "SCHEDULED",
           attendances: { none: {} }
         },
@@ -366,34 +403,35 @@ export async function generateSessions(data: GenerateSessionsFormValues) {
       roomId: string | null
     }[] = []
 
-    const cursor = new Date(from)
-    while (cursor <= to) {
-      const dayOfWeek = cursor.getDay() // 0 = CN, 1 = T2, ..., 6 = T7
+    // sessionDate = 00:00 giờ VN của ngày học (giống dữ liệu đang có)
+    for (let time = from.getTime(); time < to.getTime(); time += DAY_MS) {
+      const sessionDate = new Date(time)
+      const dayOfWeek = toVietnamWallClock(sessionDate).getDay() // 0 = CN, 1 = T2, ..., 6 = T7
       const matchingSchedules = schedules.filter((s) => s.dayOfWeek === dayOfWeek)
       for (const schedule of matchingSchedules) {
         toCreate.push({
           classId: cls.id,
           scheduleId: schedule.id,
-          sessionDate: new Date(cursor),
+          sessionDate,
           startTime: schedule.startTime,
           endTime: schedule.endTime,
           teacherId: schedule.teacherId ?? cls.teacherId ?? null,
           roomId: schedule.roomId ?? cls.roomId ?? null
         })
       }
-      cursor.setDate(cursor.getDate() + 1)
     }
 
     if (toCreate.length === 0) {
       return { success: true, data: { count: 0 } }
     }
 
-    // SQLite/D1 không hỗ trợ skipDuplicates: bỏ các buổi trùng @@unique([classId, sessionDate, startTime])
+    // SQLite/D1 không hỗ trợ skipDuplicates: bỏ các buổi trùng ngày (giờ VN) + giờ bắt đầu.
+    // So theo ngày VN thay vì mốc thời gian vì buổi cũ có thể lưu 00:00 UTC hoặc 00:00 giờ VN
     const existingSessions = await prisma.classSession.findMany({
-      where: { classId: cls.id, sessionDate: { gte: from, lte: to } },
+      where: { classId: cls.id, sessionDate: { gte: from, lt: to } },
       select: { sessionDate: true, startTime: true }
     })
-    const sessionKey = (sessionDate: Date, startTime: string) => `${sessionDate.getTime()}|${startTime}`
+    const sessionKey = (sessionDate: Date, startTime: string) => `${vietnamDateKey(sessionDate)}|${startTime}`
     const existingKeys = new Set(existingSessions.map((s) => sessionKey(s.sessionDate, s.startTime)))
     const uniqueToCreate = toCreate.filter((session) => {
       const key = sessionKey(session.sessionDate, session.startTime)
@@ -450,6 +488,25 @@ export async function updateSession(data: UpdateSessionFormValues) {
       }
     }
 
+    // Đổi ngày/giờ: không cho trùng buổi khác của lớp cùng ngày (giờ VN) + giờ bắt đầu.
+    // @@unique không bắt được khi hai buổi lưu mốc 00:00 khác múi giờ
+    if (parsed.sessionDate || parsed.startTime) {
+      const day = vietnamDayRange(parsed.sessionDate ?? existing.sessionDate)
+      const clash = await prisma.classSession.findFirst({
+        where: {
+          classId: existing.classId,
+          id: { not: existing.id },
+          startTime: parsed.startTime ?? existing.startTime,
+          sessionDate: { gte: day.start, lt: day.end },
+          status: { not: "CANCELLED" }
+        },
+        select: { id: true }
+      })
+      if (clash) {
+        return { success: false, error: "Lớp đã có buổi học khác cùng ngày và giờ bắt đầu" }
+      }
+    }
+
     await prisma.classSession.update({
       where: { id: parsed.id },
       data: {
@@ -475,6 +532,60 @@ export async function updateSession(data: UpdateSessionFormValues) {
   } catch (error) {
     console.error("Update session error:", error)
     return { success: false, error: getErrorMessage(error, "Không thể cập nhật buổi học") }
+  }
+}
+
+/**
+ * Thêm một buổi học ngoài lịch tuần, chủ yếu cho buổi học với giáo viên nước ngoài (1 buổi/tháng).
+ * Phiếu thu tháng tính buổi này: đơn giá buổi + phụ thu.
+ */
+export async function createExtraSession(data: ExtraSessionFormValues) {
+  try {
+    await requirePermission(PERMISSIONS.classesWrite)
+    const parsed = extraSessionSchema.parse(data)
+    const sessionDate = parseVietnamDateKey(parsed.sessionDate)
+    if (!sessionDate) return { success: false, error: "Ngày học không hợp lệ" }
+
+    const cls = await prisma.class.findUnique({
+      where: { id: parsed.classId },
+      select: { id: true, roomId: true, teacherId: true },
+    })
+    if (!cls) return { success: false, error: "Không tìm thấy lớp học" }
+
+    const day = vietnamDayRange(sessionDate)
+    const clash = await prisma.classSession.findFirst({
+      where: {
+        classId: cls.id,
+        startTime: parsed.startTime,
+        sessionDate: { gte: day.start, lt: day.end },
+        status: { not: "CANCELLED" },
+      },
+      select: { id: true },
+    })
+    if (clash) return { success: false, error: "Lớp đã có buổi học khác cùng ngày và giờ bắt đầu" }
+
+    const session = await prisma.classSession.create({
+      data: {
+        classId: cls.id,
+        sessionDate,
+        startTime: parsed.startTime,
+        endTime: parsed.endTime,
+        roomId: cls.roomId,
+        teacherId: parsed.teacherId || (parsed.isForeignTeacher ? null : cls.teacherId),
+        topic: parsed.topic?.trim() || (parsed.isForeignTeacher ? "Học với giáo viên nước ngoài" : null),
+        isForeignTeacher: parsed.isForeignTeacher,
+        surcharge: parsed.isForeignTeacher ? parsed.surcharge : 0,
+      },
+      select: { id: true },
+    })
+
+    revalidatePath(`/admin/classes/${cls.id}`)
+    revalidatePath("/admin/schedules")
+    revalidatePath("/admin/attendance")
+    return { success: true, data: { id: session.id } }
+  } catch (error) {
+    console.error("Create extra session error:", error)
+    return { success: false, error: getErrorMessage(error, "Không thể thêm buổi học") }
   }
 }
 
@@ -604,7 +715,7 @@ export async function cancelSession(data: CancelSessionFormValues) {
     if (cls) {
       notifyAdmins(
         "Buổi học bị huỷ",
-        `Buổi học ngày ${new Date(existing.sessionDate).toLocaleDateString("vi-VN")} của lớp ${cls.name} đã bị huỷ${parsed.reason ? `: ${parsed.reason}` : ""}`,
+        `Buổi học ngày ${formatVietnamDate(existing.sessionDate)} của lớp ${cls.name} đã bị huỷ${parsed.reason ? `: ${parsed.reason}` : ""}`,
         `/admin/schedules/${existing.id}`
       )
     }
@@ -852,36 +963,32 @@ export async function transferStudentToClass(studentId: string, fromClassId: str
       }
     }
 
-    // Transaction: set nguồn DROPPED + tạo mới ở đích
-    await prisma.$transaction(async (tx) => {
+    // Batch transaction: set nguồn DROPPED + tạo mới ở đích (D1 không hỗ trợ interactive transaction)
+    await prisma.$transaction([
       // 1. Cập nhật lớp nguồn: ACTIVE → DROPPED
-      await tx.classStudent.update({
+      prisma.classStudent.update({
         where: { classId_studentId: { classId: fromClassId, studentId } },
         data: {
           status: "DROPPED"
         }
-      })
-
-      // 2. Tạo mới ở lớp đích
-      if (existingInTarget) {
-        // Nếu đã có record cũ (DROPPED) → update lại ACTIVE
-        await tx.classStudent.update({
-          where: { classId_studentId: { classId: toClassId, studentId } },
-          data: {
-            status: "ACTIVE",
-            joinedAt: new Date()
-          }
-        })
-      } else {
-        await tx.classStudent.create({
-          data: {
-            classId: toClassId,
-            studentId,
-            status: "ACTIVE"
-          }
-        })
-      }
-    })
+      }),
+      // 2. Tạo mới ở lớp đích; nếu đã có record cũ (DROPPED) → update lại ACTIVE
+      existingInTarget
+        ? prisma.classStudent.update({
+            where: { classId_studentId: { classId: toClassId, studentId } },
+            data: {
+              status: "ACTIVE",
+              joinedAt: new Date()
+            }
+          })
+        : prisma.classStudent.create({
+            data: {
+              classId: toClassId,
+              studentId,
+              status: "ACTIVE"
+            }
+          })
+    ])
 
     revalidatePath(`/admin/classes/${fromClassId}`)
     revalidatePath(`/admin/classes/${toClassId}`)

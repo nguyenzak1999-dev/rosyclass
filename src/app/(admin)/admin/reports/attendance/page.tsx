@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { startOfMonth, endOfMonth, subMonths, format } from "date-fns"
+import { formatVietnam, vietnamDayRange, vietnamMonthStart } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import { CheckCircle2, XCircle, AlertTriangle, TrendingUp, Users, Calendar } from "lucide-react"
 import Link from "next/link"
@@ -12,14 +12,17 @@ export const dynamic = "force-dynamic"
 
 export default async function AttendanceReportPage() {
   const now = new Date()
-  const monthStart = startOfMonth(subMonths(now, 1))
-  const monthEnd = endOfMonth(now)
+  const monthStart = vietnamMonthStart(now, -1)
+  // Mốc cuối (không tính): 00:00 giờ VN ngày 1 tháng sau
+  const nextMonthStart = vietnamMonthStart(now, 1)
+  const monthEnd = new Date(nextMonthStart.getTime() - 1)
 
   // Lấy tất cả sessions COMPLETED trong 2 tháng gần nhất + attendances
   const [sessions, classes, students] = await Promise.all([
     prisma.classSession.findMany({
       where: {
-        sessionDate: { gte: monthStart, lte: monthEnd },
+        // Chỉ các buổi đã diễn ra (tới hết hôm nay): buổi tương lai chưa điểm danh làm sai số buổi
+        sessionDate: { gte: monthStart, lt: vietnamDayRange(now, 1).start },
         status: { in: ["COMPLETED", "SCHEDULED", "MAKE_UP"] },
       },
       include: {
@@ -127,7 +130,7 @@ export default async function AttendanceReportPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Báo cáo chuyên cần</h1>
         <p className="text-sm text-muted-foreground">
-          Từ {format(monthStart, "dd/MM/yyyy")} đến {format(monthEnd, "dd/MM/yyyy")} · Dữ liệu từ{" "}
+          Từ {formatVietnam(monthStart, "dd/MM/yyyy")} đến {formatVietnam(monthEnd, "dd/MM/yyyy")} · Dữ liệu từ{" "}
           {sessions.length} buổi học
         </p>
       </div>

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { FileSpreadsheet } from "lucide-react"
 import * as XLSX from "xlsx"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { toast } from "sonner"
 
 interface ExportExcelButtonProps {
@@ -28,7 +28,7 @@ export function ExportExcelButton({ data }: ExportExcelButtonProps) {
         "Giá ưu đãi (VNĐ)": c.salePrice || "—",
         "Trạng thái": c.status,
         "Hiển thị trên web": c.isPublished ? "Có" : "Không",
-        "Ngày tạo": format(new Date(c.createdAt), "dd/MM/yyyy HH:mm"),
+        "Ngày tạo": formatVietnam(new Date(c.createdAt), "dd/MM/yyyy HH:mm"),
       }))
 
       const ws = XLSX.utils.json_to_sheet(exportData)
@@ -47,7 +47,7 @@ export function ExportExcelButton({ data }: ExportExcelButtonProps) {
 
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, ws, "Khóa học")
-      XLSX.writeFile(wb, `Khoa-hoc_${format(new Date(), "dd-MM-yyyy")}.xlsx`)
+      XLSX.writeFile(wb, `Khoa-hoc_${formatVietnam(new Date(), "dd-MM-yyyy")}.xlsx`)
       toast.success(`Đã xuất ${data.length} khóa học`)
     } catch (error) {
       console.error("Export error:", error)

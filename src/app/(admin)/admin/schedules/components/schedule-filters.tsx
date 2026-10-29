@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { X } from "lucide-react"
+import { vietnamDateKey } from "@/lib/curriculum"
 
 interface ScheduleFiltersProps {
   currentMonth: string
@@ -182,9 +183,7 @@ export function ScheduleFilters({
   )
 }
 
+/** Tháng hiện tại theo giờ VN (server UTC và trình duyệt cho cùng kết quả) */
 function getCurrentMonth(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, "0")
-  return `${y}-${m}`
+  return vietnamDateKey(new Date()).slice(0, 7)
 }

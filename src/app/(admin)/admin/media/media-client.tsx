@@ -70,6 +70,7 @@ function formatDate(date: string) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: "Asia/Ho_Chi_Minh",
   })
 }
 
@@ -91,12 +92,20 @@ export function MediaClient() {
   const [dragging, setDragging] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Chỉ nhận kết quả của lần tải mới nhất: gõ tìm kiếm nhanh tạo nhiều request, về không theo thứ tự
+  const requestIdRef = useRef(0)
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+  }, [])
 
   const loadFiles = useCallback(async (params: {
     search?: string
     folder?: string
     page?: number
   } = {}) => {
+    const requestId = ++requestIdRef.current
     setLoading(true)
     try {
       const p = new URLSearchParams({
@@ -107,16 +116,16 @@ export function MediaClient() {
       })
       const res = await fetch(`/api/media?${p}`)
       const data = await res.json()
-      if (data.success) {
-        setFiles(data.files)
-        setTotal(data.total)
-        setPage(data.page)
-        setTotalPages(data.totalPages)
-      }
-    } catch {
-      toast.error("Không thể tải danh sách file")
+      if (requestId !== requestIdRef.current) return
+      if (!res.ok || !data.success) throw new Error(data.error || "Không thể tải danh sách file")
+      setFiles(data.files)
+      setTotal(data.total)
+      setPage(data.page)
+      setTotalPages(data.totalPages)
+    } catch (err: unknown) {
+      if (requestId === requestIdRef.current) toast.error(getErrorMessage(err, "Không thể tải danh sách file"))
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
   }, [])
 
@@ -126,12 +135,15 @@ export function MediaClient() {
 
   const handleSearch = (value: string) => {
     setSearch(value)
-    loadFiles({ search: value, folder, page: 1 })
+    // Đợi người dùng gõ xong mới gọi API
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(() => loadFiles({ search: value.trim(), folder, page: 1 }), 300)
   }
 
   const handleFolderChange = (value: string) => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     setFolder(value)
-    loadFiles({ search, folder: value, page: 1 })
+    loadFiles({ search: search.trim(), folder: value, page: 1 })
   }
 
   const handlePageChange = (newPage: number) => {
@@ -179,18 +191,21 @@ export function MediaClient() {
     try {
       const res = await fetch(`/api/upload?id=${file.id}`, { method: "DELETE" })
       const data = await res.json()
-      if (!data.success) throw new Error(data.error)
+      if (!res.ok || !data.success) throw new Error(data.error)
       toast.success("Đã xóa ảnh")
       if (selectedFile?.id === file.id) setSelectedFile(null)
-      loadFiles({ search, folder, page })
+      // Xoá file cuối cùng của trang thì lùi về trang trước
+      loadFiles({ search, folder, page: files.length === 1 && page > 1 ? page - 1 : page })
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Xóa ảnh thất bại"))
     }
   }
 
   const handleCopyUrl = (url: string) => {
-    navigator.clipboard.writeText(url)
-    toast.success("Đã sao chép URL")
+    navigator.clipboard.writeText(url).then(
+      () => toast.success("Đã sao chép URL"),
+      () => toast.error("Không sao chép được URL")
+    )
   }
 
   return (

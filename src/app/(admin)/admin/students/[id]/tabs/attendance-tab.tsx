@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import {
   AlertTriangle,
   CheckCircle2,
@@ -188,7 +188,7 @@ export function AttendanceTab({ student }: { student: any }) {
                         </p>
                         <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                           <Calendar className="h-3 w-3" />
-                          {a.session?.sessionDate ? format(new Date(a.session.sessionDate), "dd/MM/yyyy") : "—"}
+                          {a.session?.sessionDate ? formatVietnam(new Date(a.session.sessionDate), "dd/MM/yyyy") : "—"}
                           {" • "}{a.session?.startTime} – {a.session?.endTime}
                         </p>
                       </div>
@@ -266,7 +266,7 @@ export function AttendanceTab({ student }: { student: any }) {
                     )}
                     <p className="text-xs text-slate-700 font-medium flex items-center gap-1">
                       <Calendar className="h-3.5 w-3.5 text-slate-500" />
-                      {format(new Date(s.sessionDate), "dd/MM/yyyy")} • {s.startTime} - {s.endTime}
+                      {formatVietnam(new Date(s.sessionDate), "dd/MM/yyyy")} • {s.startTime} - {s.endTime}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
                       Giáo viên: {s.teacherName}

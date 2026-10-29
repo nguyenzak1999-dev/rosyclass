@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { CreditCard, Plus, Receipt } from "lucide-react"
 import { createPayment } from "../actions"
 import { toast } from "sonner"
@@ -45,7 +45,7 @@ export function PaymentsTab({ student }: { student: any }) {
   const totalDebt = payments.reduce((s: number, p: any) => s + p.remainingAmount, 0)
 
   const handleCreate = async () => {
-    if (!form.totalAmount) return
+    if (!form.totalAmount || loading) return
     setLoading(true)
     const result = await createPayment({
       studentId: student.id,
@@ -100,7 +100,11 @@ export function PaymentsTab({ student }: { student: any }) {
               </div>
               <div className="space-y-2">
                 <Label>Phương thức thanh toán</Label>
-                <Select value={form.paymentMethod} onValueChange={v => v && setForm(p => ({ ...p, paymentMethod: v }))}>
+                <Select
+                  value={form.paymentMethod}
+                  onValueChange={v => v && setForm(p => ({ ...p, paymentMethod: v }))}
+                  items={[{ value: "CASH", label: "Tiền mặt" }, { value: "BANK_TRANSFER", label: "Chuyển khoản" }]}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="CASH">Tiền mặt</SelectItem>
@@ -184,8 +188,8 @@ export function PaymentsTab({ student }: { student: any }) {
                         {p.remainingAmount > 0 && <span className="text-destructive">Còn nợ: {vnd.format(p.remainingAmount)}</span>}
                       </div>
                       <div className="text-xs text-muted-foreground flex gap-3">
-                        <span>Ngày tạo: {format(new Date(p.createdAt), "dd/MM/yyyy")}</span>
-                        {p.dueDate && <span>Hạn đóng: {format(new Date(p.dueDate), "dd/MM/yyyy")}</span>}
+                        <span>Ngày tạo: {formatVietnam(new Date(p.createdAt), "dd/MM/yyyy")}</span>
+                        {p.dueDate && <span>Hạn đóng: {formatVietnam(new Date(p.dueDate), "dd/MM/yyyy")}</span>}
                         <span>{p.paymentMethod === "CASH" ? "Tiền mặt" : "Chuyển khoản"}</span>
                       </div>
                       {p.note && <p className="text-xs text-muted-foreground italic">{p.note}</p>}

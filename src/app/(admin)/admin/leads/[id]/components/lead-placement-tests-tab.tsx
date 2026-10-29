@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { GraduationCap, Save, ExternalLink, Pencil, Trash2, CheckCircle2, Clock } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import Link from "next/link"
 import { recordTestResult, deletePlacementTest } from "@/app/(admin)/admin/leads/actions"
@@ -135,7 +135,7 @@ export function LeadPlacementTestsTab({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium">
-                            {format(new Date(test.testDate), "dd/MM/yyyy", { locale: vi })}
+                            {formatVietnam(new Date(test.testDate), "dd/MM/yyyy", { locale: vi })}
                           </p>
                           {isCompleted ? (
                             <Badge variant="default" className="gap-1">
@@ -258,6 +258,7 @@ function RecordTestResultDialog({ test, courses, onClose }: RecordTestResultDial
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
     setIsSubmitting(true)
     const res = await recordTestResult({
       placementTestId: test.id,
@@ -289,7 +290,7 @@ function RecordTestResultDialog({ test, courses, onClose }: RecordTestResultDial
             {test.totalScore !== null ? "Sửa kết quả" : "Nhập kết quả"} Placement Test
           </DialogTitle>
           <DialogDescription>
-            Ngày test: {format(new Date(test.testDate), "dd/MM/yyyy", { locale: vi })}
+            Ngày test: {formatVietnam(new Date(test.testDate), "dd/MM/yyyy", { locale: vi })}
           </DialogDescription>
         </DialogHeader>
 
@@ -381,6 +382,10 @@ function RecordTestResultDialog({ test, courses, onClose }: RecordTestResultDial
               value={courseId}
               onValueChange={(v) => setCourseId(v as string)}
               disabled={isSubmitting}
+              items={[
+                { value: "none", label: "— Không chọn —" },
+                ...courses.map((c) => ({ value: c.id, label: `${c.name} (${c.level})` })),
+              ]}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Chọn khóa học" />

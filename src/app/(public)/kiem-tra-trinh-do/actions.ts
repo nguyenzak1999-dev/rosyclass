@@ -35,7 +35,17 @@ export async function submitPlacementTestLead(data: {
   totalQuestions?: number
 }) {
   try {
-    const notes = `Quan tâm khóa: ${data.courseInterest}. Điểm Test Sơ Bộ: ${data.score !== undefined ? `${data.score}/${data.totalQuestions}` : 'Chưa làm'}`
+    const fullName = data.fullName?.trim().slice(0, 120)
+    const phone = data.phone?.trim().slice(0, 20)
+    if (!data.leadId && (!fullName || !phone)) {
+      return { success: false, error: "Ba mẹ vui lòng điền họ tên của bé và số điện thoại nhé!" }
+    }
+    // Điểm do trình duyệt gửi: chỉ nhận số câu đúng hợp lệ (0..tổng số câu)
+    const totalQuestions = Number.isInteger(data.totalQuestions) && data.totalQuestions! > 0 ? data.totalQuestions! : undefined
+    const score = totalQuestions !== undefined && Number.isInteger(data.score) && data.score! >= 0
+      ? Math.min(data.score!, totalQuestions)
+      : undefined
+    const notes = `Quan tâm khóa: ${data.courseInterest}. Điểm Test Sơ Bộ: ${score !== undefined ? `${score}/${totalQuestions}` : 'Chưa làm'}`
 
     const existingId = await readLeadToken(data.leadId)
     if (data.leadId && !existingId) {
@@ -56,26 +66,27 @@ export async function submitPlacementTestLead(data: {
         return { success: false, error: "Phiên làm bài đã hết hạn, ba mẹ vui lòng làm lại" }
       }
 
-      const resultNote = data.score !== undefined ? `Kết quả bài kiểm tra: ${data.score}/${data.totalQuestions ?? "?"}` : ""
+      const resultNote = score !== undefined ? `Kết quả bài kiểm tra: ${score}/${totalQuestions}` : ""
       await prisma.lead.update({
         where: { id: existing.id },
         data: {
           // Ghi nối thêm, không ghi đè ghi chú cũ
           notes: [existing.notes, resultNote].filter(Boolean).join("\n"),
-          status: data.score !== undefined ? "TESTED" : existing.status,
+          status: score !== undefined ? "TESTED" : existing.status,
         },
       })
 
-      await prisma.placementTest.create({
-        data: {
-          testDate: new Date(),
-          totalScore: data.score ?? null,
-          levelResult: data.score !== undefined && data.totalQuestions
-            ? `${data.score}/${data.totalQuestions}`
-            : null,
-          leadId: existing.id,
-        },
-      })
+      if (score !== undefined) {
+        await prisma.placementTest.create({
+          data: {
+            testDate: new Date(),
+            // CRM chấm theo thang 10 (nhập điểm cũng giới hạn 0–10): quy số câu đúng về thang 10
+            totalScore: Math.round((score / totalQuestions!) * 100) / 10,
+            levelResult: `${score}/${totalQuestions}`,
+            leadId: existing.id,
+          },
+        })
+      }
 
       // Không gửi thông báo lần hai: đã báo lúc ba mẹ để lại thông tin, kết quả xem trong CRM
       return { success: true, leadId: data.leadId }
@@ -83,12 +94,12 @@ export async function submitPlacementTestLead(data: {
 
     const lead = await prisma.lead.create({
       data: {
-        fullName: data.fullName,
-        phone: data.phone,
-        email: data.email || null,
+        fullName: fullName!,
+        phone: phone!,
+        email: data.email?.trim() || null,
         source: SOURCE,
         notes,
-        status: data.score !== undefined ? "TESTED" : "NEW"
+        status: score !== undefined ? "TESTED" : "NEW"
       }
     })
 

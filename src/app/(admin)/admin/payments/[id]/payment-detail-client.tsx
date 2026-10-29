@@ -14,13 +14,14 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
-import { recordPayment, refundPayment } from "../actions"
+import { refundPayment } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { RecordPaymentDialog } from "./components/record-payment-dialog"
+import { PaymentReceiptDialog } from "../components/payment-receipt-dialog"
 
 interface Payment {
   id: string
@@ -45,7 +46,9 @@ interface Payment {
 }
 
 interface PaymentDetailClientProps {
-  payment: Payment
+  // Bản ghi đầy đủ (kèm lineItems, phụ huynh...) để in biên lai bằng PaymentReceiptDialog
+  payment: Payment & Record<string, any>
+  siteSettings?: any
 }
 
 const methodLabels: Record<string, string> = {
@@ -63,9 +66,10 @@ function formatVND(amount: number): string {
   }).format(amount)
 }
 
-export default function PaymentDetailClient({ payment }: PaymentDetailClientProps) {
+export default function PaymentDetailClient({ payment, siteSettings }: PaymentDetailClientProps) {
   const router = useRouter()
   const [recordOpen, setRecordOpen] = useState(false)
+  const [receiptOpen, setReceiptOpen] = useState(false)
   const [refundOpen, setRefundOpen] = useState(false)
   const [isRefunding, setIsRefunding] = useState(false)
 
@@ -109,6 +113,11 @@ export default function PaymentDetailClient({ payment }: PaymentDetailClientProp
           note: match[5] || "",
         }
       }
+      // Dòng hoàn tiền: [date] name - HOÀN TIỀN: lý do
+      const refund = line.match(/^\[(.+?)\]\s+(.+?)\s+-\s+(HOÀN TIỀN)(?::\s*(.+))?$/)
+      if (refund) {
+        return { date: refund[1], actor: refund[2], amount: refund[3], method: "", note: refund[4] || "" }
+      }
       return { date: line, actor: "", amount: "", method: "", note: "" }
     })
     .reverse()
@@ -127,7 +136,7 @@ export default function PaymentDetailClient({ payment }: PaymentDetailClientProp
             <Undo2 className="w-4 h-4 mr-2" /> Hoàn tiền
           </Button>
         )}
-        <Button variant="outline" onClick={() => window.print()}>
+        <Button variant="outline" onClick={() => setReceiptOpen(true)}>
           <Printer className="w-4 h-4 mr-2" /> In biên lai
         </Button>
       </div>
@@ -192,7 +201,7 @@ export default function PaymentDetailClient({ payment }: PaymentDetailClientProp
                 <div>
                   <p className="text-xs text-muted-foreground">Ngày thanh toán gần nhất</p>
                   <p className="font-medium">
-                    {format(new Date(payment.paymentDate), "dd/MM/yyyy HH:mm", { locale: vi })}
+                    {formatVietnam(new Date(payment.paymentDate), "dd/MM/yyyy HH:mm", { locale: vi })}
                   </p>
                 </div>
               )}
@@ -207,7 +216,7 @@ export default function PaymentDetailClient({ payment }: PaymentDetailClientProp
                         : ""
                     }`}
                   >
-                    {format(new Date(payment.dueDate), "dd/MM/yyyy", { locale: vi })}
+                    {formatVietnam(new Date(payment.dueDate), "dd/MM/yyyy", { locale: vi })}
                     {payment.remainingAmount > 0 &&
                       new Date(payment.dueDate) < new Date() && (
                         <Badge variant="destructive" className="ml-2 text-xs">
@@ -220,19 +229,14 @@ export default function PaymentDetailClient({ payment }: PaymentDetailClientProp
               {payment.course && (
                 <div className="col-span-2">
                   <p className="text-xs text-muted-foreground">Khóa học</p>
-                  <Link
-                    href={`/khoa-hoc/${payment.course.id}`}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    {payment.course.name}
-                  </Link>
+                  <p className="font-medium">{payment.course.name}</p>
                 </div>
               )}
               <div className="col-span-2">
                 <p className="text-xs text-muted-foreground">Tạo bởi</p>
                 <p className="text-sm">
                   {payment.createdBy?.fullName || "—"} ·{" "}
-                  {format(new Date(payment.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
+                  {formatVietnam(new Date(payment.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
                 </p>
               </div>
             </div>
@@ -326,6 +330,13 @@ export default function PaymentDetailClient({ payment }: PaymentDetailClientProp
           setRecordOpen(false)
           router.refresh()
         }}
+      />
+
+      <PaymentReceiptDialog
+        payment={payment}
+        open={receiptOpen}
+        onOpenChange={setReceiptOpen}
+        siteSettings={siteSettings}
       />
 
       <ConfirmDialog

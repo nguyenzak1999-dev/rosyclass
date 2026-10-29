@@ -7,6 +7,8 @@ import { Prisma } from "@/generated/prisma/client"
 
 export const dynamic = "force-dynamic"
 
+const ENTITY_STATUSES = ["ACTIVE", "INACTIVE", "DRAFT", "PUBLISHED"] as const
+
 interface PageProps {
   searchParams: Promise<{
     category?: string
@@ -21,8 +23,10 @@ export default async function FaqsPage({ searchParams }: PageProps) {
   if (filters.category) {
     where.category = filters.category
   }
-  if (filters.status) {
-    where.status = filters.status as Prisma.EnumEntityStatusFilter
+  // Giá trị lạ trên URL (vd: ?status=abc) làm Prisma ném lỗi enum, nên chỉ lọc khi hợp lệ
+  const status = ENTITY_STATUSES.find((value) => value === filters.status)
+  if (status) {
+    where.status = status
   }
 
   const [faqs, allFaqs] = await Promise.all([
@@ -57,7 +61,7 @@ export default async function FaqsPage({ searchParams }: PageProps) {
 
       <FaqFilters
         currentCategory={filters.category || ""}
-        currentStatus={filters.status || ""}
+        currentStatus={status || ""}
         categories={categories}
       />
 

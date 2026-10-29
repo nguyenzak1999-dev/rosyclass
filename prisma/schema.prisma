@@ -223,6 +223,7 @@ model Student {
   homeworkSubmissions HomeworkSubmission[]
   skillAssessments    SkillAssessment[]
   progressReports     ProgressReport[]
+  makeUpLessons       MakeUpLesson[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -247,10 +248,11 @@ model Teacher {
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])
 
-  classes   Class[]
-  schedules ClassSchedule[]
-  sessions  ClassSession[]
-  payrolls  TeacherPayroll[]
+  classes       Class[]
+  schedules     ClassSchedule[]
+  sessions      ClassSession[]
+  payrolls      TeacherPayroll[]
+  makeUpLessons MakeUpLesson[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -272,6 +274,8 @@ model Course {
   sessionDurationMinutes Int          @default(90)
   tuitionFee             Float        @default(0)
   salePrice              Float?
+  // Học phí thu theo tháng: đơn giá mỗi buổi (lớp có thể ghi đè)
+  sessionFee             Float?
   thumbnail              String?
   isPublished            Boolean      @default(false)
   status                 EntityStatus @default(ACTIVE)
@@ -314,6 +318,8 @@ model Class {
   curriculum   Curriculum? @relation(fields: [curriculumId], references: [id], onDelete: SetNull)
 
   tuitionFee Float? // Override course tuition fee
+  sessionFee Float? // Đơn giá/buổi riêng của lớp (ghi đè khoá học)
+  isOneOnOne Boolean @default(false) // Lớp học riêng 1-1 với giáo viên Việt Nam
 
   students       ClassStudent[]
   schedules      ClassSchedule[]
@@ -391,11 +397,16 @@ model ClassSession {
   lessonId String?
   lesson   Lesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
 
-  attendances Attendance[]
-  scores      Score[]
-  classNotes  ClassNote[]
-  feedbacks   SessionFeedback[]
-  homework    Homework[]
+  // Buổi học thêm với giáo viên nước ngoài (ngoài lịch): thu đơn giá buổi + phụ thu
+  isForeignTeacher Boolean @default(false)
+  surcharge        Float   @default(0)
+
+  attendances   Attendance[]
+  makeUpLessons MakeUpLesson[]
+  scores        Score[]
+  classNotes    ClassNote[]
+  feedbacks     SessionFeedback[]
+  homework      Homework[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -666,6 +677,9 @@ model Payment {
   dueDate         DateTime?
   status          PaymentStatus @default(UNPAID)
   qrPayload       String?
+  // Phiếu thu theo tháng: "YYYY-MM" và ảnh chụp số liệu đối chiếu (JSON) in trên phiếu
+  billingMonth    String?
+  billingSummary  String?
   bankName        String?
   bankAccountName String?
   bankAccountNo   String?
@@ -683,10 +697,13 @@ model Payment {
   createdById String
   createdBy   User   @relation("PaymentCreatedBy", fields: [createdById], references: [id])
 
-  lineItems PaymentLineItem[]
+  lineItems     PaymentLineItem[]
+  makeUpCredits MakeUpLesson[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([studentId, billingMonth])
 }
 
 model PaymentLineItem {
@@ -1070,3 +1087,40 @@ model TeacherPayroll {
 }
 
 // ------------------------------------------------------
+
+// Kèm bù 30 phút (mặc định hôm sau) cho mỗi buổi học sinh nghỉ.
+// Đã kèm bù thì không trừ học phí; không bù được (MISSED) thì trừ vào phiếu thu kế tiếp (creditedPaymentId).
+model MakeUpLesson {
+  id              String       @id @default(uuid())
+  scheduledDate   DateTime
+  startTime       String? // "HH:mm"
+  durationMinutes Int          @default(30)
+  status          MakeUpStatus @default(PENDING)
+  note            String?
+
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Buổi học bị nghỉ
+  sessionId String
+  session   ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  teacherId String?
+  teacher   Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+
+  creditedPaymentId String?
+  creditedPayment   Payment? @relation(fields: [creditedPaymentId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sessionId, studentId])
+  @@index([studentId, status])
+  @@index([scheduledDate])
+}
+
+enum MakeUpStatus {
+  PENDING
+  DONE
+  MISSED
+}

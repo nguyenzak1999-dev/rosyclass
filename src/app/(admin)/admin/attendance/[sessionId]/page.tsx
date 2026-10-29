@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import AttendanceFormClient from "./attendance-form-client"
+import { formatVietnamDate } from "@/lib/curriculum"
 
 export default async function AttendanceDetailPage({
   params,
@@ -81,7 +82,7 @@ export default async function AttendanceDetailPage({
               {session.class.name}
             </Link>
             {" · "}
-            {new Date(session.sessionDate).toLocaleDateString("vi-VN")}
+            {formatVietnamDate(session.sessionDate)}
             {" · "}
             {session.startTime} - {session.endTime}
           </p>

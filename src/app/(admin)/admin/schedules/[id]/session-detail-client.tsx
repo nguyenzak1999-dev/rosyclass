@@ -7,8 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Pencil, Calendar, Clock, User, MapPin, BookOpen, FileText, Users, ListChecks, Presentation, NotebookPen } from "lucide-react"
-import { lessonLabel } from "@/lib/curriculum"
-import { format } from "date-fns"
+import { lessonLabel, formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import { DAY_OF_WEEK_LABELS } from "@/lib/schemas/schedule"
 import { EditSessionDialog } from "./components/edit-session-dialog"
@@ -114,9 +113,12 @@ export default function SessionDetailClient({
               <Presentation className="w-4 h-4 mr-2" /> Lên lớp
             </Button>
           )}
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
-            <Pencil className="w-4 h-4 mr-2" /> Sửa
-          </Button>
+          {/* Buổi đã huỷ không sửa được (máy chủ từ chối) */}
+          {session.status !== "CANCELLED" && (
+            <Button variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil className="w-4 h-4 mr-2" /> Sửa
+            </Button>
+          )}
           <CancelSessionButton sessionId={session.id} sessionStatus={session.status} />
         </div>
       </div>
@@ -142,7 +144,7 @@ export default function SessionDetailClient({
               <Calendar className="w-4 h-4 text-muted-foreground" />
               <span className="text-muted-foreground min-w-[100px]">Ngày:</span>
               <span className="font-medium">
-                {format(d, "EEEE, dd/MM/yyyy", { locale: vi })}
+                {formatVietnam(d, "EEEE, dd/MM/yyyy", { locale: vi })}
               </span>
             </div>
             <div className="flex items-center gap-3">

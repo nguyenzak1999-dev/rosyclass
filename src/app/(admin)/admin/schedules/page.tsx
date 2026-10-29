@@ -4,10 +4,12 @@ import { Plus, CalendarDays } from "lucide-react"
 import { ScheduleFilters } from "./components/schedule-filters"
 import Link from "next/link"
 import { Prisma } from "@/generated/prisma/client"
-import { addDays, startOfMonth, endOfMonth, subMonths, startOfDay } from "date-fns"
+import { formatVietnam, vietnamMonthBounds, vietnamMonthStart } from "@/lib/curriculum"
 import { SchedulesClient } from "./components/schedules-client"
 
 export const dynamic = "force-dynamic"
+
+const SESSION_STATUSES = ["SCHEDULED", "COMPLETED", "CANCELLED", "MAKE_UP"]
 
 interface PageProps {
   searchParams: Promise<{
@@ -23,20 +25,20 @@ export default async function SchedulesPage({ searchParams }: PageProps) {
   const filters = await searchParams
   // Xác định range ngày từ month filter (mặc định: tháng hiện tại + 1 tháng tới)
   const now = new Date()
-  const monthStr = filters.month || formatMonth(now)
-  const [year, month] = monthStr.split("-").map(Number)
-  const monthStart = startOfMonth(new Date(year, month - 1, 1))
-  const monthEnd = endOfMonth(new Date(year, month - 1, 1))
+  // Tháng không hợp lệ (vd. ?month=abc) thì quay về tháng hiện tại thay vì truy vấn với ngày NaN
+  const monthStart = vietnamMonthBounds(filters.month ?? "")?.start ?? vietnamMonthStart(now)
 
   // Hiển thị từ tháng trước đến cuối tháng sau (để thấy cả buổi quá khứ + tương lai)
-  const rangeFrom = startOfDay(subMonths(monthStart, 1))
-  const rangeTo = endOfMonth(addDays(monthEnd, 30))
+  const rangeFrom = vietnamMonthStart(monthStart, -1)
+  const rangeTo = vietnamMonthStart(monthStart, 2)
+  const monthStr = formatVietnam(monthStart, "yyyy-MM")
 
   // Build Prisma where clause
   const where: Prisma.ClassSessionWhereInput = {
-    sessionDate: { gte: rangeFrom, lte: rangeTo },
+    sessionDate: { gte: rangeFrom, lt: rangeTo },
   }
-  if (filters.status) {
+  // Bỏ qua trạng thái lạ trên URL thay vì để Prisma báo lỗi
+  if (filters.status && SESSION_STATUSES.includes(filters.status)) {
     where.status = filters.status as Prisma.EnumSessionStatusFilter
   }
   if (filters.classId) {
@@ -126,10 +128,4 @@ export default async function SchedulesPage({ searchParams }: PageProps) {
       )}
     </div>
   )
-}
-
-function formatMonth(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, "0")
-  return `${y}-${m}`
 }

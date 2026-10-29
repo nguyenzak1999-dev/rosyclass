@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { Activity, UserPlus, GraduationCap, CreditCard, ClipboardCheck, AlertCircle, Pencil } from "lucide-react"
 
 const EVENT_ICONS: Record<string, any> = {
@@ -102,7 +102,7 @@ export function ActivityTab({ student }: { student: any }) {
                       <p className="text-sm font-medium">{evt.label}</p>
                       {evt.meta && <p className="text-xs text-muted-foreground">{evt.meta}</p>}
                       <time className="text-xs text-muted-foreground">
-                        {evt.date ? format(new Date(evt.date), "dd/MM/yyyy HH:mm") : "—"}
+                        {evt.date ? formatVietnam(new Date(evt.date), "dd/MM/yyyy HH:mm") : "—"}
                       </time>
                     </div>
                   </li>

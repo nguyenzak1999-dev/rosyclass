@@ -5,7 +5,8 @@ import { type SiteSettings } from "@/lib/site-settings"
 import { updateStoredSiteSettings } from "@/lib/site-settings-store"
 import { revalidatePath } from "next/cache"
 
-export async function saveSiteSettings(data: SiteSettings) {
+/** Chỉ ghi các trường được gửi lên (patch), các trường khác giữ nguyên trong DB */
+export async function saveSiteSettings(data: Partial<SiteSettings>) {
   try {
     await requirePermission(PERMISSIONS.settingsWrite)
     // Cấu hình thông báo form có action riêng; bỏ khỏi đây để bản cũ trong form không ghi đè

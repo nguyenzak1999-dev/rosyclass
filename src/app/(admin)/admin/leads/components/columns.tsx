@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, MoreHorizontal, ExternalLink, Phone } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import Link from "next/link"
 import { LeadDialog } from "./lead-dialog"
 import {
@@ -116,7 +116,7 @@ export const columns: ColumnDef<LeadData>[] = [
     header: "Ngày tạo",
     cell: ({ row }) => {
       const date = row.getValue("createdAt") as Date | string
-      return <div className="text-sm">{format(new Date(date), "dd/MM/yyyy")}</div>
+      return <div className="text-sm">{formatVietnam(new Date(date), "dd/MM/yyyy")}</div>
     },
   },
   {

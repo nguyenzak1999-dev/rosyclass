@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 import {
   closestCenter,
   DndContext,
@@ -101,6 +101,8 @@ export function BlockLayers({
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
+  // id cố định để aria-describedby của dnd-kit khớp giữa server và client
+  const dndId = useId()
 
   const handleDragEnd = (event: DragEndEvent) => {
     if (event.over && event.active.id !== event.over.id) onReorder(String(event.active.id), String(event.over.id))
@@ -113,7 +115,7 @@ export function BlockLayers({
   return (
     <div className="p-3">
       <p className="mb-2 text-xs text-muted-foreground">Kéo thả để sắp xếp thứ tự các khối.</p>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext id={dndId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={blocks.map((block) => block.id)} strategy={verticalListSortingStrategy} disabled={disabled}>
           <ol className="space-y-1">
             {blocks.map((block, index) => (

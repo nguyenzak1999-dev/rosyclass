@@ -111,7 +111,8 @@ export async function loadBlockData(
           "khoá học",
           () =>
             prisma.course.findMany({
-              where: { status: "PUBLISHED", isPublished: true },
+              // Cùng điều kiện với trang /khoa-hoc/[slug]: khoá học mặc định ở trạng thái ACTIVE
+              where: { status: { in: ["ACTIVE", "PUBLISHED"] }, isPublished: true },
               select: {
                 id: true,
                 name: true,

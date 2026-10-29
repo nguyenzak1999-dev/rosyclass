@@ -4,6 +4,7 @@ import { columns } from "./components/columns"
 import { LeadDialog } from "./components/lead-dialog"
 import { LeadFilters } from "./components/lead-filters"
 import { Prisma } from "@/generated/prisma/client"
+import { LEAD_STATUSES } from "@/lib/schemas/lead"
 
 export const dynamic = "force-dynamic"
 
@@ -19,8 +20,9 @@ export default async function LeadsPage({ searchParams }: PageProps) {
   const filters = await searchParams
 
   const where: Prisma.LeadWhereInput = {}
-  if (filters.status) {
-    where.status = filters.status as Prisma.EnumLeadStatusFilter
+  // Bỏ qua trạng thái lạ trên URL thay vì để Prisma ném lỗi làm hỏng trang
+  if (filters.status && (LEAD_STATUSES as readonly string[]).includes(filters.status)) {
+    where.status = filters.status as (typeof LEAD_STATUSES)[number]
   }
   if (filters.source) {
     where.source = filters.source

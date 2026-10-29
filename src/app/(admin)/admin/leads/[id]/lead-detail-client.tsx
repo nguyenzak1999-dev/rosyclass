@@ -27,7 +27,7 @@ import { LeadActionsDialog } from "./components/lead-actions-dialog"
 import { deleteLead } from "@/app/(admin)/admin/leads/actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 
 interface Lead {
@@ -43,7 +43,7 @@ interface Lead {
   source: string | null
   status: string
   createdAt: string | Date
-  interestedCourse: { id: string; name: string; level: string } | null
+  interestedCourse: { id: string; name: string; level: string; slug: string; isPublished: boolean } | null
   assignedTo: { id: string; fullName: string; email: string } | null
   leadNotes: Array<{
     id: string
@@ -192,12 +192,17 @@ export default function LeadDetailClient({
                 <BookOpen className="w-4 h-4 text-muted-foreground" />
                 <div>
                   <p className="text-xs text-muted-foreground">Khóa quan tâm</p>
-                  <Link
-                    href={`/khoa-hoc/${lead.interestedCourse.id}`}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    {lead.interestedCourse.name}
-                  </Link>
+                  {lead.interestedCourse.isPublished ? (
+                    <Link
+                      href={`/khoa-hoc/${lead.interestedCourse.slug}`}
+                      target="_blank"
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {lead.interestedCourse.name}
+                    </Link>
+                  ) : (
+                    <span className="font-medium">{lead.interestedCourse.name}</span>
+                  )}
                   <Badge variant="outline" className="ml-2 text-xs">
                     {lead.interestedCourse.level}
                   </Badge>
@@ -218,7 +223,7 @@ export default function LeadDetailClient({
               <div>
                 <p className="text-xs text-muted-foreground">Ngày tạo</p>
                 <p className="font-medium">
-                  {format(new Date(lead.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
+                  {formatVietnam(new Date(lead.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
                 </p>
               </div>
             </div>

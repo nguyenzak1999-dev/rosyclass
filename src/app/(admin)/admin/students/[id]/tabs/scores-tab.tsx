@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { Award } from "lucide-react"
 
 function ScoreBar({ label, score, max = 10 }: { label: string; score: number | null; max?: number }) {
@@ -46,7 +46,7 @@ export function ScoresTab({ student }: { student: any }) {
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">
-                    Bài kiểm tra #{tests.length - idx} — {format(new Date(test.testDate), "dd/MM/yyyy")}
+                    Bài kiểm tra #{tests.length - idx} — {formatVietnam(new Date(test.testDate), "dd/MM/yyyy")}
                   </CardTitle>
                   {test.totalScore !== null && (
                     <div className="text-right">

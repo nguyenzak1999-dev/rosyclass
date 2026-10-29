@@ -10,10 +10,20 @@ export const metadata: Metadata = createPageMetadata({
 })
 
 export default async function CoursesPage() {
+  // Cùng điều kiện với trang chi tiết /khoa-hoc/[slug] và sitemap: khoá học mặc định ở trạng thái ACTIVE
   const courses = await prisma.course.findMany({
     where: {
-      status: "PUBLISHED",
+      status: { in: ["ACTIVE", "PUBLISHED"] },
       isPublished: true
+    },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      level: true,
+      description: true,
+      targetAudience: true,
+      learningOutcomes: true,
     },
     orderBy: {
       createdAt: "asc"

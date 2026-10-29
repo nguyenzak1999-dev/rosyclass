@@ -27,6 +27,7 @@ import {
 import { updateSession } from "@/app/(admin)/admin/classes/actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import { parseVietnamDateKey, vietnamDateKey } from "@/lib/curriculum"
 
 interface EditSessionDialogProps {
   open: boolean
@@ -66,7 +67,8 @@ export function EditSessionDialog({
       resolver: zodResolver(updateSessionSchema) as any,
       defaultValues: {
         id: session.id,
-        sessionDate: new Date(session.sessionDate),
+        // <input type="date"> cần chuỗi "YYYY-MM-DD" theo giờ VN; schema tự chuyển sang Date khi submit
+        sessionDate: vietnamDateKey(session.sessionDate) as unknown as Date,
         startTime: session.startTime,
         endTime: session.endTime,
         teacherId: session.teacherId,
@@ -86,7 +88,7 @@ export function EditSessionDialog({
     if (open) {
       reset({
         id: session.id,
-        sessionDate: new Date(session.sessionDate),
+        sessionDate: vietnamDateKey(session.sessionDate) as unknown as Date,
         startTime: session.startTime,
         endTime: session.endTime,
         teacherId: session.teacherId,
@@ -99,7 +101,12 @@ export function EditSessionDialog({
   }, [open, session, reset])
 
   const onSubmit = async (data: UpdateSessionFormValues) => {
-    const result = await updateSession(data)
+    // Schema đọc "YYYY-MM-DD" thành 00:00 UTC → đổi về 00:00 giờ VN như các buổi sinh từ lịch;
+    // không đổi ngày thì không gửi để giữ nguyên mốc thời gian đang lưu
+    const dateKey = data.sessionDate ? data.sessionDate.toISOString().slice(0, 10) : null
+    const sessionDate =
+      dateKey && dateKey !== vietnamDateKey(session.sessionDate) ? parseVietnamDateKey(dateKey) ?? undefined : undefined
+    const result = await updateSession({ ...data, sessionDate })
     if (result.success) {
       toast.success("Đã cập nhật buổi học")
       if (result.data?.warning) toast.warning(result.data.warning)
@@ -109,11 +116,6 @@ export function EditSessionDialog({
       toast.error(result.error)
     }
   }
-
-  const dateValue = (() => {
-    const d = new Date(session.sessionDate)
-    return d.toISOString().split("T")[0]
-  })()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,10 +129,12 @@ export function EditSessionDialog({
             <Input
               id="sessionDate"
               type="date"
-              defaultValue={dateValue}
               {...register("sessionDate")}
               disabled={readOnlyDateTime}
             />
+            {errors.sessionDate && (
+              <p className="text-sm text-destructive">Ngày học không hợp lệ</p>
+            )}
             {readOnlyDateTime && (
               <p className="text-xs text-muted-foreground">
                 Buổi học đã hoàn thành, chỉ có thể sửa chủ đề/ghi chú.

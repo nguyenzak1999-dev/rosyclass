@@ -28,7 +28,7 @@ export class MediaStorageNotConfiguredError extends Error {
 /** Cloudinary lưu âm thanh và video chung loại "video" */
 export type CloudinaryResourceType = "image" | "video"
 
-function sanitizeFolder(folder: string) {
+export function sanitizeMediaFolder(folder: string) {
   return folder.replace(/[^a-z0-9-_]/gi, "").toLowerCase() || "general"
 }
 
@@ -107,7 +107,7 @@ async function deleteFromCloudinary(publicId: string) {
 
 // Cloudinary Node SDK không chạy được trên Workers nên gọi thẳng REST API có chữ ký
 export async function storeImage(file: File, rawFolder: string): Promise<StoredMedia> {
-  const result = await uploadToCloudinary(file, sanitizeFolder(rawFolder))
+  const result = await uploadToCloudinary(file, sanitizeMediaFolder(rawFolder))
 
   return {
     url: result.secure_url,
@@ -128,7 +128,7 @@ export async function deleteStoredImage(media: { publicId: string }) {
  * nhờ đó có thể đổi đuôi URL sang .mp3 để phát trên mọi trình duyệt.
  */
 export async function storeMedia(file: File, rawFolder: string, kind: "image" | "audio" | "video"): Promise<StoredMedia> {
-  const result = await uploadToCloudinary(file, sanitizeFolder(rawFolder), kind === "image" ? "image" : "video")
+  const result = await uploadToCloudinary(file, sanitizeMediaFolder(rawFolder), kind === "image" ? "image" : "video")
 
   return {
     url: result.secure_url,

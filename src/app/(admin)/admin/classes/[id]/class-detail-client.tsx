@@ -19,6 +19,7 @@ import { removeStudentFromClass } from "../actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { formatVietnam } from "@/lib/curriculum"
 
 export default function ClassDetailClient({
   classData,
@@ -150,7 +151,7 @@ export default function ClassDetailClient({
             <AddStudentDialog
               classId={classData.id}
               allStudents={allStudents}
-              currentStudentIds={classStudents.map((s: any) => s.id)}
+              currentStudentIds={activeStudents.map((s) => s.id)}
             />
           </CardHeader>
           <CardContent>
@@ -284,7 +285,7 @@ export default function ClassDetailClient({
                   <div key={note.id} className="rounded-lg border p-3">
                     <p className="text-sm whitespace-pre-wrap">{note.content}</p>
                     <p className="text-muted-foreground mt-2 text-xs">
-                      {new Date(note.createdAt).toLocaleString("vi-VN")}
+                      {formatVietnam(note.createdAt, "HH:mm:ss dd/MM/yyyy")}
                     </p>
                   </div>
                 ))}

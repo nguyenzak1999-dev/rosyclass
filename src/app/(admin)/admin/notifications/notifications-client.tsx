@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCheck, Inbox, Trash2, Bell, ExternalLink } from "lucide-react"
-import { format, formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -32,6 +33,12 @@ interface NotificationsClientProps {
 export function NotificationsClient({ initialNotifications }: NotificationsClientProps) {
   const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications)
+  // Đồng bộ lại khi server gửi danh sách mới (sau router.refresh: thông báo mới, đọc ở thiết bị khác...)
+  const [prevInitial, setPrevInitial] = useState(initialNotifications)
+  if (prevInitial !== initialNotifications) {
+    setPrevInitial(initialNotifications)
+    setNotifications(initialNotifications)
+  }
   const [isPending, startTransition] = useTransition()
   const [filter, setFilter] = useState<"all" | "unread">("all")
 
@@ -140,7 +147,7 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
                         {notification.message}
                       </p>
                       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                        <span title={format(new Date(notification.createdAt), "dd/MM/yyyy HH:mm")}>
+                        <span title={formatVietnam(new Date(notification.createdAt), "dd/MM/yyyy HH:mm")}>
                           {formatDistanceToNow(new Date(notification.createdAt), {
                             addSuffix: true,
                             locale: vi,
@@ -149,6 +156,10 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
                         {notification.link && (
                           <Link
                             href={notification.link}
+                            onClick={() => {
+                              // Mở thông báo coi như đã đọc
+                              if (!notification.isRead) void markNotificationRead(notification.id)
+                            }}
                             className="flex items-center gap-1 text-primary hover:underline"
                           >
                             <ExternalLink className="w-3 h-3" /> Xem chi tiết

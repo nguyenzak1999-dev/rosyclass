@@ -4,13 +4,13 @@ import { Badge } from "@/components/ui/badge"
 import { TrendingUp, Users, Target, Award, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { LEAD_STATUSES, LEAD_SOURCES } from "@/lib/schemas/lead"
+import { daysAgo } from "@/lib/curriculum"
 
 export const dynamic = "force-dynamic"
 
 export default async function LeadConversionReportPage() {
   // Lấy tất cả leads trong 90 ngày gần nhất
-  const ninetyDaysAgo = new Date()
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+  const ninetyDaysAgo = daysAgo(90)
 
   const [leads, allLeads] = await Promise.all([
     prisma.lead.findMany({

@@ -16,7 +16,7 @@ import {
 import { DataTable } from "@/components/ui/data-table"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Award, Save, Trash2, TrendingUp, BarChart3, Plus } from "lucide-react"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import { upsertScore, deleteScore } from "@/app/(admin)/admin/attendance/actions"
 import { toast } from "sonner"
@@ -187,9 +187,9 @@ export function ClassScoresTab({
         const d = new Date(row.original.date)
         return (
           <div className="px-4">
-            <p className="font-medium">{format(d, "dd/MM/yyyy")}</p>
+            <p className="font-medium">{formatVietnam(d, "dd/MM/yyyy")}</p>
             <p className="text-xs text-muted-foreground">
-              {format(d, "EEEE", { locale: vi })}
+              {formatVietnam(d, "EEEE", { locale: vi })}
             </p>
           </div>
         )
@@ -243,7 +243,7 @@ export function ClassScoresTab({
         return (
           <div>
             <p className="text-sm">
-              {format(new Date(session.sessionDate), "dd/MM/yyyy")}
+              {formatVietnam(new Date(session.sessionDate), "dd/MM/yyyy")}
             </p>
             {session.topic && (
               <p className="text-xs text-muted-foreground truncate max-w-[200px]">
@@ -407,7 +407,7 @@ export function ClassScoresTab({
                   <SelectItem value="none">— Không gắn buổi —</SelectItem>
                   {sessions.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
-                      {format(new Date(s.sessionDate), "dd/MM/yyyy")}
+                      {formatVietnam(new Date(s.sessionDate), "dd/MM/yyyy")}
                       {s.topic ? ` · ${s.topic}` : ""}
                     </SelectItem>
                   ))}

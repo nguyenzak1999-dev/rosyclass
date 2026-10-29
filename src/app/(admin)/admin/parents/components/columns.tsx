@@ -121,7 +121,9 @@ function ActionsCell({ parent, students }: { parent: ParentData; students: any[]
   }
 
   return (
-    <div className="flex items-center justify-end gap-1">
+    // Dropdown / dialog render qua portal nhưng sự kiện React vẫn nổi lên TableRow (onRowClick):
+    // chặn lại để bấm "Xóa", gõ vào form sửa... không bị chuyển sang trang chi tiết
+    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
       <Button variant="ghost" size="sm" render={<Link href={`/admin/parents/${parent.id}`} />}>
         <ExternalLink className="w-4 h-4 mr-1" /> Chi tiết
       </Button>

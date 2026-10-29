@@ -153,7 +153,11 @@ export function ParentsClient({ parents, students }: ParentsClientProps) {
                       </div>
                     )}
                   </CardContent>
-                  <CardFooter className="p-4 pt-0 border-t bg-muted/10 flex items-center justify-end gap-2 h-12">
+                  <CardFooter
+                    className="p-4 pt-0 border-t bg-muted/10 flex items-center justify-end gap-2 h-12"
+                    // Dialog sửa render qua portal nhưng sự kiện vẫn nổi lên Card (onClick chuyển trang)
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/parents/${parent.id}`)}>
                       Chi tiết
                     </Button>

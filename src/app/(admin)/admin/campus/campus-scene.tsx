@@ -289,7 +289,8 @@ export default function CampusScene({ buildings, focusedId, onSelect, reducedMot
 
   return (
     <Canvas
-      shadows
+      // three r18x đã bỏ PCFSoftShadowMap (mặc định của `shadows`), dùng thẳng PCF để khỏi cảnh báo
+      shadows="percentage"
       dpr={[1, 2]}
       camera={{ position: HOME_CAMERA.toArray(), fov: 45 }}
       onPointerMissed={() => onSelect(null)}

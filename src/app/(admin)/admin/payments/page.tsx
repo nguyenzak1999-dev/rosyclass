@@ -3,6 +3,7 @@ import { PaymentsClient } from "./components/payments-client"
 import { PaymentFilters } from "./components/payment-filters"
 import { Prisma } from "@/generated/prisma/client"
 import { getSiteSettings } from "@/lib/get-site-settings"
+import { PAYMENT_METHODS, PAYMENT_STATUSES } from "@/lib/schemas/payment"
 
 export const dynamic = "force-dynamic"
 
@@ -18,17 +19,18 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
   const filters = await searchParams
 
   const where: Prisma.PaymentWhereInput = {}
-  if (filters.status) {
+  // Giá trị lạ trên URL (vd. ?status=abc) làm Prisma ném lỗi enum và sập trang: bỏ qua
+  if (filters.status && (PAYMENT_STATUSES as readonly string[]).includes(filters.status)) {
     where.status = filters.status as Prisma.EnumPaymentStatusFilter
   }
-  if (filters.method) {
+  if (filters.method && (PAYMENT_METHODS as readonly string[]).includes(filters.method)) {
     where.paymentMethod = filters.method as Prisma.EnumPaymentMethodFilter
   }
   if (filters.studentId) {
     where.studentId = filters.studentId
   }
 
-  const [payments, students, siteSettings] = await Promise.all([
+  const [payments, students, siteSettings, billingClasses] = await Promise.all([
     prisma.payment.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -62,14 +64,20 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
       orderBy: { fullName: "asc" },
     }),
     getSiteSettings(),
+    prisma.class.findMany({
+      where: { status: { in: ["ACTIVE", "UPCOMING"] } },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
   ])
 
-  // Stats
+  // Stats: phiếu đã huỷ / đã hoàn tiền không còn là tiền phải thu hay đã thu
+  const billable = payments.filter((p) => p.status !== "CANCELLED" && p.status !== "REFUNDED")
   const stats = {
     total: payments.length,
-    totalAmount: payments.reduce((sum, p) => sum + p.totalAmount, 0),
-    paidAmount: payments.reduce((sum, p) => sum + p.paidAmount, 0),
-    remainingAmount: payments.reduce((sum, p) => sum + p.remainingAmount, 0),
+    totalAmount: billable.reduce((sum, p) => sum + p.totalAmount, 0),
+    paidAmount: billable.reduce((sum, p) => sum + p.paidAmount, 0),
+    remainingAmount: billable.reduce((sum, p) => sum + p.remainingAmount, 0),
     unpaidCount: payments.filter((p) => p.status === "UNPAID").length,
     partialCount: payments.filter((p) => p.status === "PARTIAL").length,
     paidCount: payments.filter((p) => p.status === "PAID").length,
@@ -91,6 +99,8 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
     bankAccountName: p.bankAccountName,
     bankAccountNo: p.bankAccountNo,
     note: p.note,
+    billingMonth: p.billingMonth,
+    billingSummary: p.billingSummary,
     createdAt: p.createdAt,
     student: {
       id: p.student?.id,
@@ -110,6 +120,7 @@ export default async function PaymentsPage({ searchParams }: PageProps) {
     <PaymentsClient
       payments={validPayments as any}
       students={students}
+      billingClasses={billingClasses}
       stats={stats}
       siteSettings={siteSettings}
       filterSlot={

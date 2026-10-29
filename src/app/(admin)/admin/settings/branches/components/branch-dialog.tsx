@@ -24,34 +24,31 @@ interface BranchDialogProps {
   trigger?: React.ReactNode
 }
 
+/** Bản ghi DB có phone/address null mà schema chỉ nhận string: không chuẩn hoá thì sửa chi nhánh không lưu được */
+function toFormValues(data: any): BranchFormValues {
+  return {
+    id: data?.id,
+    name: data?.name ?? "",
+    phone: data?.phone ?? "",
+    address: data?.address ?? "",
+    isActive: data?.isActive ?? true
+  }
+}
+
 export function BranchDialog({ initialData, trigger }: BranchDialogProps) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting }, reset } = useForm<BranchFormValues>({
     resolver: zodResolver(branchSchema) as any,
-    defaultValues: initialData || {
-      name: "",
-      phone: "",
-      address: "",
-      isActive: true
-    }
+    defaultValues: toFormValues(initialData)
   })
 
   const isActive = watch("isActive")
 
   React.useEffect(() => {
     if (open) {
-      if (initialData) {
-        reset(initialData)
-      } else {
-        reset({
-          name: "",
-          phone: "",
-          address: "",
-          isActive: true
-        })
-      }
+      reset(toFormValues(initialData))
     }
   }, [open, initialData, reset])
 

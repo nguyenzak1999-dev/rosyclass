@@ -66,6 +66,30 @@ const emptyPost: BlogPostFormValues = {
   seoDescription: "",
 }
 
+const statusItems = [
+  { value: "DRAFT", label: "Nháp" },
+  { value: "PUBLISHED", label: "Xuất bản" },
+  { value: "ACTIVE", label: "Đang hoạt động" },
+  { value: "INACTIVE", label: "Ẩn" },
+]
+
+// Chuẩn hoá slug khi đang gõ: giữ dấu gạch ngang ở cuối để gõ được "a-b" (generateSlug sẽ xoá nó)
+function slugWhileTyping(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-/, "")
+}
+
+function escapeAttr(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
+
 const editorButtonClass =
   "h-8 w-8 rounded-md text-muted-foreground hover:text-foreground"
 
@@ -78,6 +102,8 @@ export function BlogPostForm({ initialData }: { initialData?: BlogPostFormInitia
   const [contentPreview, setContentPreview] = React.useState(initialData?.content || "")
   const [uploadingInlineImage, setUploadingInlineImage] = React.useState(false)
   const [slugTouched, setSlugTouched] = React.useState(Boolean(initialData?.slug))
+  // Đã lưu xong và đang chuyển trang: khoá nút để không tạo trùng bài khi bấm thêm lần nữa
+  const [saved, setSaved] = React.useState(false)
 
   const {
     register,
@@ -132,7 +158,7 @@ export function BlogPostForm({ initialData }: { initialData?: BlogPostFormInitia
     const url = window.prompt("Dán URL ảnh")
     if (!url?.trim()) return
     insertHtml(
-      `<figure><img src="${url.trim()}" alt="" /><figcaption>Chú thích ảnh</figcaption></figure><p><br /></p>`
+      `<figure><img src="${escapeAttr(url.trim())}" alt="" /><figcaption>Chú thích ảnh</figcaption></figure><p><br /></p>`
     )
   }
 
@@ -148,7 +174,7 @@ export function BlogPostForm({ initialData }: { initialData?: BlogPostFormInitia
       if (!res.ok || !data.success) throw new Error(data.error || "Tải ảnh thất bại")
 
       insertHtml(
-        `<figure><img src="${data.media.url}" alt="${file.name}" /><figcaption>Chú thích ảnh</figcaption></figure><p><br /></p>`
+        `<figure><img src="${escapeAttr(data.media.url)}" alt="${escapeAttr(file.name)}" /><figcaption>Chú thích ảnh</figcaption></figure><p><br /></p>`
       )
       toast.success("Đã chèn ảnh vào bài viết")
     } catch (error) {
@@ -166,6 +192,7 @@ export function BlogPostForm({ initialData }: { initialData?: BlogPostFormInitia
     })
 
     if (result.success) {
+      setSaved(true)
       toast.success(initialData?.id ? "Đã cập nhật bài viết" : "Đã tạo bài viết")
       router.push("/admin/cms/blog")
       router.refresh()
@@ -175,7 +202,12 @@ export function BlogPostForm({ initialData }: { initialData?: BlogPostFormInitia
   }
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    if (isSubmitting || saved) {
+      event.preventDefault()
+      return
+    }
     syncContentFromEditor()
+    setValue("slug", generateSlug(slug), { shouldValidate: true })
     void handleSubmit(onSubmit)(event)
   }
 
@@ -201,6 +233,9 @@ export function BlogPostForm({ initialData }: { initialData?: BlogPostFormInitia
                     {...register("slug")}
                     onChange={(event) => {
                       setSlugTouched(true)
+                      setValue("slug", slugWhileTyping(event.target.value), { shouldDirty: true, shouldValidate: true })
+                    }}
+                    onBlur={(event) => {
                       setValue("slug", generateSlug(event.target.value), { shouldDirty: true, shouldValidate: true })
                     }}
                     placeholder="7-cach-luyen-noi-tieng-anh"
@@ -283,7 +318,8 @@ export function BlogPostForm({ initialData }: { initialData?: BlogPostFormInitia
                   </div>
                 </div>
 
-                <TabsContent value="write" className="mt-3">
+                {/* Giữ editor trong DOM khi xem Preview, nếu không nội dung đang soạn sẽ bị mất khi quay lại */}
+                <TabsContent value="write" keepMounted className="mt-3">
                   <div
                     ref={editorRef}
                     contentEditable
@@ -317,14 +353,22 @@ export function BlogPostForm({ initialData }: { initialData?: BlogPostFormInitia
             <CardContent className="space-y-4 pt-1">
               <div className="space-y-2">
                 <Label>Trạng thái</Label>
-                <Select value={status} onValueChange={(value) => setValue("status", value as BlogPostFormValues["status"])}>
+                <Select
+                  value={status}
+                  items={statusItems}
+                  onValueChange={(value) => setValue("status", value as BlogPostFormValues["status"], { shouldDirty: true })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn trạng thái" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DRAFT">Nháp</SelectItem>
-                    <SelectItem value="PUBLISHED">Xuất bản</SelectItem>
-                    <SelectItem value="INACTIVE">Ẩn</SelectItem>
+                    {statusItems
+                      .filter((item) => item.value !== "ACTIVE" || status === "ACTIVE")
+                      .map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -337,7 +381,7 @@ export function BlogPostForm({ initialData }: { initialData?: BlogPostFormInitia
                 <Button type="button" variant="outline" className="flex-1" render={<Link href="/admin/cms/blog" />}>
                   Hủy
                 </Button>
-                <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                <Button type="submit" className="flex-1" disabled={isSubmitting || saved}>
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Lưu
                 </Button>

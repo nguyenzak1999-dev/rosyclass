@@ -4,9 +4,17 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { BadgeStatus } from "@/components/ui/badge-status"
+import { getSiteSettings } from "@/lib/get-site-settings"
+import PaymentDetailClient from "./payment-detail-client"
+import { BillingSummaryView, familyRemaining } from "../components/billing-summary-view"
+import { MonthlyBillingDialog } from "../components/monthly-billing-dialog"
+import { formatBillingMonth, parseBillingSummary, type BillingCategory } from "@/lib/monthly-billing-shared"
+import { siblingBills } from "@/lib/monthly-billing"
+import { vietnamDateKey } from "@/lib/curriculum"
 
 export default async function PaymentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const siteSettings = await getSiteSettings()
   const payment = await prisma.payment.findUnique({
     where: { id },
     include: {
@@ -16,7 +24,8 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
           fullName: true,
           phone: true,
           email: true,
-          code: true
+          code: true,
+          parent: { select: { fullName: true, phone: true, email: true } }
         }
       },
       class: { select: { id: true, name: true } },
@@ -31,6 +40,17 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
   if (!payment) {
     return notFound()
   }
+
+  // Phiếu thu tháng: số liệu đối chiếu lưu lúc lập phiếu, anh chị em đọc mới (phiếu của các bé có thể lập sau)
+  const snapshot = parseBillingSummary(payment.billingSummary)
+  const billingSummary =
+    snapshot && payment.billingMonth
+      ? {
+          ...snapshot,
+          siblings: await siblingBills(payment.student.id, payment.student.parent?.phone ?? snapshot.parentPhone, payment.billingMonth),
+        }
+      : null
+  const canEditMonthly = Boolean(payment.billingMonth) && payment.status !== "CANCELLED" && payment.status !== "REFUNDED"
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -59,45 +79,46 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
         <BadgeStatus status={payment.status} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="bg-card rounded-lg border p-4">
-          <p className="text-muted-foreground text-sm">Tổng học phí</p>
-          <p className="mt-2 text-2xl font-semibold">{formatMoney(payment.totalAmount)}</p>
-        </div>
-        <div className="bg-card rounded-lg border p-4">
-          <p className="text-muted-foreground text-sm">Đã thanh toán</p>
-          <p className="mt-2 text-2xl font-semibold text-emerald-600">{formatMoney(payment.paidAmount)}</p>
-        </div>
-        <div className="bg-card rounded-lg border p-4">
-          <p className="text-muted-foreground text-sm">Còn lại</p>
-          <p className="mt-2 text-2xl font-semibold text-orange-600">{formatMoney(payment.remainingAmount)}</p>
-        </div>
-      </div>
+      <PaymentDetailClient
+        payment={JSON.parse(JSON.stringify({ ...payment, billingSummaryData: billingSummary }))}
+        siteSettings={siteSettings}
+      />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <section className="bg-card rounded-lg border p-4">
-          <h3 className="font-semibold">Thông tin thanh toán</h3>
-          <dl className="mt-4 space-y-3 text-sm">
-            <DetailRow label="Mã phiếu thu" value={payment.receiptCode || "—"} />
-            <DetailRow label="Phương thức" value={payment.paymentMethod} />
-            <DetailRow label="Ngày thanh toán" value={formatDate(payment.paymentDate)} />
-            <DetailRow label="Hạn thanh toán" value={formatDate(payment.dueDate)} />
-            <DetailRow label="Người tạo" value={payment.createdBy.fullName} />
-            <DetailRow label="Ngày tạo" value={formatDate(payment.createdAt)} />
-          </dl>
+      {billingSummary && payment.billingMonth ? (
+        <section className="bg-card space-y-3 rounded-lg border p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-semibold">Học phí tháng {formatBillingMonth(payment.billingMonth)}</h3>
+            {canEditMonthly ? (
+              <MonthlyBillingDialog
+                students={[{ id: payment.student.id, name: payment.student.fullName }]}
+                classes={[]}
+                edit={{
+                  paymentId: payment.id,
+                  studentId: payment.student.id,
+                  month: payment.billingMonth,
+                  lines: payment.lineItems.map((item) => ({
+                    description: item.description,
+                    category: item.category as BillingCategory,
+                    quantity: item.quantity,
+                    unitAmount: item.unitAmount,
+                  })),
+                  dueDate: payment.dueDate ? vietnamDateKey(payment.dueDate) : null,
+                  note: payment.note,
+                  paidAmount: payment.paidAmount,
+                }}
+                trigger={<Button variant="outline" size="sm">Sửa phiếu / học liệu</Button>}
+              />
+            ) : null}
+          </div>
+          <BillingSummaryView summary={billingSummary} />
+          {billingSummary.siblings.length > 0 ? (
+            <p className="border-t pt-3 text-sm">
+              Cả nhà còn phải đóng tháng này:{" "}
+              <strong>{formatMoney(familyRemaining(billingSummary, payment.remainingAmount))}</strong>
+            </p>
+          ) : null}
         </section>
-
-        <section className="bg-card rounded-lg border p-4">
-          <h3 className="font-semibold">Học viên</h3>
-          <dl className="mt-4 space-y-3 text-sm">
-            <DetailRow label="Họ tên" value={payment.student.fullName} />
-            <DetailRow label="Số điện thoại" value={payment.student.phone || "—"} />
-            <DetailRow label="Email" value={payment.student.email || "—"} />
-            <DetailRow label="Khóa học" value={payment.course?.name || "—"} />
-            <DetailRow label="Lớp" value={payment.class?.name || "—"} />
-          </dl>
-        </section>
-      </div>
+      ) : null}
 
       {payment.lineItems.length > 0 ? (
         <section className="bg-card rounded-lg border p-4">
@@ -158,12 +179,6 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
         </div>
       ) : null}
 
-      {payment.note ? (
-        <section className="bg-card rounded-lg border p-4">
-          <h3 className="font-semibold">Ghi chú</h3>
-          <p className="text-muted-foreground mt-3 text-sm whitespace-pre-line">{payment.note}</p>
-        </section>
-      ) : null}
     </div>
   )
 }
@@ -194,14 +209,6 @@ function formatMoney(value: number) {
     style: "currency",
     currency: "VND",
     maximumFractionDigits: 0
-  }).format(value)
-}
-
-function formatDate(value: Date | null) {
-  if (!value) return "—"
-  return new Intl.DateTimeFormat("vi-VN", {
-    dateStyle: "medium",
-    timeStyle: "short"
   }).format(value)
 }
 

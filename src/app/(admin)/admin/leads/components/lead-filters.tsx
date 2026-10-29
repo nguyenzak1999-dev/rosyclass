@@ -12,6 +12,15 @@ import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import { LEAD_STATUSES, LEAD_SOURCES } from "@/lib/schemas/lead"
 
+// Nguồn do các form trên website tự gán (xem actions trong (public)/*)
+const SOURCE_ITEMS = [
+  ...LEAD_SOURCES.map((s) => ({ value: s as string, label: s as string })),
+  { value: "Registration Form", label: "Web: Đăng ký học thử" },
+  { value: "Contact Form", label: "Web: Liên hệ" },
+  { value: "Placement Test Form", label: "Web: Kiểm tra trình độ" },
+  { value: "Class Schedule Form", label: "Web: Lịch khai giảng" },
+]
+
 interface LeadFiltersProps {
   currentStatus: string
   currentSource: string
@@ -97,19 +106,16 @@ export function LeadFilters({
         <Select
           value={currentSource || "all"}
           onValueChange={(v) => updateParam("source", v)}
-          items={[
-            { value: "all", label: "Tất cả" },
-            ...LEAD_SOURCES.map((s) => ({ value: s, label: s })),
-          ]}
+          items={[{ value: "all", label: "Tất cả" }, ...SOURCE_ITEMS]}
         >
           <SelectTrigger className="w-[180px] bg-background">
             <SelectValue placeholder="Tất cả" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả</SelectItem>
-            {LEAD_SOURCES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {s}
+            {SOURCE_ITEMS.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
               </SelectItem>
             ))}
           </SelectContent>

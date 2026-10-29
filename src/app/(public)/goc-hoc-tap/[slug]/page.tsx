@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { absoluteUrl, createPageMetadata, JsonLd, trimSeoText } from "@/lib/seo"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { format } from "date-fns"
+import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import { Calendar, ChevronLeft } from "lucide-react"
 import Link from "next/link"
@@ -86,7 +86,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <div className="flex items-center justify-center gap-4 text-[15px] text-kid-ink-soft">
             <span className="kid-border-2 inline-flex items-center rounded-full bg-kid-sun-soft px-3 py-1 font-semibold text-kid-ink">
               <Calendar className="mr-1.5 h-4 w-4" aria-hidden="true" />
-              {format(new Date(post.publishedAt || post.createdAt), "dd MMMM, yyyy", { locale: vi })}
+              {formatVietnam(new Date(post.publishedAt || post.createdAt), "dd MMMM, yyyy", { locale: vi })}
             </span>
           </div>
         </div>

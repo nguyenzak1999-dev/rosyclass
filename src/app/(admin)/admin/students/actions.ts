@@ -31,23 +31,29 @@ export async function generateStudentCode() {
   return `HV${String(nextNum).padStart(4, "0")}`
 }
 
+/** "" → null để xoá được giá trị; undefined giữ nguyên (form không gửi trường đó) */
+function optionalText(value: string | null | undefined) {
+  if (value === undefined) return undefined
+  return value?.trim() || null
+}
+
 export async function upsertStudent(data: StudentFormValues) {
   try {
     await requirePermission(PERMISSIONS.studentsWrite)
     const parsedData = studentSchema.parse(data)
 
     const payload: Prisma.StudentUncheckedCreateInput = {
-      fullName: parsedData.fullName,
-      email: parsedData.email,
-      phone: parsedData.phone,
+      fullName: parsedData.fullName.trim(),
+      email: optionalText(parsedData.email),
+      phone: optionalText(parsedData.phone),
       dateOfBirth: parsedData.dateOfBirth,
-      gender: parsedData.gender,
-      address: parsedData.address,
-      currentLevel: parsedData.currentLevel,
-      learningGoal: parsedData.learningGoal,
-      source: parsedData.source,
+      gender: optionalText(parsedData.gender),
+      address: optionalText(parsedData.address),
+      currentLevel: optionalText(parsedData.currentLevel),
+      learningGoal: optionalText(parsedData.learningGoal),
+      source: optionalText(parsedData.source),
       status: parsedData.status,
-      notes: parsedData.notes,
+      notes: optionalText(parsedData.notes),
       parentId: parsedData.parentId,
       code: parsedData.code || undefined,
     }
@@ -55,13 +61,23 @@ export async function upsertStudent(data: StudentFormValues) {
     if (parsedData.id) {
       await prisma.student.update({ where: { id: parsedData.id }, data: payload })
     } else {
-      if (!payload.code) {
-        payload.code = await generateStudentCode()
+      if (payload.code) {
+        await prisma.student.create({ data: payload })
+      } else {
+        // Hai người thêm cùng lúc có thể sinh trùng mã: thử lại với mã mới
+        for (let attempt = 0; ; attempt++) {
+          try {
+            await prisma.student.create({ data: { ...payload, code: await generateStudentCode() } })
+            break
+          } catch (error) {
+            if (!isPrismaUniqueError(error) || attempt >= 2) throw error
+          }
+        }
       }
-      await prisma.student.create({ data: payload })
     }
 
     revalidatePath("/admin/students")
+    if (parsedData.id) revalidatePath(`/admin/students/${parsedData.id}`)
     return { success: true }
   } catch (error: unknown) {
     console.error("Student upsert error:", error)
@@ -75,6 +91,11 @@ export async function upsertStudent(data: StudentFormValues) {
 export async function deleteStudent(id: string) {
   try {
     await requirePermission(PERMISSIONS.studentsWrite)
+    // Phiếu thu giữ khoá ngoại RESTRICT tới học viên: báo rõ thay vì lỗi chung chung
+    const paymentCount = await prisma.payment.count({ where: { studentId: id } })
+    if (paymentCount > 0) {
+      return { success: false, error: `Học viên còn ${paymentCount} phiếu thu học phí, hãy xoá các phiếu thu trước (hoặc chuyển trạng thái sang "Đã nghỉ")` }
+    }
     await prisma.student.delete({
       where: { id }
     })

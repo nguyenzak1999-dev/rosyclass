@@ -32,6 +32,8 @@ export type ClassData = {
   roomId: string | null
   curriculumId?: string | null
   maxStudents: number
+  sessionFee?: number | null
+  isOneOnOne?: boolean
   status: ClassStatus
   notes: string | null
   startDate: Date | string | null
@@ -138,6 +140,8 @@ function ActionsCell({ classData, lookups }: { classData: ClassData; lookups: Cl
           name: classData.name,
           courseId: classData.courseId,
           maxStudents: classData.maxStudents,
+          sessionFee: classData.sessionFee ?? null,
+          isOneOnOne: classData.isOneOnOne ?? false,
           startDate: classData.startDate as Date | null,
           expectedEndDate: classData.expectedEndDate as Date | null,
           status: classData.status,

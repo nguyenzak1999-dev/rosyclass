@@ -1,5 +1,6 @@
 // Tiện ích dùng chung (server + client) cho phân hệ Tiếng Anh lớp 1:
 // chương trình học (Unit → Bài), màn hình "Lên lớp", sao & nhận xét.
+import { format, type FormatOptions } from "date-fns"
 
 /** Tách chuỗi nhập tay (dấu phẩy, chấm phẩy hoặc xuống dòng) thành danh sách, bỏ trùng */
 export function splitWords(text: string | null | undefined): string[] {
@@ -78,6 +79,19 @@ export function vietnamDayRange(now = new Date(), offsetDays = 0) {
   }
 }
 
+/** 00:00 giờ VN ngày thứ Hai của tuần hiện tại (theo giờ VN) cộng thêm `offsetWeeks` tuần */
+export function vietnamWeekStart(now = new Date(), offsetWeeks = 0) {
+  const local = new Date(now.getTime() + VIETNAM_OFFSET_MS)
+  const daysSinceMonday = (local.getUTCDay() + 6) % 7
+  return vietnamDayRange(now, offsetWeeks * 7 - daysSinceMonday).start
+}
+
+/** 00:00 giờ VN ngày 1 của tháng hiện tại (theo giờ VN) cộng thêm `offsetMonths` tháng */
+export function vietnamMonthStart(now = new Date(), offsetMonths = 0) {
+  const local = new Date(now.getTime() + VIETNAM_OFFSET_MS)
+  return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth() + offsetMonths, 1) - VIETNAM_OFFSET_MS)
+}
+
 export function formatVietnamDate(value: Date | string, options: Intl.DateTimeFormatOptions = {}) {
   return new Intl.DateTimeFormat("vi-VN", {
     timeZone: VIETNAM_TIME_ZONE,
@@ -86,6 +100,29 @@ export function formatVietnamDate(value: Date | string, options: Intl.DateTimeFo
     year: "numeric",
     ...options,
   }).format(new Date(value))
+}
+
+/**
+ * Mốc thời gian có giờ địa phương (của máy đang chạy) trùng với giờ Việt Nam của `value`.
+ * Dùng để đưa vào các hàm date-fns (format, startOfMonth…) cho ra cùng kết quả trên Worker (UTC)
+ * và trình duyệt, tránh lệch ngày và lỗi hydration.
+ */
+export function toVietnamWallClock(value: Date | string | number) {
+  const local = new Date(new Date(value).getTime() + VIETNAM_OFFSET_MS)
+  return new Date(
+    local.getUTCFullYear(),
+    local.getUTCMonth(),
+    local.getUTCDate(),
+    local.getUTCHours(),
+    local.getUTCMinutes(),
+    local.getUTCSeconds(),
+    local.getUTCMilliseconds()
+  )
+}
+
+/** `format` của date-fns nhưng luôn theo giờ Việt Nam, bất kể máy chạy ở múi giờ nào */
+export function formatVietnam(value: Date | string | number, pattern: string, options?: FormatOptions) {
+  return format(toVietnamWallClock(value), pattern, options)
 }
 
 /** "23/10" (vi-VN tự in "23-10" khi chỉ có ngày + tháng nên cắt từ dạng đầy đủ) */

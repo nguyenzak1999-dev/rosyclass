@@ -11,6 +11,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Printer, QrCode, CreditCard, User, BookOpen, Clock, FileText, Send, Mail } from "lucide-react"
 import { toast } from "sonner"
+import { VIETNAM_TIME_ZONE } from "@/lib/curriculum"
+import { parseBillingSummary, type BillingSummary } from "@/lib/monthly-billing-shared"
+import { BillingSummaryView, familyRemaining } from "./billing-summary-view"
+import { billingSummaryHtml, billingSummaryText } from "./billing-summary-print"
 
 interface PaymentReceiptDialogProps {
   payment: any | null
@@ -31,14 +35,15 @@ function formatDate(value: any) {
   if (!value) return "—"
   return new Intl.DateTimeFormat("vi-VN", {
     dateStyle: "medium",
-    timeStyle: "short"
+    timeStyle: "short",
+    timeZone: VIETNAM_TIME_ZONE,
   }).format(new Date(value))
 }
 
 const paymentMethodLabels: Record<string, string> = {
   CASH: "Tiền mặt",
   BANK_TRANSFER: "Chuyển khoản ngân hàng",
-  CREDIT_CARD: "Thẻ tín dụng",
+  CARD: "Quẹt thẻ",
   OTHER: "Khác"
 }
 
@@ -49,6 +54,14 @@ const paymentCategoryLabels: Record<string, string> = {
   MAKE_UP: "Học bù",
   DISCOUNT: "Chiết khấu/Ưu đãi",
   OTHER: "Khác"
+}
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
 }
 
 function removeDiacritics(str: string): string {
@@ -105,10 +118,16 @@ export function PaymentReceiptDialog({ payment, open, onOpenChange, siteSettings
       return `https://img.vietqr.io/image/${bankCode}-${bankNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(accountName)}`
     }
     
-    return payment.qrPayload || null
+    // qrPayload chỉ là nội dung chuyển khoản (chưa cấu hình ngân hàng) thì không phải ảnh QR
+    return payment.qrPayload?.startsWith("http") ? payment.qrPayload : null
   }
 
-  const qrUrl = getQrUrl()
+  // Phiếu đã thu đủ / hoàn tiền / huỷ: không in mã QR (mã sẽ mang số tiền tổng và dễ bị chuyển khoản lần nữa)
+  const isSettled = payment.remainingAmount <= 0 || ["PAID", "REFUNDED", "CANCELLED"].includes(payment.status)
+  // Phiếu thu tháng: trang chi tiết gửi kèm bản có anh chị em đọc mới, danh sách thì dùng bản lưu lúc lập phiếu
+  const billing: BillingSummary | null = payment.billingSummaryData ?? parseBillingSummary(payment.billingSummary)
+  const familyDue = billing ? familyRemaining(billing, payment.remainingAmount) : 0
+  const qrUrl = isSettled ? null : getQrUrl()
 
   const getShareText = () => {
     const studentName = payment.student?.fullName || "—"
@@ -122,14 +141,14 @@ export function PaymentReceiptDialog({ payment, open, onOpenChange, siteSettings
       itemsText = `- Học phí lớp ${payment.class?.name || payment.course?.name || "chưa xếp lớp"}: ${formatMoney(payment.totalAmount)}`
     }
 
-    return `Kính gửi Phụ huynh ${parentName ? `phụ huynh ${parentName} (Học viên ${studentName})` : `học viên ${studentName}`},
+    return `Kính gửi ${parentName ? `Phụ huynh ${parentName} (Học viên ${studentName})` : `Phụ huynh học viên ${studentName}`},
 
 ROSYCLASS xin gửi thông tin xác nhận biên lai thu tiền:
 - Số biên lai: ${displayCode}
 - Ngày lập: ${dateStr}
 - Chi tiết khoản thu:
 ${itemsText}
------------------------------
+${billing ? `-----------------------------\n${billingSummaryText(billing, familyDue)}\n` : ""}-----------------------------
 - Tổng tiền: ${formatMoney(payment.totalAmount)}
 - Đã thanh toán: ${formatMoney(payment.paidAmount)}
 - Số tiền còn lại: ${formatMoney(payment.remainingAmount)}
@@ -279,7 +298,7 @@ Trân trọng cảm ơn quý phụ huynh!`
       win.document.write(`
         <html>
           <head>
-            <title>In Biên Lai Thu Tiền - ${displayCode}</title>
+            <title>In Biên Lai Thu Tiền - ${escapeHtml(displayCode)}</title>
             <style>
               @page { size: A5 landscape; margin: 5mm; }
               body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; font-size: 11.5px; color: #111; padding: 10px; margin: 0; line-height: 1.4; }
@@ -316,20 +335,20 @@ Trân trọng cảm ơn quý phụ huynh!`
             <div class="receipt-container">
               <div class="header">
                 <div class="logo-area">
-                  ${(siteSettings?.siteName || "RosyClass").toUpperCase()}
-                  <div class="logo-sub">${siteSettings?.address ? `Địa chỉ: ${siteSettings.address}` : ""}${siteSettings?.address && siteSettings?.phone ? " · " : ""}${siteSettings?.phone ? `Hotline: ${siteSettings.phone}` : ""}</div>
+                  ${escapeHtml((siteSettings?.siteName || "RosyClass").toUpperCase())}
+                  <div class="logo-sub">${siteSettings?.address ? `Địa chỉ: ${escapeHtml(siteSettings.address)}` : ""}${siteSettings?.address && siteSettings?.phone ? " · " : ""}${siteSettings?.phone ? `Hotline: ${escapeHtml(siteSettings.phone)}` : ""}</div>
                 </div>
                 <div class="title-area">
                   <h1 class="title-main">BIÊN LAI THU TIỀN</h1>
-                  <div class="title-sub">Số: ${displayCode}</div>
+                  <div class="title-sub">Số: ${escapeHtml(displayCode)}</div>
                 </div>
               </div>
               
               <div class="info-grid">
-                <div class="info-item"><span class="info-label">Học viên:</span><span class="info-value">${payment.student?.fullName || "—"}</span></div>
+                <div class="info-item"><span class="info-label">Học viên:</span><span class="info-value">${escapeHtml(payment.student?.fullName || "—")}</span></div>
                 <div class="info-item"><span class="info-label">Ngày lập phiếu:</span><span class="info-value">${formatDate(payment.createdAt)}</span></div>
-                <div class="info-item"><span class="info-label">Điện thoại:</span><span class="info-value">${payment.student?.phone || "—"}</span></div>
-                <div class="info-item"><span class="info-label">Khóa học / Lớp:</span><span class="info-value">${payment.course?.name || "—"}${payment.class ? ` / ${payment.class.name}` : ""}</span></div>
+                <div class="info-item"><span class="info-label">Điện thoại:</span><span class="info-value">${escapeHtml(payment.student?.phone || "—")}</span></div>
+                <div class="info-item"><span class="info-label">Khóa học / Lớp:</span><span class="info-value">${escapeHtml(payment.course?.name || "—")}${payment.class ? ` / ${escapeHtml(payment.class.name)}` : ""}</span></div>
               </div>
 
               <table>
@@ -346,7 +365,7 @@ Trân trọng cảm ơn quý phụ huynh!`
                   ${payment.lineItems && payment.lineItems.length > 0 ? 
                     payment.lineItems.map((item: any) => `
                       <tr>
-                        <td class="font-bold">${item.description}</td>
+                        <td class="font-bold">${escapeHtml(item.description)}</td>
                         <td>${paymentCategoryLabels[item.category] || item.category}</td>
                         <td class="text-right">${item.quantity}</td>
                         <td class="text-right">${formatMoney(item.unitAmount)}</td>
@@ -354,7 +373,7 @@ Trân trọng cảm ơn quý phụ huynh!`
                       </tr>
                     `).join('') : `
                       <tr>
-                        <td class="font-bold">Học phí lớp ${payment.class?.name || payment.course?.name || "chưa xếp lớp"}</td>
+                        <td class="font-bold">Học phí lớp ${escapeHtml(payment.class?.name || payment.course?.name || "chưa xếp lớp")}</td>
                         <td>Học phí</td>
                         <td class="text-right">1</td>
                         <td class="text-right">${formatMoney(payment.totalAmount)}</td>
@@ -364,6 +383,8 @@ Trân trọng cảm ơn quý phụ huynh!`
                   }
                 </tbody>
               </table>
+
+              ${billing ? billingSummaryHtml(billing, familyDue) : ""}
 
               <div class="summary-section">
                 ${qrUrl ? `
@@ -385,12 +406,12 @@ Trân trọng cảm ơn quý phụ huynh!`
                 <div>
                   <span class="signature-title">Người nộp tiền</span><br/>(Ký, ghi rõ họ tên)
                   <div class="signature-space"></div>
-                  <span class="signature-name">${payment.student?.fullName || ""}</span>
+                  <span class="signature-name">${escapeHtml(payment.student?.fullName || "")}</span>
                 </div>
                 <div>
                   <span class="signature-title">Người lập phiếu</span><br/>(Ký, họ tên)
                   <div class="signature-space"></div>
-                  <span class="signature-name">${payment.createdBy?.fullName || "Hệ thống"}</span>
+                  <span class="signature-name">${escapeHtml(payment.createdBy?.fullName || "Hệ thống")}</span>
                 </div>
                 <div>
                   <span class="signature-title">Thủ quỹ</span><br/>(Ký, đóng dấu)
@@ -403,6 +424,11 @@ Trân trọng cảm ơn quý phụ huynh!`
         </html>
       `)
       win.document.close()
+      // Chờ ảnh QR tải xong rồi mở hộp thoại in
+      win.addEventListener("load", () => {
+        win.focus()
+        win.print()
+      })
     }
   }
 
@@ -545,6 +571,17 @@ Trân trọng cảm ơn quý phụ huynh!`
                 </tbody>
               </table>
             </div>
+
+            {billing ? (
+              <div className="mb-6 rounded-lg border p-3">
+                <BillingSummaryView summary={billing} />
+                {billing.siblings.length > 0 ? (
+                  <p className="mt-3 border-t pt-2 text-sm">
+                    Cả nhà còn phải đóng tháng này: <strong>{formatMoney(familyDue)}</strong>
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             {/* Note Section if exists */}
             {payment.note && (

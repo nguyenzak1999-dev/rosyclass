@@ -9,17 +9,18 @@ import { getErrorMessage } from "@/lib/errors"
 export async function upsertBranch(data: BranchFormValues) {
   try {
     await requirePermission(PERMISSIONS.settingsWrite)
-    const parsedData = branchSchema.parse(data)
+    const { id, ...fields } = branchSchema.parse(data)
+    const payload = {
+      name: fields.name.trim(),
+      phone: fields.phone?.trim() || null,
+      address: fields.address?.trim() || null,
+      isActive: fields.isActive,
+    }
 
-    if (parsedData.id) {
-      await prisma.branch.update({
-        where: { id: parsedData.id },
-        data: { ...parsedData }
-      })
+    if (id) {
+      await prisma.branch.update({ where: { id }, data: payload })
     } else {
-      await prisma.branch.create({
-        data: { ...parsedData }
-      })
+      await prisma.branch.create({ data: payload })
     }
 
     revalidatePath("/admin/settings/branches")
@@ -33,6 +34,17 @@ export async function upsertBranch(data: BranchFormValues) {
 export async function deleteBranch(id: string) {
   try {
     await requirePermission(PERMISSIONS.settingsWrite)
+    const branch = await prisma.branch.findUnique({
+      where: { id },
+      select: { _count: { select: { rooms: true, classes: true } } }
+    })
+    if (!branch) return { success: false, error: "Không tìm thấy chi nhánh" }
+    if (branch._count.rooms > 0 || branch._count.classes > 0) {
+      return {
+        success: false,
+        error: `Chi nhánh đang có ${branch._count.rooms} phòng và ${branch._count.classes} lớp. Hãy bỏ chọn "Đang hoạt động" thay vì xoá.`
+      }
+    }
     await prisma.branch.delete({ where: { id } })
     revalidatePath("/admin/settings/branches")
     return { success: true }

@@ -18,15 +18,6 @@ export function calculateSessionHours(startTime: string, endTime: string): numbe
 }
 
 /**
- * Lấy ngày đầu và cuối tháng theo múi giờ local
- */
-export function getMonthRange(month: number, year: number): { start: Date; end: Date } {
-  const start = new Date(year, month - 1, 1, 0, 0, 0, 0)
-  const end = new Date(year, month, 0, 23, 59, 59, 999) // ngày cuối tháng
-  return { start, end }
-}
-
-/**
  * Format số tiền VND
  */
 export function formatVND(amount: number): string {
