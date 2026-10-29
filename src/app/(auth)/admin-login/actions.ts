@@ -9,24 +9,21 @@ import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/
 
 const INVALID_CREDENTIALS = "Email hoặc mật khẩu không chính xác."
 
+const userSelect = { id: true, status: true, passwordHash: true } as const
+
 export async function login(formData: FormData) {
-  const email = String(formData.get("email") || "").trim().toLowerCase()
+  const typedEmail = String(formData.get("email") || "").trim()
+  const email = typedEmail.toLowerCase()
   const password = String(formData.get("password") || "")
 
   if (!email || !password) {
     return { error: INVALID_CREDENTIALS }
   }
 
-  const adminUser = await prisma.user.findUnique({
-    where: {
-      email,
-    },
-    select: {
-      id: true,
-      status: true,
-      passwordHash: true,
-    },
-  })
+  // SQLite so sánh email phân biệt hoa thường: tài khoản cũ lưu email có chữ hoa thì thử thêm đúng kiểu đã gõ
+  const adminUser =
+    (await prisma.user.findUnique({ where: { email }, select: userSelect })) ??
+    (typedEmail !== email ? await prisma.user.findUnique({ where: { email: typedEmail }, select: userSelect }) : null)
 
   if (!adminUser || !(await verifyPassword(password, adminUser.passwordHash))) {
     return { error: INVALID_CREDENTIALS }
@@ -47,5 +44,8 @@ export async function login(formData: FormData) {
   cookieStore.set(SESSION_COOKIE, await createSessionToken(adminUser.id, passwordHash), sessionCookieOptions)
 
   revalidatePath("/", "layout")
-  redirect("/admin/campus")
+  // Quay lại trang đang mở trước khi bị yêu cầu đăng nhập; chỉ nhận đường dẫn nội bộ trong khu quản trị
+  const next = String(formData.get("next") || "")
+  const safeNext = next.startsWith("/admin") && !next.startsWith("//") && !next.startsWith("/admin-login") ? next : null
+  redirect(safeNext ?? "/admin/campus")
 }

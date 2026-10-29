@@ -10,7 +10,11 @@ export async function proxy(request: NextRequest) {
   // Không tự chuyển /admin-login sang dashboard: cookie hợp lệ nhưng tài khoản đã bị khoá
   // sẽ bị server đẩy về /admin-login, chuyển ngược lại sẽ tạo vòng lặp
   if (isAdminRoute && !session) {
-    return NextResponse.redirect(new URL("/admin-login", request.url))
+    const loginUrl = new URL("/admin-login", request.url)
+    // Đăng nhập xong quay lại đúng trang đang mở
+    const next = `${request.nextUrl.pathname}${request.nextUrl.search}`
+    if (next !== "/admin" && next !== "/admin/") loginUrl.searchParams.set("next", next)
+    return NextResponse.redirect(loginUrl)
   }
 
   return NextResponse.next()
