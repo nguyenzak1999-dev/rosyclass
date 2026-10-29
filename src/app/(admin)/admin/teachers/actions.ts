@@ -9,6 +9,7 @@ import type { Prisma } from "@/generated/prisma/client"
 import { hashPassword } from "@/lib/auth/password"
 import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth/session"
 import { cookies } from "next/headers"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 // Vai trò quản trị: chỉ SUPER_ADMIN được gán hoặc chỉnh tài khoản mang các vai trò này
 const PRIVILEGED_ROLES = ["SUPER_ADMIN", "ADMIN"]
@@ -137,6 +138,8 @@ export async function upsertTeacher(data: TeacherFormValues, password?: string) 
       cookieStore.set(SESSION_COOKIE, await createSessionToken(actor.id, passwordHash), sessionCookieOptions)
     }
 
+    revalidatePublicSite()
+
     revalidatePath("/admin/teachers")
     revalidatePath("/admin/payroll")
     return { success: true }
@@ -185,6 +188,8 @@ export async function deleteTeacher(userId: string) {
         where: { id: teacher.id }
       })
     }
+
+    revalidatePublicSite()
 
     revalidatePath("/admin/teachers")
     return { success: true }

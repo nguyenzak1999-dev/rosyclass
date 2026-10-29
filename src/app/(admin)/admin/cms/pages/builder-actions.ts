@@ -16,6 +16,7 @@ import {
 import { buildStarterBlocks } from "@/lib/page-builder/defaults"
 import { parsePageDocument, serializePageDocument, validateBlocks, type PageDocument } from "@/lib/page-builder/document"
 import { pageMetaSchema, type PageMetaInput } from "@/lib/page-builder/meta"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 type ActionResult<T = object> = ({ success: true } & T) | { success: false; error: string }
 
@@ -27,6 +28,8 @@ export interface SavedPageState {
 }
 
 function revalidatePagePaths(...slugs: string[]) {
+  // Khối trên trang có thể hiện ở trang khác (menu, chân trang…): làm mới toàn bộ trang công khai
+  revalidatePublicSite()
   for (const slug of new Set(slugs)) revalidatePath(getPublicPagePath(slug))
   revalidatePath("/admin/cms/pages")
 }

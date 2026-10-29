@@ -3,6 +3,10 @@ import { getSiteSettings } from "@/lib/get-site-settings"
 import { absoluteUrl, getSiteUrl, JsonLd } from "@/lib/seo"
 import { PublicFooter } from "./components/PublicFooter"
 
+// Trang công khai cache 1 ngày (Workers KV) để Worker không phải dựng lại trang và gọi D1 mỗi lượt xem;
+// admin sửa nội dung thì làm mới ngay qua revalidatePublicSite(). Khu phụ huynh tự đặt force-dynamic.
+export const revalidate = 86400
+
 export default async function PublicLayout({
   children,
 }: {

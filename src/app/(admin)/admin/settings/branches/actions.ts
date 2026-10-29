@@ -5,6 +5,7 @@ import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { branchSchema, type BranchFormValues } from "@/lib/schemas/branch"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage } from "@/lib/errors"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 export async function upsertBranch(data: BranchFormValues) {
   try {
@@ -22,6 +23,8 @@ export async function upsertBranch(data: BranchFormValues) {
     } else {
       await prisma.branch.create({ data: payload })
     }
+
+    revalidatePublicSite()
 
     revalidatePath("/admin/settings/branches")
     return { success: true }
@@ -46,6 +49,7 @@ export async function deleteBranch(id: string) {
       }
     }
     await prisma.branch.delete({ where: { id } })
+    revalidatePublicSite()
     revalidatePath("/admin/settings/branches")
     return { success: true }
   } catch (error: unknown) {

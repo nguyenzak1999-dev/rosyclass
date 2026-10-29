@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { prisma } from "@/lib/prisma"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 const placementQuestionSchema = z.object({
   id: z.string().optional(),
@@ -60,6 +61,8 @@ export async function upsertPlacementQuestion(data: PlacementQuestionFormValues)
       await prisma.placementQuestion.create({ data: payload })
     }
 
+    revalidatePublicSite()
+
     revalidatePath("/admin/cms/placement-questions")
     revalidatePath("/kiem-tra-trinh-do")
     return { success: true }
@@ -73,6 +76,7 @@ export async function deletePlacementQuestion(id: string) {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
     await prisma.placementQuestion.delete({ where: { id } })
+    revalidatePublicSite()
     revalidatePath("/admin/cms/placement-questions")
     revalidatePath("/kiem-tra-trinh-do")
     return { success: true }

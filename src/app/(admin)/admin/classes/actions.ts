@@ -22,6 +22,7 @@ import {
 import { revalidatePath } from "next/cache"
 import { getErrorMessage } from "@/lib/errors"
 import { DAY_MS, formatVietnamDate, parseVietnamDateKey, toVietnamWallClock, vietnamDateKey, vietnamDayRange } from "@/lib/curriculum"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 const addStudentToClassSchema = z.object({
   classId: z.string().min(1, "Lớp học là bắt buộc"),
@@ -96,6 +97,8 @@ export async function upsertClass(data: ClassFormValues) {
       }
     }
 
+    revalidatePublicSite()
+
     revalidatePath("/admin/classes")
     if (classId) {
       revalidatePath(`/admin/classes/${classId}`)
@@ -111,6 +114,7 @@ export async function deleteClass(id: string) {
   try {
     await requirePermission(PERMISSIONS.classesWrite)
     await prisma.class.delete({ where: { id } })
+    revalidatePublicSite()
     revalidatePath("/admin/classes")
     return { success: true }
   } catch (error: unknown) {
@@ -205,6 +209,8 @@ export async function addStudentToClass(
       )
     }
 
+    revalidatePublicSite()
+
     revalidatePath(`/admin/classes/${classId}`)
     revalidatePath(`/admin/students/${studentId}`)
     revalidatePath("/admin/classes/arrange")
@@ -224,6 +230,8 @@ export async function removeStudentFromClass(classId: string, studentId: string)
         classId_studentId: { classId, studentId }
       }
     })
+
+    revalidatePublicSite()
 
     revalidatePath(`/admin/classes/${classId}`)
     return { success: true }
@@ -264,6 +272,8 @@ export async function createClassSchedule(data: ScheduleFormValues) {
       }
     })
 
+    revalidatePublicSite()
+
     revalidatePath(`/admin/classes/${parsed.classId}`)
     return { success: true }
   } catch (error) {
@@ -302,6 +312,8 @@ export async function updateClassSchedule(data: ScheduleFormValues) {
       }
     })
 
+    revalidatePublicSite()
+
     revalidatePath(`/admin/classes/${existing.classId}`)
     return { success: true }
   } catch (error) {
@@ -326,6 +338,7 @@ export async function deleteClassSchedule(scheduleId: string) {
     }
 
     await prisma.classSchedule.delete({ where: { id: scheduleId } })
+    revalidatePublicSite()
     revalidatePath(`/admin/classes/${existing.classId}`)
     return { success: true }
   } catch (error) {
@@ -989,6 +1002,8 @@ export async function transferStudentToClass(studentId: string, fromClassId: str
             }
           })
     ])
+
+    revalidatePublicSite()
 
     revalidatePath(`/admin/classes/${fromClassId}`)
     revalidatePath(`/admin/classes/${toClassId}`)

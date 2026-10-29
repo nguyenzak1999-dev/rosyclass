@@ -5,6 +5,7 @@ import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 import { isSafeImage, isSafeLink } from "@/lib/page-builder/fields"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 const bannerSchema = z.object({
   title: z.string().optional().nullable(),
@@ -48,7 +49,7 @@ function toBannerData(input: BannerInput) {
 function revalidateBannerPaths() {
   revalidatePath("/admin/cms/banners")
   // Banner hiển thị ở khối Hero của trang chủ
-  revalidatePath("/")
+  revalidatePublicSite()
 }
 
 export async function createBanner(input: BannerInput) {

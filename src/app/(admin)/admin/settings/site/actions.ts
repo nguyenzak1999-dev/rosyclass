@@ -4,6 +4,7 @@ import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { type SiteSettings } from "@/lib/site-settings"
 import { updateStoredSiteSettings } from "@/lib/site-settings-store"
 import { revalidatePath } from "next/cache"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 /** Chỉ ghi các trường được gửi lên (patch), các trường khác giữ nguyên trong DB */
 export async function saveSiteSettings(data: Partial<SiteSettings>) {
@@ -13,6 +14,8 @@ export async function saveSiteSettings(data: Partial<SiteSettings>) {
     const { leadNotificationSettings: _ignored, ...patch } = data
     void _ignored
     await updateStoredSiteSettings(patch)
+
+    revalidatePublicSite()
 
     revalidatePath("/admin/settings/site")
     revalidatePath("/admin/payments")

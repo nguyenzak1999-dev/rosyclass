@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { prisma } from "@/lib/prisma"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 const testimonialSchema = z.object({
   id: z.string().optional(),
@@ -43,6 +44,8 @@ export async function upsertTestimonial(data: TestimonialFormValues) {
       await prisma.testimonial.create({ data: payload })
     }
 
+    revalidatePublicSite()
+
     revalidatePath("/admin/cms/testimonials")
     revalidatePath("/")
     return { success: true }
@@ -56,6 +59,7 @@ export async function deleteTestimonial(id: string) {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
     await prisma.testimonial.delete({ where: { id } })
+    revalidatePublicSite()
     revalidatePath("/admin/cms/testimonials")
     revalidatePath("/")
     return { success: true }

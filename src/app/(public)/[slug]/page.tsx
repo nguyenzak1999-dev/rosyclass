@@ -5,7 +5,8 @@ import { getSiteSettings } from "@/lib/get-site-settings"
 import { getPublishedCustomPage, loadDataForBlocks } from "@/lib/page-builder/pages"
 import { createPageMetadata } from "@/lib/seo"
 
-export const revalidate = 300
+// Cache 1 ngày (Workers KV); admin sửa nội dung thì làm mới ngay qua revalidatePublicSite()
+export const revalidate = 86400
 
 type CustomPageProps = { params: Promise<{ slug: string }> }
 

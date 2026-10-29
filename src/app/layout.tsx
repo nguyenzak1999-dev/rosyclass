@@ -8,7 +8,6 @@ import { StyleProvider } from "@/components/style-provider"
 import { FontResourceHints } from "@/components/font-resource-hints"
 import { absoluteUrl, getSiteUrl, JsonLd } from "@/lib/seo"
 
-export const dynamic = "force-dynamic"
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings()

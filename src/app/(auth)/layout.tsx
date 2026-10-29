@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
 
+// Trang đăng nhập không cache
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Đăng nhập quản trị",
   robots: {

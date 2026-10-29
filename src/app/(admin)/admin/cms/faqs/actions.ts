@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { prisma } from "@/lib/prisma"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 const faqSchema = z.object({
   id: z.string().optional(),
@@ -41,6 +42,8 @@ export async function upsertFaq(data: FaqFormValues) {
       await prisma.faq.create({ data: payload })
     }
 
+    revalidatePublicSite()
+
     revalidatePath("/admin/cms/faqs")
     revalidatePath("/hoi-dap")
     revalidatePath("/")
@@ -55,6 +58,7 @@ export async function deleteFaq(id: string) {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
     await prisma.faq.delete({ where: { id } })
+    revalidatePublicSite()
     revalidatePath("/admin/cms/faqs")
     revalidatePath("/hoi-dap")
     revalidatePath("/")

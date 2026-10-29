@@ -8,6 +8,7 @@ import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 import { SITE_SETTINGS_SLUG } from "@/lib/site-settings"
 import { HOME_PAGE_SLUG, PAGE_SLUG_RE, getPublicPagePath, isReservedSlug } from "@/lib/page-builder/constants"
 import { emptyDocument, serializePageDocument } from "@/lib/page-builder/document"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 /**
  * Sửa nhanh thông tin trang (tiêu đề, slug, SEO, trạng thái) từ danh sách.
@@ -50,6 +51,7 @@ export async function upsertPage(data: PageFormValues) {
           ...(content !== undefined && content !== "" ? { content } : {}),
         },
       })
+      revalidatePublicSite()
       revalidatePath(getPublicPagePath(existing.slug))
       revalidatePath(getPublicPagePath(slug))
     } else {
@@ -79,6 +81,7 @@ export async function deletePage(id: string) {
     if (!existing || existing.slug === SITE_SETTINGS_SLUG) return { success: false, error: "Không thể xóa trang này" }
     if (existing.slug === HOME_PAGE_SLUG) return { success: false, error: "Không thể xoá trang chủ" }
     await prisma.page.delete({ where: { id } })
+    revalidatePublicSite()
     revalidatePath(getPublicPagePath(existing.slug))
     revalidatePath("/admin/cms/pages")
     return { success: true }

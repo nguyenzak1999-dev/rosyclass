@@ -8,6 +8,7 @@ import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 import { formatBlogContent } from "@/lib/blog-content"
 import { generateSlug } from "@/lib/slug"
 import type { Prisma } from "@/generated/prisma/client"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 export async function upsertBlogPost(data: BlogPostFormValues) {
   try {
@@ -52,6 +53,8 @@ export async function upsertBlogPost(data: BlogPostFormValues) {
       await prisma.blogPost.create({ data: payload })
     }
 
+    revalidatePublicSite()
+
     revalidatePath("/admin/cms/blog")
     revalidatePath("/goc-hoc-tap")
     revalidatePath(`/goc-hoc-tap/${slug}`)
@@ -70,6 +73,7 @@ export async function deleteBlogPost(id: string) {
   try {
     await requirePermission(PERMISSIONS.cmsWrite)
     const post = await prisma.blogPost.delete({ where: { id }, select: { slug: true } })
+    revalidatePublicSite()
     revalidatePath("/admin/cms/blog")
     revalidatePath("/goc-hoc-tap")
     revalidatePath(`/goc-hoc-tap/${post.slug}`)

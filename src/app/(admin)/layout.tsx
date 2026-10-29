@@ -10,6 +10,9 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { hasPermission, PERMISSIONS, requireAdminUser } from "@/lib/auth/permissions"
 import { prisma } from "@/lib/prisma"
 
+// Khu quản trị luôn dựng mới theo từng tài khoản, không bao giờ vào cache trang
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Admin",
   robots: {

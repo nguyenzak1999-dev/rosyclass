@@ -5,6 +5,7 @@ import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { courseSchema, type CourseFormValues } from "@/lib/schemas/course"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
+import { revalidatePublicSite } from "@/lib/public-cache"
 
 export async function upsertCourse(data: CourseFormValues) {
   try {
@@ -38,6 +39,8 @@ export async function upsertCourse(data: CourseFormValues) {
       await prisma.course.create({ data: payload })
     }
 
+    revalidatePublicSite()
+
     revalidatePath("/admin/courses")
     revalidatePath("/khoa-hoc")
     revalidatePath(`/khoa-hoc/${parsedData.slug}`)
@@ -68,6 +71,7 @@ export async function deleteCourse(id: string) {
     await prisma.course.delete({
       where: { id }
     })
+    revalidatePublicSite()
     revalidatePath("/admin/courses")
     revalidatePath("/khoa-hoc")
     revalidatePath(`/khoa-hoc/${course.slug}`)
