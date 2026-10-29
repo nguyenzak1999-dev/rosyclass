@@ -1,7 +1,7 @@
 // Tạo tài khoản quản trị hoặc đổi mật khẩu, chạy trên D1 thật qua `cf`.
 // Mật khẩu được hỏi khi chạy (không hiện khi gõ, không lưu vào lịch sử shell).
 //
-//   npm run admin:create -- admin@rosyclass.edu.vn "Họ tên"
+//   npm run admin:create -- admin@rosyclass.edu.vn "Admin Rossy"
 //
 // Email chưa tồn tại thì tạo tài khoản SUPER_ADMIN; đã tồn tại thì chỉ đổi mật khẩu.
 import { randomUUID } from "node:crypto"

@@ -67,7 +67,7 @@ npm run db:bootstrap
 Tạo tài khoản quản trị đầu tiên, hoặc đổi mật khẩu cho tài khoản đã có. Mật khẩu được hỏi khi chạy và không hiện lúc gõ:
 
 ```bash
-npm run admin:create -- admin@rosyclass.edu.vn "Họ tên"
+npm run admin:create -- admin@rosyclass.edu.vn "Admin Rossy"
 ```
 
 Nạp nội dung khởi đầu cho trung tâm trẻ em: 15 câu hỏi kiểm tra trình độ (đã xuất bản), 5 chương trình học (ở trạng thái nháp, cần điền học phí rồi bật hiển thị) và FAQ cho phụ huynh:
