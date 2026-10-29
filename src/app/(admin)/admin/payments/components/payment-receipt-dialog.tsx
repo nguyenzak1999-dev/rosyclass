@@ -91,6 +91,12 @@ export function PaymentReceiptDialog({ payment, open, onOpenChange, siteSettings
 
   // Dynamic VietQR generator fallback
   const getQrUrl = () => {
+    const url = buildQrUrl()
+    // img.vietqr.io chuyển .png/.jpg sang .svg bằng 301 không kèm CORS: trình duyệt chặn khi chụp ảnh biên lai
+    return url ? url.replace(/(img\.vietqr\.io\/image\/[^?]+)\.(png|jpg)(?=\?|$)/, "$1.svg") : null
+  }
+
+  const buildQrUrl = () => {
     // If we have an existing qrPayload (which is a valid VietQR URL from DB), 
     // try to just update its amount to the current remaining amount
     if (payment.qrPayload && payment.qrPayload.startsWith("http")) {
@@ -115,7 +121,7 @@ export function PaymentReceiptDialog({ payment, open, onOpenChange, siteSettings
     if (bankNo) {
       const amount = payment.remainingAmount > 0 ? payment.remainingAmount : payment.totalAmount
       const addInfo = getTransferContent()
-      return `https://img.vietqr.io/image/${bankCode}-${bankNo}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(accountName)}`
+      return `https://img.vietqr.io/image/${bankCode}-${bankNo}-compact2.svg?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(accountName)}`
     }
     
     // qrPayload chỉ là nội dung chuyển khoản (chưa cấu hình ngân hàng) thì không phải ảnh QR
@@ -123,6 +129,8 @@ export function PaymentReceiptDialog({ payment, open, onOpenChange, siteSettings
   }
 
   // Phiếu đã thu đủ / hoàn tiền / huỷ: không in mã QR (mã sẽ mang số tiền tổng và dễ bị chuyển khoản lần nữa)
+  // Người nộp tiền là phụ huynh; chưa liên kết phụ huynh thì để trống cho người nộp tự ghi
+  const payerName: string = payment.student?.parent?.fullName || ""
   const isSettled = payment.remainingAmount <= 0 || ["PAID", "REFUNDED", "CANCELLED"].includes(payment.status)
   // Phiếu thu tháng: trang chi tiết gửi kèm bản có anh chị em đọc mới, danh sách thì dùng bản lưu lúc lập phiếu
   const billing: BillingSummary | null = payment.billingSummaryData ?? parseBillingSummary(payment.billingSummary)
@@ -188,6 +196,36 @@ Trân trọng cảm ơn quý phụ huynh!`
     const element = document.getElementById("receipt-print-content")
     if (!element) return null
 
+    // Ảnh QR ở tên miền khác: tải về và nhúng dạng data URL để html2canvas vẽ được vào ảnh biên lai
+    const qrImage = element.querySelector<HTMLImageElement>("img[data-receipt-qr]")
+    const originalQrSrc = qrImage?.src
+    if (qrImage && originalQrSrc && !originalQrSrc.startsWith("data:")) {
+      try {
+        const response = await fetch(originalQrSrc, { mode: "cors" })
+        if (!response.ok) throw new Error(`QR ${response.status}`)
+        const blob = await response.blob()
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(String(reader.result))
+          reader.onerror = () => reject(reader.error)
+          reader.readAsDataURL(blob)
+        })
+        qrImage.src = dataUrl
+        await qrImage.decode().catch(() => undefined)
+      } catch (error) {
+        console.error("Không tải được ảnh QR:", error)
+        toast.warning("Không tải được mã QR, ảnh biên lai sẽ thiếu QR. Kiểm tra kết nối mạng rồi thử lại.")
+      }
+    }
+
+    try {
+      return await renderReceipt(html2canvas, element)
+    } finally {
+      if (qrImage && originalQrSrc) qrImage.src = originalQrSrc
+    }
+  }
+
+  const renderReceipt = async (html2canvas: any, element: HTMLElement): Promise<Blob | null> => {
     const canvas = await html2canvas(element, {
       useCORS: true,
       scale: 2,
@@ -346,6 +384,7 @@ Trân trọng cảm ơn quý phụ huynh!`
               
               <div class="info-grid">
                 <div class="info-item"><span class="info-label">Học viên:</span><span class="info-value">${escapeHtml(payment.student?.fullName || "—")}</span></div>
+                ${payerName ? `<div class="info-item"><span class="info-label">Phụ huynh:</span><span class="info-value">${escapeHtml(payerName)}${payment.student?.parent?.phone ? ` · ${escapeHtml(payment.student.parent.phone)}` : ""}</span></div>` : ""}
                 <div class="info-item"><span class="info-label">Ngày lập phiếu:</span><span class="info-value">${formatDate(payment.createdAt)}</span></div>
                 <div class="info-item"><span class="info-label">Điện thoại:</span><span class="info-value">${escapeHtml(payment.student?.phone || "—")}</span></div>
                 <div class="info-item"><span class="info-label">Khóa học / Lớp:</span><span class="info-value">${escapeHtml(payment.course?.name || "—")}${payment.class ? ` / ${escapeHtml(payment.class.name)}` : ""}</span></div>
@@ -406,7 +445,7 @@ Trân trọng cảm ơn quý phụ huynh!`
                 <div>
                   <span class="signature-title">Người nộp tiền</span><br/>(Ký, ghi rõ họ tên)
                   <div class="signature-space"></div>
-                  <span class="signature-name">${escapeHtml(payment.student?.fullName || "")}</span>
+                  <span class="signature-name">${escapeHtml(payerName)}</span>
                 </div>
                 <div>
                   <span class="signature-title">Người lập phiếu</span><br/>(Ký, họ tên)
@@ -599,6 +638,8 @@ Trân trọng cảm ơn quý phụ huynh!`
                   <div className="flex flex-col items-center bg-white p-2 rounded border shadow-xs">
                     <img
                       src={qrUrl}
+                      data-receipt-qr
+                      crossOrigin="anonymous"
                       alt="VietQR code"
                       className="w-32 h-32 object-contain"
                     />
@@ -651,7 +692,7 @@ Trân trọng cảm ơn quý phụ huynh!`
                 <p className="font-bold text-foreground">Người nộp tiền</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">(Ký, ghi rõ họ tên)</p>
                 <div className="h-16" />
-                <p className="italic text-muted-foreground">{payment.student?.fullName || ""}</p>
+                <p className="italic text-muted-foreground">{payerName}</p>
               </div>
               <div>
                 <p className="font-bold text-foreground">Người lập phiếu</p>

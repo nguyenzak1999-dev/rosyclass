@@ -52,5 +52,5 @@ export function buildQrPayload(
     params.set("accountName", accountName)
   }
 
-  return `https://img.vietqr.io/image/${bankCode}-${accountNo}-compact2.png?${params.toString()}`
+  return `https://img.vietqr.io/image/${bankCode}-${accountNo}-compact2.svg?${params.toString()}`
 }
