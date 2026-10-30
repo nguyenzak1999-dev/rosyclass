@@ -16,7 +16,9 @@ import {
   billTotal,
   defaultBillingMonth,
   formatBillingMonth,
+  isPercentDiscountLine,
   lineTotal,
+  percentDiscountLine,
   type BillingCategory,
   type BillingLineDraft,
 } from "@/lib/monthly-billing-shared"
@@ -35,6 +37,7 @@ export interface MonthlyBillingEdit {
   dueDate: string | null
   note: string | null
   paidAmount: number
+  discountPercent: number
 }
 
 interface MonthlyBillingDialogProps {
@@ -68,6 +71,8 @@ export function MonthlyBillingDialog({ students, classes, edit, trigger }: Month
   const [classLines, setClassLines] = React.useState<BillingLineDraft[]>([])
   const [dueDate, setDueDate] = React.useState(edit?.dueDate ?? "")
   const [note, setNote] = React.useState(edit?.note ?? "")
+  // Miễn/giảm %: dòng giảm do hệ thống tính trên tạm tính, không nằm trong danh sách dòng sửa tay
+  const [discountPercent, setDiscountPercent] = React.useState(String(edit?.discountPercent ?? 0))
   const [loading, setLoading] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   // Bỏ kết quả của lần tính cũ nếu người dùng đã đổi bé/tháng trong lúc chờ
@@ -87,7 +92,10 @@ export function MonthlyBillingDialog({ students, classes, edit, trigger }: Month
           return
         }
         setDraft(result.data)
-        if (!keepLines) setLines(result.data.lines)
+        if (!keepLines) {
+          setLines(result.data.lines.filter((line) => !isPercentDiscountLine(line)))
+          setDiscountPercent(String(result.data.discountPercent))
+        }
       } catch {
         if (requestId === requestRef.current) toast.error("Không tính được phiếu thu tháng")
       } finally {
@@ -103,7 +111,8 @@ export function MonthlyBillingDialog({ students, classes, edit, trigger }: Month
     if (edit) {
       setStudentId(edit.studentId)
       setMonth(edit.month)
-      setLines(edit.lines)
+      setLines(edit.lines.filter((line) => !isPercentDiscountLine(line)))
+      setDiscountPercent(String(edit.discountPercent))
       setDueDate(edit.dueDate ?? "")
       setNote(edit.note ?? "")
       void loadDraft(edit.studentId, edit.month, true)
@@ -120,7 +129,11 @@ export function MonthlyBillingDialog({ students, classes, edit, trigger }: Month
   const updateLine = (setter: React.Dispatch<React.SetStateAction<BillingLineDraft[]>>, index: number, patch: Partial<BillingLineDraft>) =>
     setter((current) => current.map((line, i) => (i === index ? { ...line, ...patch } : line)))
 
-  const total = billTotal(lines.filter((line) => line.quantity > 0))
+  const percent = Math.min(100, Math.max(0, Number(discountPercent) || 0))
+  const activeLines = lines.filter((line) => line.quantity > 0)
+  const subtotal = billTotal(activeLines)
+  const percentLine = percentDiscountLine(activeLines, percent)
+  const total = billTotal(percentLine ? [...activeLines, percentLine] : activeLines)
 
   const saveStudent = async () => {
     if (saving) return
@@ -135,6 +148,7 @@ export function MonthlyBillingDialog({ students, classes, edit, trigger }: Month
         dueDate: dueDate || null,
         note: note || null,
         paymentId: edit?.paymentId ?? null,
+        discountPercent: percent,
       })
       if (!result.success) {
         toast.error(result.error)
@@ -259,6 +273,26 @@ export function MonthlyBillingDialog({ students, classes, edit, trigger }: Month
 
       {(draft || edit) && (
         <div className="space-y-1 text-right">
+          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-sm">
+            <span className="text-muted-foreground">Tạm tính: {money(subtotal)}</span>
+            <Label htmlFor="billing-discount" className="font-normal">
+              Miễn/giảm học phí
+            </Label>
+            <div className="flex items-center gap-1">
+              <Input
+                id="billing-discount"
+                type="number"
+                min={0}
+                max={100}
+                step="any"
+                className="h-8 w-20 text-right"
+                value={discountPercent}
+                onChange={(event) => setDiscountPercent(event.target.value)}
+              />
+              <span>%</span>
+            </div>
+            {percentLine ? <span className="text-muted-foreground">-{money(-percentLine.unitAmount)}</span> : null}
+          </div>
           <p className="text-base">
             Tổng phiếu: <strong>{money(total)}</strong>
             {edit && edit.paidAmount > 0 ? <span className="text-sm text-muted-foreground"> · đã thu {money(edit.paidAmount)}</span> : null}
@@ -298,7 +332,7 @@ export function MonthlyBillingDialog({ students, classes, edit, trigger }: Month
       </div>
       <p className="text-sm text-muted-foreground">
         Mỗi bé đang học trong lớp được lập một phiếu: học phí theo số buổi thực tế của tháng, buổi GV nước ngoài (nếu lớp có),
-        trừ buổi nghỉ không kèm bù được. Bé đã có phiếu tháng này sẽ được bỏ qua. Các dòng dưới đây được thêm cho mọi bé.
+        trừ buổi nghỉ không kèm bù được, miễn/giảm % theo hồ sơ từng bé. Bé đã có phiếu tháng này sẽ được bỏ qua. Các dòng dưới đây được thêm cho mọi bé.
       </p>
       <LineEditor
         lines={classLines}

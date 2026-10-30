@@ -53,6 +53,7 @@ type StudentRecord = {
   status: StudentFormValues["status"]
   notes?: string | null
   parentId?: string | null
+  tuitionDiscountPercent?: number | null
 }
 
 export const EMPTY_STUDENT_FORM: StudentFormInput = {
@@ -68,6 +69,7 @@ export const EMPTY_STUDENT_FORM: StudentFormInput = {
   source: "",
   notes: "",
   parentId: null,
+  tuitionDiscountPercent: 0,
 }
 
 /** Bản ghi học viên (null từ DB) → giá trị form (chuỗi rỗng) */
@@ -88,6 +90,7 @@ export function toStudentFormInput(student: StudentRecord): StudentFormInput {
     notes: student.notes || "",
     // undefined (không truyền) = giữ nguyên phụ huynh hiện tại
     parentId: student.parentId,
+    tuitionDiscountPercent: student.tuitionDiscountPercent ?? 0,
   }
 }
 

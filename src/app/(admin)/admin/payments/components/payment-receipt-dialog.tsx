@@ -528,7 +528,7 @@ Trân trọng cảm ơn quý phụ huynh!`
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`w-[94vw] ${isMonthly ? "sm:max-w-[1100px]" : "sm:max-w-4xl"} p-6 max-h-[95vh] overflow-y-auto`}>
+      <DialogContent className={`w-[94vw] ${isMonthly ? "sm:max-w-[1400px]" : "sm:max-w-4xl"} p-6 max-h-[95vh] overflow-y-auto`}>
         <DialogHeader className="border-b pb-3 flex flex-row items-center justify-between">
           <DialogTitle className="text-lg font-bold flex items-center gap-2 text-primary">
             <FileText className="h-5 w-5" />

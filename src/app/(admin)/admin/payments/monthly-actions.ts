@@ -23,6 +23,7 @@ const monthlyPaymentSchema = z.object({
   dueDate: z.string().optional().nullable(),
   note: z.string().max(1000).optional().nullable(),
   paymentId: z.string().optional().nullable(),
+  discountPercent: z.coerce.number().min(0, "Miễn/giảm không được âm").max(100, "Miễn/giảm tối đa 100%").optional().nullable(),
 })
 
 export type MonthlyPaymentInput = z.input<typeof monthlyPaymentSchema>

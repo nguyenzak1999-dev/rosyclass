@@ -15,6 +15,11 @@ export const studentSchema = z.object({
   status: z.enum(['ACTIVE', 'WAITING_CLASS', 'RESERVED', 'PAUSED', 'COMPLETED', 'DROPPED']).default('ACTIVE'),
   notes: z.string().optional(),
   parentId: z.string().optional().nullable(),
+  tuitionDiscountPercent: z.coerce
+    .number({ message: "Miễn/giảm phải là số" })
+    .min(0, "Miễn/giảm không được âm")
+    .max(100, "Miễn/giảm tối đa 100%")
+    .optional(),
 })
 
 export type StudentFormValues = z.infer<typeof studentSchema>

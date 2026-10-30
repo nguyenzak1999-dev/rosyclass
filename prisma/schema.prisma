@@ -206,6 +206,8 @@ model Student {
   source       String?
   joinedAt     DateTime      @default(now())
   notes        String?
+  // Miễn/giảm học phí mặc định (%) áp vào phiếu thu tháng: con em nhân viên, anh chị em, học bổng…
+  tuitionDiscountPercent Float @default(0)
 
   userId String? @unique
   user   User?   @relation(fields: [userId], references: [id])

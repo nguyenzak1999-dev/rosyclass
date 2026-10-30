@@ -23,7 +23,9 @@ import {
   normalizePhone,
   parseBillingSummary,
   shiftBillingMonth,
+  isPercentDiscountLine,
   noticeLineKind,
+  percentDiscountLine,
   plannedDatesText,
   type BillingLineDraft,
   type BillingSummary,
@@ -41,6 +43,8 @@ const ABSENT = new Set(["ABSENT_WITH_PERMISSION", "ABSENT_WITHOUT_PERMISSION"])
 
 export type MonthlyBillDraft = {
   month: string
+  /** Miễn/giảm học phí mặc định của bé (%) */
+  discountPercent: number
   student: { id: string; fullName: string; code: string | null }
   summary: BillingSummary
   lines: BillingLineDraft[]
@@ -122,6 +126,7 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
       id: true,
       fullName: true,
       code: true,
+      tuitionDiscountPercent: true,
       parent: { select: { phone: true } },
       classStudents: {
         where: { status: "ACTIVE", class: { status: { in: ["ACTIVE", "UPCOMING"] } } },
@@ -506,8 +511,14 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
   const existing = paymentByMonth.get(month)
   if (classes.length === 0) warnings.push("Học viên chưa có lớp nào đang học")
 
+  // Miễn/giảm % tính trên tạm tính (mọi dòng ở trên), giống thông báo học phí giấy
+  const discountPercent = student.tuitionDiscountPercent
+  const percentLine = percentDiscountLine(lines, discountPercent)
+  if (percentLine) lines.push(percentLine)
+
   return {
     month,
+    discountPercent,
     student: { id: student.id, fullName: student.fullName, code: student.code },
     summary: {
       version: 1,
@@ -533,6 +544,8 @@ export type MonthlyPaymentRecordInput = {
   note?: string | null
   /** Có = sửa phiếu tháng đã có */
   paymentId?: string | null
+  /** Miễn/giảm học phí (%) cho phiếu này; bỏ trống = theo hồ sơ học viên */
+  discountPercent?: number | null
 }
 
 /**
@@ -553,11 +566,15 @@ export function defaultDueDate(month: string, now = new Date()) {
  */
 export async function saveMonthlyPaymentRecord(input: MonthlyPaymentRecordInput, actorId: string): Promise<{ id: string; totalAmount: number }> {
   const draft = await buildMonthlyBillDraft(input.studentId, input.month)
-  const lines: BillingLineDraft[] = input.lines.filter((line) => line.quantity > 0)
+  // Dòng miễn/giảm % luôn tính lại trên server từ các dòng còn lại
+  const lines: BillingLineDraft[] = input.lines.filter((line) => line.quantity > 0 && !isPercentDiscountLine(line))
   if (lines.length === 0) throw new Error("Phiếu thu cần ít nhất một dòng có số lượng > 0")
+  const discountPercent = Math.min(100, Math.max(0, input.discountPercent ?? draft.discountPercent))
+  const percentLine = percentDiscountLine(lines, discountPercent)
+  if (percentLine) lines.push(percentLine)
   const totalAmount = billTotal(lines)
   const dueDate = parseVietnamDateKey(input.dueDate) ?? defaultDueDate(input.month)
-  const billingSummary = JSON.stringify(draft.summary)
+  const billingSummary = JSON.stringify({ ...draft.summary, discountPercent })
   const lineRows = lines.map((line) => ({
     description: line.description,
     category: line.category,
@@ -723,6 +740,9 @@ export async function buildFamilyNotice(paymentId: string): Promise<FamilyNotice
       foreignAmount: sum("foreign", "totalAmount"),
       materialAmount: sum("extra", "totalAmount"),
       discountAmount: sum("discount", "totalAmount"),
+      subtotal: item.totalAmount - sum("percent", "totalAmount"),
+      discountPercent: summary?.discountPercent ?? 0,
+      percentAmount: -sum("percent", "totalAmount"),
       total: item.totalAmount,
       paid: item.paidAmount,
       remaining: item.remainingAmount,

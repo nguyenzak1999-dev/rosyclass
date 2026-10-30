@@ -6,24 +6,28 @@ const money = (value: number) => Math.round(value).toLocaleString("vi-VN")
 const signedMoney = (value: number) => (value < 0 ? `-${money(-value)}` : money(value))
 /** "2026-09" → "09/26" như trên thông báo giấy */
 const shortMonth = (month: string) => `${month.slice(5)}/${month.slice(2, 4)}`
+const percentText = (value: number) => `${value.toLocaleString("vi-VN")}%`
 
 function Row({
   index,
   label,
   values,
   strong,
+  muted,
 }: {
   index?: number
   label: string
   values: string[]
   strong?: boolean
+  /** Dòng phụ (tạm tính, miễn giảm, đã đóng…): chữ nhỏ hơn một bậc */
+  muted?: boolean
 }) {
   return (
-    <tr className={cn(strong && "font-bold italic")}>
-      <td className="w-7 py-1 pr-1 align-top text-[18px] text-zinc-500">{index ?? ""}</td>
-      <td className="py-1 pr-3 text-[21px]">{label}</td>
+    <tr className={cn(strong ? "font-extrabold" : "font-semibold", muted ? "text-[34px]" : "text-[40px]")}>
+      <td className="w-12 py-1.5 pr-2 align-baseline text-[28px] font-bold text-kid-ink-soft">{index ?? ""}</td>
+      <td className="py-1.5 pr-6 leading-tight whitespace-nowrap">{label}</td>
       {values.map((value, i) => (
-        <td key={i} className="py-1 text-center text-[21px] tabular-nums">
+        <td key={i} className="px-3 py-1.5 text-center leading-tight">
           {value}
         </td>
       ))}
@@ -32,50 +36,43 @@ function Row({
 }
 
 /**
- * Thông báo thu học phí cả nhà: mỗi bé một cột (mục 1–7), tổng cả nhà và mã QR lớn để phụ huynh quét.
- * Màu cố định (giấy trắng) để ảnh chụp gửi Zalo giống nhau ở cả giao diện sáng và tối.
+ * Thông báo thu học phí cả nhà: mỗi bé một cột (mục 1–7, miễn/giảm), tổng cả nhà và mã QR lớn để phụ huynh quét.
+ * Một font (Nunito) và bảng màu của website; màu cố định nên ảnh gửi Zalo giống nhau ở giao diện sáng và tối.
  */
 export function FamilyNoticeView({ notice, siteName }: { notice: FamilyNotice; siteName: string }) {
   const { children } = notice
   const prev = shortMonth(notice.previousMonth)
   const current = shortMonth(notice.month)
   const hasDiscount = children.some((child) => child.discountAmount !== 0)
+  const hasPercent = children.some((child) => child.percentAmount > 0)
   const hasPaid = notice.totalPaid > 0
   const sectionRow = (label: string) => (
     <tr>
       <td />
-      <td colSpan={children.length + 1} className="pt-2 text-[22px] font-bold text-red-600">
+      <td colSpan={children.length + 1} className="pt-4 pb-1 text-[42px] leading-tight font-black text-kid-rose">
         {label}
-      </td>
-    </tr>
-  )
-  const separator = (
-    <tr>
-      <td />
-      <td colSpan={children.length + 1} className="py-1">
-        <div className="border-t-2 border-double border-zinc-500" />
       </td>
     </tr>
   )
 
   return (
-    // Times như thông báo giấy; lining-nums để chữ số cao bằng nhau, dễ đọc số tiền
+    // Rộng cố định theo số bé (nhãn ~820px + mỗi bé ~320px) để dòng dài tự xuống dòng thay vì kéo rộng ảnh
     <div
-      className="min-w-[1100px] border-2 border-zinc-800 bg-white text-zinc-900 [font-variant-numeric:lining-nums_tabular-nums]"
-      style={{ fontFamily: '"Times New Roman", Times, serif' }}
+      className="overflow-hidden rounded-[28px] border-[4px] border-kid-ink bg-kid-cream text-kid-ink [font-variant-numeric:lining-nums_tabular-nums]"
+      style={{ fontFamily: "var(--font-kid-body)", width: Math.max(1300, 820 + children.length * 320) }}
     >
-      <div className="border-b-2 border-zinc-800 bg-yellow-300 px-4 py-2 text-center text-[24px] font-bold text-blue-950 italic uppercase">
+      <div className="border-b-[4px] border-kid-ink bg-kid-sun px-8 py-4 text-center text-[42px] leading-tight font-black uppercase">
         Thông báo thu học phí lớp tiếng Anh {siteName} tháng {formatBillingMonth(notice.month)}
       </div>
 
-      <div className="px-4 pt-3">
+      <div className="bg-white px-8 pt-5 pb-3">
         <table className="w-full border-collapse">
           <tbody>
-            <tr>
+            <tr className="text-[40px]">
               <td />
-              <td className="py-1 pr-3 text-[21px]">Kính gửi phụ huynh bạn</td>
+              <td className="py-1.5 pr-6 leading-tight font-semibold whitespace-nowrap">Kính gửi phụ huynh bạn</td>
               {children.map((child) => (
-                <td key={child.paymentId} className="px-2 py-1 text-center text-[22px] font-bold">
+                <td key={child.paymentId} className="px-3 py-1.5 text-center leading-tight font-black">
                   {child.label}
                 </td>
               ))}
@@ -87,21 +84,38 @@ export function FamilyNoticeView({ notice, siteName }: { notice: FamilyNotice; s
             {sectionRow(`Tháng ${current}`)}
             <Row index={4} label="Số buổi học tạm thu:" values={children.map((child) => String(child.monthSessions))} />
             <Row index={5} label={`Thành tiền tháng ${current}`} values={children.map((child) => money(child.monthAmount))} strong />
-            <Row index={6} label="Buổi học GVNN" values={children.map((child) => money(child.foreignAmount))} strong />
-            <Row index={7} label="Học liệu" values={children.map((child) => money(child.materialAmount))} strong />
+            <Row index={6} label="Buổi học Giáo viên nước ngoài" values={children.map((child) => money(child.foreignAmount))} />
+            <Row index={7} label="Tài liệu bổ trợ / Học liệu / Sách" values={children.map((child) => money(child.materialAmount))} />
             {hasDiscount ? (
-              <Row index={8} label="Giảm trừ" values={children.map((child) => signedMoney(child.discountAmount))} strong />
+              <Row index={8} label="Giảm trừ khác" values={children.map((child) => signedMoney(child.discountAmount))} />
             ) : null}
-            {separator}
+            <tr>
+              <td />
+              <td colSpan={children.length + 1} className="py-2">
+                <div className="border-t-[4px] border-dashed border-kid-ink" />
+              </td>
+            </tr>
             <Row
               label={`Tạm tính (Mục 3 + 5 + 6 + 7${hasDiscount ? " + 8" : ""}):`}
-              values={children.map((child) => money(child.total))}
+              values={children.map((child) => money(child.subtotal))}
               strong
+              muted
             />
+            {hasPercent ? (
+              <>
+                <Row
+                  label="Miễn/ giảm học phí:"
+                  values={children.map((child) => (child.percentAmount > 0 ? percentText(child.discountPercent) : ""))}
+                  strong
+                  muted
+                />
+                <Row label="Học phí sau miễn giảm:" values={children.map((child) => money(child.total))} strong muted />
+              </>
+            ) : null}
             {hasPaid ? (
               <>
-                <Row label="Đã đóng:" values={children.map((child) => money(child.paid))} />
-                <Row label="Còn phải đóng:" values={children.map((child) => money(child.remaining))} strong />
+                <Row label="Đã đóng:" values={children.map((child) => money(child.paid))} muted />
+                <Row label="Còn phải đóng:" values={children.map((child) => money(child.remaining))} strong muted />
               </>
             ) : null}
           </tbody>
@@ -109,56 +123,58 @@ export function FamilyNoticeView({ notice, siteName }: { notice: FamilyNotice; s
       </div>
 
       {/* Thông tin chuyển khoản bên trái, mã QR cỡ lớn bên phải để phụ huynh quét dễ từ ảnh gửi Zalo */}
-      <div className="flex items-center gap-6 border-t border-zinc-300 px-4 py-4">
-        <div className="grid flex-1 grid-cols-[220px_1fr] items-baseline gap-x-3 gap-y-2 font-sans text-[20px]">
-          <span className="font-bold">Học phí cần đóng:</span>
-          <span className="text-[48px] leading-none font-bold text-red-600 italic" style={{ fontFamily: '"Times New Roman", Times, serif' }}>
+      <div className="flex items-center gap-8 border-t-[4px] border-kid-ink px-8 py-6">
+        <div className="grid flex-1 grid-cols-[max-content_1fr] items-baseline gap-x-6 gap-y-3 text-[32px] leading-tight">
+          <span className="font-extrabold">Học phí cần đóng:</span>
+          <span className="text-[92px] leading-none font-black text-kid-rose">
             {notice.totalDue > 0 ? money(notice.totalDue) : "Đã đóng đủ"}
           </span>
-          <span>Tài khoản ngân hàng:</span>
-          <span className="font-semibold">{notice.bank.accountNo || "—"}</span>
-          <span>Tên chủ tài khoản:</span>
-          <span className="font-semibold">{notice.bank.accountName || "—"}</span>
-          <span>Ngân hàng:</span>
-          <span className="font-semibold">{notice.bank.code}</span>
-          <span>Nội dung chuyển khoản</span>
-          <span className="font-semibold">{notice.transferContent}</span>
+          <span className="font-semibold text-kid-ink-soft">Tài khoản ngân hàng:</span>
+          <span className="font-extrabold">{notice.bank.accountNo || "—"}</span>
+          <span className="font-semibold text-kid-ink-soft">Tên chủ tài khoản:</span>
+          <span className="font-extrabold">{notice.bank.accountName || "—"}</span>
+          <span className="font-semibold text-kid-ink-soft">Ngân hàng:</span>
+          <span className="font-extrabold">{notice.bank.code}</span>
+          <span className="font-semibold text-kid-ink-soft">Nội dung chuyển khoản</span>
+          <span className="font-extrabold">{notice.transferContent}</span>
           {notice.qrUrl ? (
-            <p className="col-span-2 mt-3 w-max rounded bg-yellow-200 px-4 py-2 text-[22px] leading-snug font-bold text-red-600">
+            <p className="col-span-2 mt-4 rounded-2xl border-[3px] border-kid-ink bg-kid-sun-soft px-6 py-4 text-[32px] leading-snug font-extrabold text-kid-rose">
               Chuyển nhanh: mở app ngân hàng và quét mã QR bên cạnh ➜
             </p>
           ) : null}
         </div>
 
         {notice.qrUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={notice.qrUrl}
-            data-receipt-qr
-            crossOrigin="anonymous"
-            alt={`Mã QR chuyển khoản ${money(notice.totalDue)} đồng`}
-            className="h-[520px] w-[520px] shrink-0 object-contain"
-          />
+          <div className="shrink-0 rounded-3xl border-[4px] border-kid-ink bg-white p-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={notice.qrUrl}
+              data-receipt-qr
+              crossOrigin="anonymous"
+              alt={`Mã QR chuyển khoản ${money(notice.totalDue)} đồng`}
+              className="h-[540px] w-[540px] object-contain"
+            />
+          </div>
         ) : null}
       </div>
 
-      <div className="border-t-2 border-zinc-800 bg-green-100 px-4 py-1.5 text-center font-sans text-[19px] font-bold">
+      <div className="border-t-[4px] border-kid-ink bg-kid-mint-soft px-8 py-4 text-center text-[30px] leading-snug font-extrabold">
         Ba mẹ vui lòng thanh toán {notice.dueDate ? `trước ngày ${notice.dueDate}` : "trong 05 ngày"} và gửi xác nhận cho cô. Trân trọng.
       </div>
 
       {children.some((child) => child.attendance.length || child.planned.length) ? (
-        <div className="space-y-2 border-t border-zinc-300 px-4 py-3 font-sans text-[17px] leading-relaxed">
+        <div className="space-y-4 border-t-[4px] border-kid-ink bg-white px-8 py-6 text-[26px] leading-snug">
           {children.map((child) => (
             <div key={child.paymentId}>
-              <p className="font-bold">{child.label}</p>
+              <p className="font-extrabold">{child.label}</p>
               {child.attendance.map((item) => (
-                <p key={`a-${item.className}`}>
-                  <span className="text-zinc-500">Điểm danh tháng {prev}:</span> {item.days.map(sessionMarkText).join(", ")}
+                <p key={`a-${item.className}`} className="font-semibold">
+                  <span className="text-kid-ink-soft">Điểm danh tháng {prev}:</span> {item.days.map(sessionMarkText).join(", ")}
                 </p>
               ))}
               {child.planned.map((item) => (
-                <p key={`p-${item.className}`}>
-                  <span className="text-zinc-500">Lịch học tháng {current}:</span> {item.dates}
+                <p key={`p-${item.className}`} className="font-semibold">
+                  <span className="text-kid-ink-soft">Lịch học tháng {current}:</span> {item.dates}
                 </p>
               ))}
             </div>

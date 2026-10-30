@@ -55,6 +55,7 @@ export async function upsertStudent(data: StudentFormValues) {
       status: parsedData.status,
       notes: optionalText(parsedData.notes),
       parentId: parsedData.parentId,
+      tuitionDiscountPercent: parsedData.tuitionDiscountPercent,
       code: parsedData.code || undefined,
     }
 

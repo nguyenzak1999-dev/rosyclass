@@ -105,6 +105,7 @@ export default async function PaymentDetailPage({ params }: { params: Promise<{ 
                   dueDate: payment.dueDate ? vietnamDateKey(payment.dueDate) : null,
                   note: payment.note,
                   paidAmount: payment.paidAmount,
+                  discountPercent: billingSummary.discountPercent ?? 0,
                 }}
                 trigger={<Button variant="outline" size="sm">Sửa phiếu / học liệu</Button>}
               />

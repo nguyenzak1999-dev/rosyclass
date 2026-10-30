@@ -164,6 +164,8 @@ export type BillingSummary = {
   previous: PreviousClassMonth[]
   siblings: SiblingBill[]
   parentPhone: string | null
+  /** Miễn/giảm học phí (%) áp trên tạm tính của phiếu; phiếu cũ không có */
+  discountPercent?: number
 }
 
 export function parseBillingSummary(value: string | null | undefined): BillingSummary | null {
@@ -182,6 +184,22 @@ export function lineTotal(line: Pick<BillingLineDraft, "quantity" | "unitAmount"
 
 export function billTotal(lines: Pick<BillingLineDraft, "quantity" | "unitAmount">[]) {
   return Math.max(0, lines.reduce((sum, line) => sum + lineTotal(line), 0))
+}
+
+const PERCENT_DISCOUNT_PREFIX = "Miễn/giảm học phí"
+
+/** Dòng miễn/giảm theo % do hệ thống tự tính (không sửa tay, lập lại mỗi lần lưu phiếu) */
+export function isPercentDiscountLine(line: { category: string; description: string }) {
+  return line.category === "DISCOUNT" && line.description.startsWith(PERCENT_DISCOUNT_PREFIX)
+}
+
+/** Dòng "Miễn/giảm học phí 10%" tính trên tạm tính (tổng các dòng còn lại); null khi không giảm */
+export function percentDiscountLine(lines: BillingLineDraft[], percent: number): BillingLineDraft | null {
+  if (!(percent > 0)) return null
+  const subtotal = billTotal(lines.filter((line) => line.quantity > 0 && !isPercentDiscountLine(line)))
+  const amount = Math.round((subtotal * Math.min(percent, 100)) / 100)
+  if (amount <= 0) return null
+  return { description: `${PERCENT_DISCOUNT_PREFIX} ${percent}%`, category: "DISCOUNT", quantity: 1, unitAmount: -amount }
 }
 
 // ------------------------------------------------------
@@ -225,10 +243,11 @@ export function normalizePhone(phone: string | null | undefined) {
 // Thông báo thu học phí cả nhà (mỗi bé một cột)
 // ------------------------------------------------------
 
-export type NoticeLineKind = "tuition" | "foreign" | "carry" | "extra" | "discount"
+export type NoticeLineKind = "tuition" | "foreign" | "carry" | "extra" | "discount" | "percent"
 
 /** Xếp dòng phiếu vào các mục của thông báo; phiếu lập trước khi có danh mục FOREIGN/CARRY thì đoán theo nội dung */
 export function noticeLineKind(line: { category: string; description: string }): NoticeLineKind {
+  if (isPercentDiscountLine(line)) return "percent"
   if (line.category === "CARRY") return "carry"
   if (line.category === "FOREIGN") return "foreign"
   if (line.category === "TUITION" || line.category === "DISCOUNT") {
@@ -256,6 +275,10 @@ export type FamilyNoticeChild = {
   foreignAmount: number
   materialAmount: number
   discountAmount: number
+  /** Tạm tính trước miễn/giảm %, phần trăm và số tiền miễn/giảm */
+  subtotal: number
+  discountPercent: number
+  percentAmount: number
   total: number
   paid: number
   remaining: number

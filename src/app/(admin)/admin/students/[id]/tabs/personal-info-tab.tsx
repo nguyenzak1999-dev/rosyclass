@@ -122,6 +122,23 @@ export function PersonalInfoTab({ student }: { student: any }) {
               <Input id="learningGoal" {...register("learningGoal")} placeholder="Ví dụ: Đạt IELTS 6.5" />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="tuitionDiscountPercent">Miễn/giảm học phí (%)</Label>
+              <Input
+                id="tuitionDiscountPercent"
+                type="number"
+                min={0}
+                max={100}
+                step="any"
+                {...register("tuitionDiscountPercent")}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground">Tự áp vào phiếu thu tháng; sửa được khi lập phiếu.</p>
+              {errors.tuitionDiscountPercent && (
+                <p className="text-sm text-destructive">{errors.tuitionDiscountPercent.message}</p>
+              )}
+            </div>
+
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="source">Nguồn đăng ký</Label>
               <Input id="source" {...register("source")} placeholder="Ví dụ: Facebook, Người quen giới thiệu..." />
