@@ -1,3 +1,4 @@
+import { AppWindow } from "lucide-react"
 import { Sparkle, Squiggle, Star, WaveDivider, toneAt } from "@/components/kids"
 import { cn } from "@/lib/utils"
 import { parseYouTubeId } from "@/lib/page-builder/video"
@@ -100,6 +101,35 @@ export function VideoEmbedBlock({ props, ctx }: BlockComponentProps<BlockProps<"
         )}
       </Container>
     </BlockSection>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Nội dung chính của trang hệ thống
+// ---------------------------------------------------------------------------
+
+export function PageContentBlock({ props, ctx }: BlockComponentProps<BlockProps<"pageContent">>) {
+  if (ctx.mode === "public") {
+    if (!ctx.mainContent) return null
+    // data-pb-main: hiệu ứng cuộn của page builder không chạm vào phần trang tự quản
+    return (
+      <div id={anchorId(props.anchor)} data-pb-main="" className="scroll-mt-20">
+        {ctx.mainContent}
+      </div>
+    )
+  }
+  return (
+    <div id={anchorId(props.anchor)} className="bg-kid-cream px-4 py-10 @3xl:px-8">
+      <div className="mx-auto flex max-w-[1200px] flex-col items-center gap-2 rounded-kid border-[3px] border-dashed border-kid-ink/30 bg-white/70 px-6 py-14 text-center">
+        <AppWindow className="h-10 w-10 text-kid-ink-soft" aria-hidden="true" />
+        <p className="font-kid-display text-[20px] font-bold">Nội dung chính của trang</p>
+        <p className="max-w-[560px] text-[15px] text-kid-ink-soft">
+          Phần có sẵn của trang (danh sách, form, bài kiểm tra…) hiển thị ở đây. Kéo khối để đổi vị trí, thêm khối
+          khác phía trên hoặc dưới; xoá khối này nếu muốn tự thiết kế toàn bộ trang. Bấm &quot;Xem trước&quot; để xem
+          đầy đủ.
+        </p>
+      </div>
+    </div>
   )
 }
 

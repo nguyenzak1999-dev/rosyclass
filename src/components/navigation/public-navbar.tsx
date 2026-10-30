@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { BookOpen, CalendarDays, Lightbulb, Menu, Phone, Smile, Sparkles, Users, X } from "lucide-react"
+import { BookOpen, CalendarDays, FileText, Lightbulb, Menu, Phone, Smile, Sparkles, Users, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { KidButton, Sparkle, Star, toneAt, toneClasses } from "@/components/kids"
 
@@ -54,7 +54,17 @@ function Logo({ siteName, logoUrl }: { siteName: string; logoUrl: string }) {
   )
 }
 
-export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteName?: string; logoUrl?: string }) {
+export function PublicNavbar({
+  siteName = "RosyClass",
+  logoUrl = "",
+  extraLinks = [],
+}: {
+  siteName?: string
+  logoUrl?: string
+  /** Trang tự tạo trong CMS được bật "Hiện trên menu" */
+  extraLinks?: { name: string; href: string }[]
+}) {
+  const links = [...navLinks, ...extraLinks.map((link) => ({ ...link, Icon: FileText }))]
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   const reduceMotion = useReducedMotion()
@@ -92,7 +102,7 @@ export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteNam
           {/* Điều hướng desktop: các pill nhiều màu */}
           <nav aria-label="Điều hướng chính" className="hidden flex-1 justify-center xl:flex">
             <ul className="flex items-center gap-1.5">
-              {navLinks.map((link, i) => {
+              {links.map((link, i) => {
                 const tone = toneAt(i)
                 const active = isActive(link.href)
                 return (
@@ -173,7 +183,7 @@ export function PublicNavbar({ siteName = "RosyClass", logoUrl = "" }: { siteNam
 
               <nav aria-label="Điều hướng di động">
                 <ul className="grid gap-2.5">
-                  {navLinks.map((link, i) => {
+                  {links.map((link, i) => {
                     const tone = toneAt(i)
                     const active = isActive(link.href)
                     return (

@@ -1,15 +1,18 @@
 import type { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
-import { absoluteUrl, createPageMetadata, JsonLd } from "@/lib/seo"
+import { absoluteUrl, JsonLd } from "@/lib/seo"
 import BlogClient from "./blog-client"
+import { DesignedPage, designedPageMetadata } from "@/components/page-builder/designed-page"
 
-export const metadata: Metadata = createPageMetadata({
-  title: "Góc học tập",
-  description: "Bài viết, kinh nghiệm và mẹo giúp ba mẹ đồng hành cùng bé học tiếng Anh tại nhà — dành cho trẻ mầm non và tiểu học — từ RosyClass.",
-  path: "/goc-hoc-tap",
-})
+export async function generateMetadata(): Promise<Metadata> {
+  return designedPageMetadata("goc-hoc-tap", {
+    title: "Góc học tập",
+    description: "Bài viết, kinh nghiệm và mẹo giúp ba mẹ đồng hành cùng bé học tiếng Anh tại nhà — dành cho trẻ mầm non và tiểu học — từ RosyClass.",
+    path: "/goc-hoc-tap",
+  })
+}
 
-export default async function BlogPage() {
+async function BlogPageContent() {
   const posts = await prisma.blogPost.findMany({
     where: {
       status: "PUBLISHED"
@@ -38,5 +41,14 @@ export default async function BlogPage() {
       />
       <BlogClient posts={posts} />
     </>
+  )
+}
+
+// Trang thiết kế lại được trong CMS (page builder); phần trên là nội dung chính của trang
+export default function BlogPage() {
+  return (
+    <DesignedPage slug="goc-hoc-tap">
+      <BlogPageContent />
+    </DesignedPage>
   )
 }

@@ -9,6 +9,8 @@ export type RenderMode = "public" | "editor"
 export interface BlockRenderContext {
   mode: RenderMode
   data: PageBuilderData
+  /** Phần chức năng có sẵn của trang hệ thống, hiện tại vị trí khối "Nội dung chính của trang" */
+  mainContent?: React.ReactNode
 }
 
 export interface BlockComponentProps<P> {

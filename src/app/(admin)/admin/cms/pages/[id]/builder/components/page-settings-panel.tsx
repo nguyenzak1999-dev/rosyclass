@@ -4,6 +4,7 @@ import { Wand2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { generateSlug } from "@/lib/slug"
 import { cn } from "@/lib/utils"
@@ -23,6 +24,7 @@ export function PageSettingsPanel({
   meta,
   onChange,
   isHome,
+  systemPage,
   status,
   hasDraft,
   canWrite,
@@ -32,6 +34,7 @@ export function PageSettingsPanel({
   meta: PageMetaInput
   onChange: (meta: PageMetaInput) => void
   isHome: boolean
+  systemPage: { title: string; content: string } | null
   status: PageStatus
   hasDraft: boolean
   canWrite: boolean
@@ -46,7 +49,8 @@ export function PageSettingsPanel({
       errors[key] ??= issue.message
     }
   }
-  const set = (key: keyof PageMetaInput, value: string) => onChange({ ...meta, [key]: value })
+  const set = (key: keyof PageMetaInput, value: string | boolean) => onChange({ ...meta, [key]: value })
+  const fixedSlug = isHome || Boolean(systemPage)
   const published = isPublicStatus(status)
 
   return (
@@ -63,6 +67,8 @@ export function PageSettingsPanel({
               : "Trang đang hiển thị trên website. “Lưu nháp” sẽ lưu riêng bản nháp, website giữ nguyên tới khi bạn xuất bản."
             : isHome
               ? "Trang chủ chưa xuất bản: website đang dùng trang chủ mặc định. Bấm “Xuất bản” để áp dụng thiết kế này."
+              : systemPage
+                ? "Thiết kế chưa xuất bản: website đang dùng trang mặc định. Bấm “Xuất bản” để áp dụng thiết kế này."
               : "Trang chưa hiển thị trên website. Bấm “Xuất bản” khi đã sẵn sàng."}
         </p>
         {published && canWrite ? (
@@ -87,12 +93,12 @@ export function PageSettingsPanel({
               id="pb-slug"
               className="h-8 min-w-0 flex-1 bg-transparent pr-2.5 text-foreground outline-none disabled:opacity-60"
               value={meta.slug}
-              disabled={isHome}
+              disabled={fixedSlug}
               aria-invalid={Boolean(errors.slug)}
               onChange={(e) => set("slug", e.target.value.toLowerCase().replace(/\s+/g, "-"))}
             />
           </div>
-          {!isHome ? (
+          {!fixedSlug ? (
             <Button
               type="button"
               variant="outline"
@@ -107,10 +113,25 @@ export function PageSettingsPanel({
         </div>
         {isHome ? (
           <p className="text-xs text-muted-foreground">Trang chủ luôn hiển thị tại “/”.</p>
+        ) : systemPage ? (
+          <p className="text-xs text-muted-foreground">
+            Trang hệ thống “{systemPage.title}” có đường dẫn cố định. Khối “Nội dung chính của trang” là phần có sẵn:{" "}
+            {systemPage.content.toLowerCase()}.
+          </p>
         ) : errors.slug ? (
           <p className="text-xs font-medium text-destructive">{errors.slug}</p>
         ) : null}
       </div>
+
+      {!fixedSlug ? (
+        <div className="flex items-start justify-between gap-3 rounded-lg border p-3">
+          <div className="space-y-0.5">
+            <Label htmlFor="pb-menu">Hiện trên menu website</Label>
+            <p className="text-xs text-muted-foreground">Thêm trang vào thanh menu (sau các mục có sẵn) khi trang đã xuất bản.</p>
+          </div>
+          <Switch id="pb-menu" checked={meta.showInMenu} onCheckedChange={(checked) => set("showInMenu", checked)} />
+        </div>
+      ) : null}
 
       <div className="space-y-4 border-t pt-4">
         <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">SEO</p>

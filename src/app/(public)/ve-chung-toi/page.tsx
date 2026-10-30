@@ -1,16 +1,18 @@
 import type { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
-import { createPageMetadata } from "@/lib/seo"
 import { getSiteSettings } from "@/lib/get-site-settings"
 import AboutClient from "./about-client"
+import { DesignedPage, designedPageMetadata } from "@/components/page-builder/designed-page"
 
-export const metadata: Metadata = createPageMetadata({
-  title: "Về chúng tôi",
-  description: "Tìm hiểu RosyClass — trung tâm tiếng Anh dành riêng cho trẻ mầm non và tiểu học tại Dương Xá, Gia Lâm, Hà Nội, với lớp học nhỏ, lộ trình rõ ràng và theo dõi tiến bộ của từng bé.",
-  path: "/ve-chung-toi",
-})
+export async function generateMetadata(): Promise<Metadata> {
+  return designedPageMetadata("ve-chung-toi", {
+    title: "Về chúng tôi",
+    description: "Tìm hiểu RosyClass — trung tâm tiếng Anh dành riêng cho trẻ mầm non và tiểu học tại Dương Xá, Gia Lâm, Hà Nội, với lớp học nhỏ, lộ trình rõ ràng và theo dõi tiến bộ của từng bé.",
+    path: "/ve-chung-toi",
+  })
+}
 
-export default async function AboutPage() {
+async function AboutPageContent() {
   const [studentCount, teacherCount, activeClassCount, settings] = await Promise.all([
     prisma.student.count({ where: { status: "ACTIVE" } }),
     prisma.teacher.count({ where: { status: "ACTIVE" } }),
@@ -26,4 +28,13 @@ export default async function AboutPage() {
   ]
 
   return <AboutClient stats={stats} imageUrl={settings.heroImageUrl || settings.ogImage || ""} />
+}
+
+// Trang thiết kế lại được trong CMS (page builder); phần trên là nội dung chính của trang
+export default function AboutPage() {
+  return (
+    <DesignedPage slug="ve-chung-toi">
+      <AboutPageContent />
+    </DesignedPage>
+  )
 }

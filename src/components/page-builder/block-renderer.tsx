@@ -18,7 +18,7 @@ import {
   UpcomingClassesBlock,
 } from "./blocks/data-blocks"
 import { ContactInfoBlock, CtaBlock, FaqBlock } from "./blocks/engage-blocks"
-import { DividerBlock, GalleryBlock, SpacerBlock, VideoEmbedBlock } from "./blocks/media-layout-blocks"
+import { DividerBlock, GalleryBlock, PageContentBlock, SpacerBlock, VideoEmbedBlock } from "./blocks/media-layout-blocks"
 import type { BlockComponentProps, BlockRenderContext, RenderMode } from "./blocks/shared"
 import { PageAnimations } from "./page-animations"
 
@@ -43,6 +43,7 @@ export const BLOCK_COMPONENTS: BlockComponentMap = {
   videoEmbed: VideoEmbedBlock,
   contactInfo: ContactInfoBlock,
   spacer: SpacerBlock,
+  pageContent: PageContentBlock,
   divider: DividerBlock,
 }
 
@@ -65,13 +66,16 @@ export function PageBlocks({
   data,
   mode = "public",
   className,
+  mainContent,
 }: {
   blocks: Block[]
   data: PageBuilderData
   mode?: RenderMode
   className?: string
+  /** Phần chức năng của trang hệ thống, đặt tại khối "Nội dung chính của trang" */
+  mainContent?: React.ReactNode
 }) {
-  const ctx: BlockRenderContext = { mode, data }
+  const ctx: BlockRenderContext = { mode, data, mainContent }
   const content = (
     <BlockCanvasRoot className={className}>
       {blocks

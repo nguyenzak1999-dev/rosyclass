@@ -72,6 +72,8 @@ export function PageAnimations({ children }: { children: React.ReactNode }) {
     if (progress.current) link(animate(progress.current, { scaleX: [0, 1] }, { ease: "linear" }))
 
     for (const section of container.querySelectorAll("section")) {
+      // Phần chức năng của trang hệ thống tự lo hiệu ứng của nó
+      if (section.closest("[data-pb-main]")) continue
       if (section.querySelector("h1")) {
         // Hero: ảnh nghiêng theo chuột (chỉ máy có chuột)
         const target = section.querySelector<HTMLElement>("[data-hero-parallax] > *")

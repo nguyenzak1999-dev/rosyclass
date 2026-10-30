@@ -1,14 +1,16 @@
 import { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
-import { createPageMetadata } from "@/lib/seo"
 import { vietnamDateKey } from "@/lib/curriculum"
 import { ScheduleClient, type ScheduleLevelGroup } from "@/app/(public)/lich-khai-giang/schedule-client"
+import { DesignedPage, designedPageMetadata } from "@/components/page-builder/designed-page"
 
-export const metadata: Metadata = createPageMetadata({
-  title: "Lịch khai giảng",
-  description: "Lịch khai giảng các lớp tiếng Anh cho bé mầm non và tiểu học tại RosyClass, Dương Xá, Gia Lâm, Hà Nội.",
-  path: "/lich-khai-giang",
-})
+export async function generateMetadata(): Promise<Metadata> {
+  return designedPageMetadata("lich-khai-giang", {
+    title: "Lịch khai giảng",
+    description: "Lịch khai giảng các lớp tiếng Anh cho bé mầm non và tiểu học tại RosyClass, Dương Xá, Gia Lâm, Hà Nội.",
+    path: "/lich-khai-giang",
+  })
+}
 
 const dayNames = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"]
 
@@ -21,7 +23,7 @@ function getLevelGroup(level: string): ScheduleLevelGroup {
   return "khac"
 }
 
-export default async function SchedulePage() {
+async function SchedulePageContent() {
   const upcomingClasses = await prisma.class.findMany({
     where: {
       status: {
@@ -93,5 +95,14 @@ export default async function SchedulePage() {
         }
       })}
     />
+  )
+}
+
+// Trang thiết kế lại được trong CMS (page builder); phần trên là nội dung chính của trang
+export default function SchedulePage() {
+  return (
+    <DesignedPage slug="lich-khai-giang">
+      <SchedulePageContent />
+    </DesignedPage>
   )
 }

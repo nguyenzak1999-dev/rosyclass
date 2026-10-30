@@ -15,7 +15,7 @@ import { createBuilderPage } from "../builder-actions"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { generateSlug } from "@/lib/slug"
-import { HOME_PAGE_SLUG } from "@/lib/page-builder/constants"
+import { HOME_PAGE_SLUG, isFixedSlug } from "@/lib/page-builder/constants"
 
 interface PageDialogData {
   id: string
@@ -133,6 +133,7 @@ function EditPageDialog({ initialData, trigger }: { initialData: PageDialogData;
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
   const isHome = initialData.slug === HOME_PAGE_SLUG
+  const fixedSlug = isFixedSlug(initialData.slug ?? "")
 
   const defaults = React.useMemo<PageFormValues>(
     () => ({
@@ -193,8 +194,12 @@ function EditPageDialog({ initialData, trigger }: { initialData: PageDialogData;
             </div>
             <div className="space-y-2">
               <Label htmlFor="slug">Slug *</Label>
-              <Input id="slug" readOnly={isHome} {...register("slug")} />
-              {isHome ? <p className="text-xs text-muted-foreground">Slug của trang chủ không thể thay đổi.</p> : null}
+              <Input id="slug" readOnly={fixedSlug} {...register("slug")} />
+              {fixedSlug ? (
+                <p className="text-xs text-muted-foreground">
+                  Slug của {isHome ? "trang chủ" : "trang hệ thống"} không thể thay đổi.
+                </p>
+              ) : null}
               {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
             </div>
           </div>

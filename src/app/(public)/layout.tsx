@@ -1,5 +1,6 @@
 import { PublicNavbar } from "@/components/navigation/public-navbar"
 import { getSiteSettings } from "@/lib/get-site-settings"
+import { getMenuPages } from "@/lib/page-builder/pages"
 import { absoluteUrl, getSiteUrl, JsonLd } from "@/lib/seo"
 import { PublicFooter } from "./components/PublicFooter"
 
@@ -12,7 +13,7 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode
 }) {
-  const s = await getSiteSettings()
+  const [s, menuPages] = await Promise.all([getSiteSettings(), getMenuPages()])
   const siteUrl = getSiteUrl()
   const sameAs = [s.facebook, s.youtube, s.zalo, s.tiktok].filter(Boolean)
 
@@ -37,7 +38,7 @@ export default async function PublicLayout({
           sameAs,
         }}
       />
-      <PublicNavbar siteName={s.siteName} logoUrl={s.logoUrl} />
+      <PublicNavbar siteName={s.siteName} logoUrl={s.logoUrl} extraLinks={menuPages} />
       
       <main id="main-content" tabIndex={-1} className="flex-1 pt-[80px] focus:outline-none">
         {children}

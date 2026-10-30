@@ -1,7 +1,17 @@
+import type { Metadata } from "next"
 import { Building2, Database, Eye, Lock, ShieldCheck, UserCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PageHero, readableSolid, toneAt } from "@/components/kids"
 import { getSiteSettings } from "@/lib/get-site-settings"
+import { DesignedPage, designedPageMetadata } from "@/components/page-builder/designed-page"
+
+export async function generateMetadata(): Promise<Metadata> {
+  return designedPageMetadata("chinh-sach-bao-mat", {
+    title: "Chính sách bảo mật",
+    description: "Chính sách bảo mật thông tin cá nhân của phụ huynh và các bé khi đăng ký và học tại RosyClass.",
+    path: "/chinh-sach-bao-mat",
+  })
+}
 
 const sections = [
   { id: "thu-thap", Icon: Database, title: "1. Thu thập thông tin" },
@@ -26,7 +36,7 @@ function SectionTitle({ index }: { index: number }) {
   )
 }
 
-export default async function PrivacyPolicyPage() {
+async function PrivacyPolicyPageContent() {
   const settings = await getSiteSettings()
 
   return (
@@ -101,5 +111,14 @@ export default async function PrivacyPolicyPage() {
         </div>
       </section>
     </div>
+  )
+}
+
+// Trang thiết kế lại được trong CMS (page builder); phần trên là nội dung chính của trang
+export default function PrivacyPolicyPage() {
+  return (
+    <DesignedPage slug="chinh-sach-bao-mat">
+      <PrivacyPolicyPageContent />
+    </DesignedPage>
   )
 }

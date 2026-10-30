@@ -1,15 +1,18 @@
 import type { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
-import { createPageMetadata, JsonLd } from "@/lib/seo"
+import { JsonLd } from "@/lib/seo"
 import FAQClient from "./faq-client"
+import { DesignedPage, designedPageMetadata } from "@/components/page-builder/designed-page"
 
-export const metadata: Metadata = createPageMetadata({
-  title: "Hỏi đáp",
-  description: "Giải đáp những câu hỏi ba mẹ thường gặp về chương trình tiếng Anh cho bé mầm non và tiểu học, học phí, học thử, kiểm tra trình độ và học bù tại RosyClass.",
-  path: "/hoi-dap",
-})
+export async function generateMetadata(): Promise<Metadata> {
+  return designedPageMetadata("hoi-dap", {
+    title: "Hỏi đáp",
+    description: "Giải đáp những câu hỏi ba mẹ thường gặp về chương trình tiếng Anh cho bé mầm non và tiểu học, học phí, học thử, kiểm tra trình độ và học bù tại RosyClass.",
+    path: "/hoi-dap",
+  })
+}
 
-export default async function FAQPage() {
+async function FAQPageContent() {
   const faqs = await prisma.faq.findMany({
     where: {
       status: {
@@ -41,5 +44,14 @@ export default async function FAQPage() {
       />
       <FAQClient faqs={faqItems} />
     </>
+  )
+}
+
+// Trang thiết kế lại được trong CMS (page builder); phần trên là nội dung chính của trang
+export default function FAQPage() {
+  return (
+    <DesignedPage slug="hoi-dap">
+      <FAQPageContent />
+    </DesignedPage>
   )
 }

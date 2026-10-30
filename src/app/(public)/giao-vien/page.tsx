@@ -1,15 +1,17 @@
 import type { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
-import { createPageMetadata } from "@/lib/seo"
 import TeachersClient from "./teachers-client"
+import { DesignedPage, designedPageMetadata } from "@/components/page-builder/designed-page"
 
-export const metadata: Metadata = createPageMetadata({
-  title: "Đội ngũ giáo viên",
-  description: "Gặp gỡ đội ngũ giáo viên RosyClass — những thầy cô đồng hành cùng các bé mầm non và tiểu học trên hành trình làm quen và yêu thích tiếng Anh.",
-  path: "/giao-vien",
-})
+export async function generateMetadata(): Promise<Metadata> {
+  return designedPageMetadata("giao-vien", {
+    title: "Đội ngũ giáo viên",
+    description: "Gặp gỡ đội ngũ giáo viên RosyClass — những thầy cô đồng hành cùng các bé mầm non và tiểu học trên hành trình làm quen và yêu thích tiếng Anh.",
+    path: "/giao-vien",
+  })
+}
 
-export default async function TeachersPage() {
+async function TeachersPageContent() {
   let formattedTeachers: Array<{
     id: string
     fullName: string
@@ -52,4 +54,13 @@ export default async function TeachersPage() {
   }
 
   return <TeachersClient teachers={formattedTeachers} />
+}
+
+// Trang thiết kế lại được trong CMS (page builder); phần trên là nội dung chính của trang
+export default function TeachersPage() {
+  return (
+    <DesignedPage slug="giao-vien">
+      <TeachersPageContent />
+    </DesignedPage>
+  )
 }

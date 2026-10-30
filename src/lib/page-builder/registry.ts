@@ -1,4 +1,5 @@
 import {
+  AppWindow,
   BarChart3,
   BookOpen,
   CalendarDays,
@@ -610,6 +611,20 @@ export const BLOCK_DEFINITIONS = {
     defaults: {
       size: "md",
       ...commonDefaults("cream"),
+    },
+  }),
+
+  // Chỉ có ở trang hệ thống (Khóa học, Liên hệ…): giữ chỗ cho phần chức năng có sẵn của trang
+  pageContent: defineBlock({
+    label: "Nội dung chính của trang",
+    description: "Phần có sẵn của trang hệ thống (danh sách, form, bài kiểm tra…). Kéo để đổi vị trí.",
+    icon: AppWindow,
+    category: "layout",
+    fields: {
+      anchor: anchor(),
+    },
+    defaults: {
+      anchor: "",
     },
   }),
 

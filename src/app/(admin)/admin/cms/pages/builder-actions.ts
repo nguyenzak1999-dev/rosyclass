@@ -7,9 +7,9 @@ import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 import { SITE_SETTINGS_SLUG } from "@/lib/site-settings"
 import {
-  HOME_PAGE_SLUG,
   getPublicPagePath,
   isPublicStatus,
+  isFixedSlug,
   isReservedSlug,
   type PageStatus,
 } from "@/lib/page-builder/constants"
@@ -79,9 +79,8 @@ export async function savePageBuilder(input: {
     }
 
     const meta = metaResult.data
-    const isHome = existing.slug === HOME_PAGE_SLUG
-    // Trang chủ luôn giữ slug hệ thống
-    const slug = isHome ? HOME_PAGE_SLUG : meta.slug
+    // Trang chủ và trang hệ thống luôn giữ slug của mình
+    const slug = isFixedSlug(existing.slug) ? existing.slug : meta.slug
     const conflict = slugError(slug, existing.slug)
     if (conflict) return { success: false, error: conflict }
 
@@ -106,6 +105,8 @@ export async function savePageBuilder(input: {
         slug,
         seoTitle: meta.seoTitle || null,
         seoDescription: meta.seoDescription || null,
+        // Trang chủ / trang hệ thống đã có sẵn trên menu
+        showInMenu: isFixedSlug(slug) ? false : meta.showInMenu,
         content: serializePageDocument(doc),
         status,
       },

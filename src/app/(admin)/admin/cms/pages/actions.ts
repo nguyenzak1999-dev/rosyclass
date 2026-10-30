@@ -6,7 +6,7 @@ import { pageSchema, type PageFormValues } from "@/lib/schemas/page"
 import { revalidatePath } from "next/cache"
 import { getErrorMessage, isPrismaUniqueError } from "@/lib/errors"
 import { SITE_SETTINGS_SLUG } from "@/lib/site-settings"
-import { HOME_PAGE_SLUG, PAGE_SLUG_RE, getPublicPagePath, isReservedSlug } from "@/lib/page-builder/constants"
+import { HOME_PAGE_SLUG, PAGE_SLUG_RE, getPublicPagePath, isFixedSlug, isReservedSlug } from "@/lib/page-builder/constants"
 import { emptyDocument, serializePageDocument } from "@/lib/page-builder/document"
 import { revalidatePublicSite } from "@/lib/public-cache"
 
@@ -36,8 +36,8 @@ export async function upsertPage(data: PageFormValues) {
     if (id) {
       const existing = await prisma.page.findUnique({ where: { id }, select: { slug: true } })
       if (!existing || existing.slug === SITE_SETTINGS_SLUG) return { success: false, error: "Không tìm thấy trang" }
-      if (existing.slug === HOME_PAGE_SLUG && slug !== HOME_PAGE_SLUG) {
-        return { success: false, error: "Không thể đổi slug của trang chủ" }
+      if (isFixedSlug(existing.slug) && slug !== existing.slug) {
+        return { success: false, error: "Không thể đổi slug của trang chủ / trang hệ thống" }
       }
       if (slug !== existing.slug && isReservedSlug(slug)) {
         return { success: false, error: `Slug "${slug}" đã được hệ thống sử dụng` }

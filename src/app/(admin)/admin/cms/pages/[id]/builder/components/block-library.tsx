@@ -26,7 +26,15 @@ function normalize(value: string) {
     .replace(/đ/g, "d")
 }
 
-export function BlockLibrary({ onAdd, disabled }: { onAdd: (type: BlockType) => void; disabled?: boolean }) {
+export function BlockLibrary({
+  onAdd,
+  disabled,
+  exclude = [],
+}: {
+  onAdd: (type: BlockType) => void
+  disabled?: boolean
+  exclude?: BlockType[]
+}) {
   const [query, setQuery] = useState("")
   const q = normalize(query.trim())
   const matches = (type: BlockType) => {
@@ -49,7 +57,9 @@ export function BlockLibrary({ onAdd, disabled }: { onAdd: (type: BlockType) => 
       </div>
       <p className="text-xs text-muted-foreground">Bấm để thêm khối ngay sau khối đang chọn.</p>
       {BLOCK_CATEGORIES.map((category) => {
-        const types = BLOCK_TYPES.filter((type) => BLOCK_DEFINITIONS[type].category === category.id && matches(type))
+        const types = BLOCK_TYPES.filter(
+          (type) => BLOCK_DEFINITIONS[type].category === category.id && !exclude.includes(type) && matches(type)
+        )
         if (types.length === 0) return null
         return (
           <section key={category.id} className="space-y-1.5">

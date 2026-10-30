@@ -823,6 +823,8 @@ model Page {
   seoTitle       String?
   seoDescription String?
   status         EntityStatus @default(ACTIVE)
+  // Trang tự tạo hiện thêm vào menu website (sau các mục cố định)
+  showInMenu     Boolean      @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

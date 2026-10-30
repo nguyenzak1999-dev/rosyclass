@@ -3,7 +3,7 @@ import "server-only"
 import { cache } from "react"
 import { prisma } from "@/lib/prisma"
 import { getSiteSettings } from "@/lib/get-site-settings"
-import { HOME_PAGE_SLUG, PAGE_SLUG_RE, PUBLIC_PAGE_STATUSES, isReservedSlug } from "./constants"
+import { HOME_PAGE_SLUG, PAGE_SLUG_RE, PUBLIC_PAGE_STATUSES, isReservedSlug, type SystemPageSlug } from "./constants"
 import { buildDefaultHomeBlocks } from "./defaults"
 import { parsePageDocument, visibleBlocks, type Block } from "./document"
 import { collectDataNeeds, loadBlockData, safeQuery } from "./data"
@@ -59,6 +59,56 @@ export async function getHomeBlocks(): Promise<Block[]> {
   }
   return buildDefaultHomeBlocks(await getSiteSettings())
 }
+
+/** Trang tự tạo hiện trên menu website (tối đa 3 để menu máy tính không tràn) */
+export async function getMenuPages(): Promise<{ name: string; href: string }[]> {
+  const pages = await safeQuery(
+    "trang trên menu",
+    () =>
+      prisma.page.findMany({
+        where: { showInMenu: true, status: { in: [...PUBLIC_PAGE_STATUSES] } },
+        select: { title: true, slug: true },
+        orderBy: { createdAt: "asc" },
+        take: 10,
+      }),
+    []
+  )
+  return pages
+    .filter((page) => PAGE_SLUG_RE.test(page.slug) && !isReservedSlug(page.slug))
+    .slice(0, 3)
+    .map((page) => ({ name: page.title, href: `/${page.slug}` }))
+}
+
+/** Cờ xem trước theo request: trang /xem-truoc bật lên để trang hệ thống dựng từ bản nháp */
+const previewRequest = cache(() => ({ enabled: false }))
+
+export function enablePagePreview() {
+  previewRequest().enabled = true
+}
+
+/**
+ * Bản thiết kế page builder của một trang hệ thống (Khóa học, Liên hệ…): bản đã xuất bản,
+ * hoặc bản nháp mới nhất khi đang xem trước. null = hiển thị trang mặc định.
+ */
+export const getSystemPageDesign = cache(async (slug: SystemPageSlug) => {
+  const preview = previewRequest().enabled
+  const record = preview
+    ? await safeQuery(
+        `trang ${slug}`,
+        () =>
+          prisma.page.findUnique({
+            where: { slug },
+            select: { content: true, seoTitle: true, seoDescription: true },
+          }),
+        null
+      )
+    : await getPublicPageRecord(slug)
+  if (!record) return null
+  const doc = parsePageDocument(record.content)
+  const blocks = visibleBlocks(preview ? (doc.draft?.blocks ?? doc.blocks) : doc.blocks)
+  if (blocks.length === 0) return null
+  return { blocks, seoTitle: record.seoTitle, seoDescription: record.seoDescription }
+})
 
 export async function loadDataForBlocks(blocks: Block[]): Promise<PageBuilderData> {
   return loadBlockData(collectDataNeeds(blocks), getSiteSettings)

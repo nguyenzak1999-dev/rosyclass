@@ -13,6 +13,7 @@ export const pageMetaSchema = z.object({
     .regex(PAGE_SLUG_RE, "Slug chỉ gồm chữ thường không dấu, số và dấu gạch ngang"),
   seoTitle: z.string().trim().max(160, "SEO title tối đa 160 ký tự"),
   seoDescription: z.string().trim().max(320, "SEO description tối đa 320 ký tự"),
+  showInMenu: z.boolean(),
 })
 
 export type PageMetaInput = z.infer<typeof pageMetaSchema>

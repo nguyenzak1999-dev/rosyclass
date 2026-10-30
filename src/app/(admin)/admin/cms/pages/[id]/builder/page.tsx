@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { hasPermission, PERMISSIONS, requireAdminUser } from "@/lib/auth/permissions"
 import { getSiteSettings } from "@/lib/get-site-settings"
 import { SITE_SETTINGS_SLUG } from "@/lib/site-settings"
-import { HOME_PAGE_SLUG, PAGE_STATUSES, type PageStatus } from "@/lib/page-builder/constants"
+import { DESIGNABLE_SYSTEM_PAGES, HOME_PAGE_SLUG, PAGE_STATUSES, isSystemPageSlug, type PageStatus } from "@/lib/page-builder/constants"
 import { parsePageDocument } from "@/lib/page-builder/document"
 import { ALL_DATA_NEEDS, loadBlockData } from "@/lib/page-builder/data"
 import { PageBuilderEditor } from "./components/page-builder-editor"
@@ -36,6 +36,8 @@ export default async function PageBuilderRoute({ params }: { params: Promise<{ i
         seoDescription: page.seoDescription ?? "",
         status,
         isHome: page.slug === HOME_PAGE_SLUG,
+        systemPage: isSystemPageSlug(page.slug) ? DESIGNABLE_SYSTEM_PAGES[page.slug] : null,
+        showInMenu: page.showInMenu,
         updatedAt: page.updatedAt.toISOString(),
       }}
       initialBlocks={doc.draft?.blocks ?? doc.blocks}

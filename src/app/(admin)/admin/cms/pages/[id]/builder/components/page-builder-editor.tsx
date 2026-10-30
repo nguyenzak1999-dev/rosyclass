@@ -46,6 +46,9 @@ export interface EditorPage {
   seoDescription: string
   status: PageStatus
   isHome: boolean
+  /** Trang hệ thống (Khóa học, Liên hệ…): slug cố định, có khối "Nội dung chính của trang" */
+  systemPage: { title: string; content: string } | null
+  showInMenu: boolean
   updatedAt: string
 }
 
@@ -85,6 +88,7 @@ export function PageBuilderEditor({
     slug: page.slug,
     seoTitle: page.seoTitle,
     seoDescription: page.seoDescription,
+    showInMenu: page.showInMenu,
   })
   const [saved, setSaved] = useState(() => snapshotOf(initialBlocks, meta))
   const [pageState, setPageState] = useState({ status: page.status, hasDraft: initialHasDraft, slug: page.slug })
@@ -460,8 +464,8 @@ export function PageBuilderEditor({
           <span>
             {published
               ? "Website vẫn hiển thị bản cũ cho tới khi bấm Xuất bản."
-              : page.isHome
-                ? "Website đang hiển thị trang chủ mặc định; bấm Xuất bản để thay bằng thiết kế này."
+              : page.isHome || page.systemPage
+                ? `Website đang hiển thị ${page.isHome ? "trang chủ" : "trang"} mặc định; bấm Xuất bản để thay bằng thiết kế này.`
                 : "Khách truy cập chưa thấy trang này; bấm Xuất bản để đưa lên website."}
           </span>
           <button type="button" onClick={openPreview} className="font-semibold underline underline-offset-2" disabled={busy}>
@@ -490,7 +494,12 @@ export function PageBuilderEditor({
               </TabsList>
             </div>
             <TabsContent value="library" className="min-h-0 flex-1 overflow-y-auto">
-              <BlockLibrary onAdd={addBlock} disabled={readOnly} />
+              <BlockLibrary
+                onAdd={addBlock}
+                disabled={readOnly}
+                // Khối "Nội dung chính" chỉ dành cho trang hệ thống và mỗi trang một khối
+                exclude={!page.systemPage || blocks.some((block) => block.type === "pageContent") ? ["pageContent"] : []}
+              />
             </TabsContent>
             <TabsContent value="layers" className="min-h-0 flex-1 overflow-y-auto">
               <BlockLayers
@@ -561,6 +570,7 @@ export function PageBuilderEditor({
                   meta={meta}
                   onChange={setMeta}
                   isHome={page.isHome}
+                  systemPage={page.systemPage}
                   status={pageState.status}
                   hasDraft={pageState.hasDraft}
                   canWrite={canWrite}
@@ -578,8 +588,8 @@ export function PageBuilderEditor({
         onOpenChange={setConfirmUnpublish}
         title="Gỡ trang khỏi website?"
         description={
-          page.isHome
-            ? "Trang chủ sẽ quay về giao diện mặc định cho tới khi bạn xuất bản lại."
+          page.isHome || page.systemPage
+            ? "Website sẽ quay về giao diện mặc định của trang này cho tới khi bạn xuất bản lại."
             : "Trang sẽ không còn truy cập được trên website cho tới khi bạn xuất bản lại."
         }
         confirmText="Gỡ xuất bản"
