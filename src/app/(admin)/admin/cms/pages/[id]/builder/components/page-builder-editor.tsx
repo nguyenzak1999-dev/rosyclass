@@ -6,6 +6,7 @@ import { arrayMove } from "@dnd-kit/sortable"
 import {
   ArrowLeft,
   ExternalLink,
+  Eye,
   Layers,
   Loader2,
   Monitor,
@@ -209,19 +210,19 @@ export function PageBuilderEditor({
   // Lưu
   // ---------------------------------------------------------------------------
 
-  const save = async (mode: "draft" | "publish") => {
-    if (readOnly || savingRef.current) return
+  const save = async (mode: "draft" | "publish"): Promise<boolean> => {
+    if (readOnly || savingRef.current) return false
     const blocksResult = validateBlocks(blocks)
     if (!blocksResult.success) {
       toast.error(blocksResult.error)
-      return
+      return false
     }
     const metaResult = pageMetaSchema.safeParse(meta)
     if (!metaResult.success) {
       toast.error(metaResult.error.issues[0]?.message || "Thông tin trang không hợp lệ")
       setRightTab("page")
       setMobilePanel("right")
-      return
+      return false
     }
 
     const metaAtSave = meta
@@ -232,7 +233,7 @@ export function PageBuilderEditor({
       const result = await savePageBuilder({ id: page.id, meta: normalizedMeta, blocks, mode, expectedUpdatedAt: baseUpdatedAt })
       if (!result.success) {
         toast.error(result.error)
-        return
+        return false
       }
       setPageState({ status: result.page.status, hasDraft: result.page.hasDraft, slug: result.page.slug })
       setBaseUpdatedAt(result.page.updatedAt)
@@ -246,12 +247,29 @@ export function PageBuilderEditor({
             ? "Đã lưu bản nháp (website chưa thay đổi)"
             : "Đã lưu nháp"
       )
+      return true
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Không thể lưu trang")
+      return false
     } finally {
       savingRef.current = false
       setSaving(null)
     }
+  }
+
+  // Xem bản nháp y như trên website; còn thay đổi chưa lưu thì lưu nháp trước.
+  // Mở tab ngay trong lúc bấm (trình duyệt chặn popup mở sau await), lưu xong mới chuyển trang
+  const openPreview = async () => {
+    const previewPath = `/xem-truoc/${page.id}`
+    if (!dirty || readOnly) {
+      window.open(previewPath, "_blank", "noopener")
+      return
+    }
+    const tab = window.open("about:blank", "_blank")
+    if (await save("draft")) {
+      if (tab) tab.location.href = previewPath
+      else window.open(previewPath, "_blank", "noopener")
+    } else tab?.close()
   }
 
   const handleUnpublish = async () => {
@@ -406,14 +424,19 @@ export function PageBuilderEditor({
           </Button>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          render={<a href={publicPath} target="_blank" rel="noopener noreferrer" />}
-          title={published ? "Mở trang trên website" : "Trang chưa xuất bản – website chưa hiển thị nội dung này"}
-        >
-          <ExternalLink /> <span className="hidden sm:inline">Xem trang</span>
+        <Button variant="outline" size="sm" onClick={openPreview} disabled={busy} title="Xem bản nháp y như trên website (chỉ admin thấy)">
+          <Eye /> <span className="hidden sm:inline">Xem trước</span>
         </Button>
+        {published ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            render={<a href={publicPath} target="_blank" rel="noopener noreferrer" />}
+            title="Mở trang đang hiển thị trên website"
+          >
+            <ExternalLink /> <span className="hidden sm:inline">Trên web</span>
+          </Button>
+        ) : null}
         {canWrite ? (
           <>
             <Button variant="outline" size="sm" onClick={() => save("draft")} disabled={busy} title="Lưu nháp (Ctrl/⌘+S)">
@@ -429,6 +452,23 @@ export function PageBuilderEditor({
           <span className="text-xs text-muted-foreground">Chỉ xem (không có quyền chỉnh sửa)</span>
         )}
       </header>
+
+      {/* Nhắc rõ: chỉnh sửa chỉ lên website sau khi bấm Xuất bản */}
+      {!published || pageState.hasDraft ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+          <span className="font-semibold">{published ? "Có bản nháp chưa xuất bản." : "Trang chưa xuất bản."}</span>
+          <span>
+            {published
+              ? "Website vẫn hiển thị bản cũ cho tới khi bấm Xuất bản."
+              : page.isHome
+                ? "Website đang hiển thị trang chủ mặc định; bấm Xuất bản để thay bằng thiết kế này."
+                : "Khách truy cập chưa thấy trang này; bấm Xuất bản để đưa lên website."}
+          </span>
+          <button type="button" onClick={openPreview} className="font-semibold underline underline-offset-2" disabled={busy}>
+            Xem trước
+          </button>
+        </div>
+      ) : null}
 
       <div className="relative flex min-h-0 flex-1">
         {/* Bảng trái */}

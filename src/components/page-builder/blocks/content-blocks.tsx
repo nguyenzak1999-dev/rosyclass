@@ -19,6 +19,8 @@ import {
 
 export function FeaturesBlock({ props, ctx }: BlockComponentProps<BlockProps<"features">>) {
   const items = props.items.filter((item) => item.title || item.description || item.image)
+  // Khối chưa có nội dung thì ẩn trên trang thật (builder vẫn hiện khung nhắc)
+  if (items.length === 0 && ctx.mode === "public") return null
 
   return (
     <BlockSection background={props.background} anchor={props.anchor}>
@@ -118,6 +120,8 @@ export function FeaturesBlock({ props, ctx }: BlockComponentProps<BlockProps<"fe
 
 export function StatisticsBlock({ props, ctx }: BlockComponentProps<BlockProps<"statistics">>) {
   const items = props.items.filter((item) => item.number || item.label)
+  // Khối chưa có nội dung thì ẩn trên trang thật (builder vẫn hiện khung nhắc)
+  if (items.length === 0 && ctx.mode === "public") return null
 
   return (
     <BlockSection background={props.background} anchor={props.anchor}>
@@ -164,6 +168,8 @@ export function StatisticsBlock({ props, ctx }: BlockComponentProps<BlockProps<"
 
 export function LearningPathBlock({ props, ctx }: BlockComponentProps<BlockProps<"learningPath">>) {
   const steps = props.steps.filter((step) => step.title || step.text)
+  // Khối chưa có nội dung thì ẩn trên trang thật (builder vẫn hiện khung nhắc)
+  if (steps.length === 0 && ctx.mode === "public") return null
 
   return (
     <BlockSection background={props.background} anchor={props.anchor}>
@@ -221,6 +227,8 @@ export function LearningPathBlock({ props, ctx }: BlockComponentProps<BlockProps
 
 export function RichTextBlock({ props, ctx }: BlockComponentProps<BlockProps<"richText">>) {
   const html = renderMarkdown(props.content)
+  // Khối chưa có nội dung thì ẩn trên trang thật (builder vẫn hiện khung nhắc)
+  if (!html && ctx.mode === "public") return null
   const body = html ? (
     <div
       className={cn(markdownClasses, props.align === "center" && "text-center [&_ol]:text-left [&_ul]:text-left")}

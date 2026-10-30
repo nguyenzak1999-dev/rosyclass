@@ -18,6 +18,8 @@ const galleryColumns = {
 
 export function GalleryBlock({ props, ctx }: BlockComponentProps<BlockProps<"gallery">>) {
   const items = props.items.filter((item) => item.image)
+  // Khối chưa có nội dung thì ẩn trên trang thật (builder vẫn hiện khung nhắc)
+  if (items.length === 0 && ctx.mode === "public") return null
 
   return (
     <BlockSection background={props.background} anchor={props.anchor}>
@@ -116,7 +118,7 @@ export function SpacerBlock({ props }: BlockComponentProps<BlockProps<"spacer">>
   return (
     <div
       id={anchorId(props.anchor)}
-      className={cn(backgroundClasses[props.background], spacerHeights[props.size])}
+      className={cn("scroll-mt-20", backgroundClasses[props.background], spacerHeights[props.size])}
       aria-hidden="true"
     />
   )

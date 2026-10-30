@@ -18,8 +18,17 @@ export interface BlockComponentProps<P> {
 
 const ANCHOR_RE = /^[a-z0-9][a-z0-9-]{0,39}$/
 
+/** "Khoá học 2026" → "khoa-hoc-2026": anchor gõ có dấu, chữ hoa, khoảng trắng vẫn dùng được thay vì bị bỏ */
 export function anchorId(anchor?: string) {
-  return anchor && ANCHOR_RE.test(anchor) ? anchor : undefined
+  const id = (anchor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/gi, "d")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+  return ANCHOR_RE.test(id) ? id : undefined
 }
 
 export function BlockSection({
@@ -38,7 +47,8 @@ export function BlockSection({
     <section
       id={anchorId(anchor)}
       className={cn(
-        "relative overflow-hidden px-4 py-14 text-kid-ink @3xl:px-8 @3xl:py-20 @5xl:py-24",
+        // scroll-mt: link #neo không bị thanh menu cố định (80px) che mất tiêu đề
+        "relative scroll-mt-20 overflow-hidden px-4 py-14 text-kid-ink @3xl:px-8 @3xl:py-20 @5xl:py-24",
         backgroundClasses[background],
         className
       )}
@@ -192,6 +202,8 @@ export function EmptyState({
   editorHint?: string
   action?: React.ReactNode
 }) {
+  // Khung trống chỉ để nhắc admin trong builder, khách xem website không thấy
+  if (mode === "public") return null
   return (
     <div className="kid-border mx-auto flex max-w-[560px] flex-col items-center gap-3 rounded-kid bg-white/80 px-6 py-10 text-center">
       <Star className="h-10 w-10" />

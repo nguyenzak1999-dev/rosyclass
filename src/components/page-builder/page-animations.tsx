@@ -47,6 +47,9 @@ export function PageAnimations({ children }: { children: React.ReactNode }) {
 
     const cleanups: VoidFunction[] = []
     const touched = new Set<HTMLElement | SVGElement>()
+    // HTML từ server đã vẽ xong trước khi JS chạy: phần đang (hoặc đã) nằm trong khung nhìn giữ nguyên,
+    // nếu ẩn đi để chạy hiệu ứng thì khách thấy nội dung biến mất rồi hiện lại
+    const alreadySeen = (element: Element) => element.getBoundingClientRect().top < window.innerHeight * 0.9
     const hide = (element: HTMLElement, transform: string) => {
       touched.add(element)
       element.style.opacity = "0"
@@ -95,7 +98,7 @@ export function PageAnimations({ children }: { children: React.ReactNode }) {
 
       // Tiêu đề khối: huy hiệu, tiêu đề, mô tả bật lên lần lượt
       const heading = section.querySelector("h2")?.parentElement
-      if (heading) {
+      if (heading && !alreadySeen(heading)) {
         const parts = Array.from(heading.children as HTMLCollectionOf<HTMLElement>)
         for (const part of parts) hide(part, "translateY(36px)")
         cleanups.push(
@@ -114,7 +117,7 @@ export function PageAnimations({ children }: { children: React.ReactNode }) {
       // Thẻ trong lưới: nảy vào theo từng đợt khi cuộn tới
       const items = Array.from(
         section.querySelectorAll<HTMLElement>(":scope .grid > *, :scope dl > div, :scope details")
-      ).filter((item) => !heading?.contains(item))
+      ).filter((item) => !heading?.contains(item) && !alreadySeen(item))
       if (items.length) {
         const tilts = new Map(items.map((item) => [item, random(-4, 4)]))
         for (const item of items) hide(item, `translateY(60px) scale(0.92) rotate(${tilts.get(item)}deg)`)
@@ -168,8 +171,13 @@ export function PageAnimations({ children }: { children: React.ReactNode }) {
     // Con số thống kê đếm tăng dần
     for (const element of container.querySelectorAll<HTMLElement>("[data-count]")) {
       const parsed = parseCount(element.dataset.count ?? "")
-      if (!parsed) continue
+      if (!parsed || alreadySeen(element)) continue
+      const original = element.textContent
       element.textContent = parsed.render(0)
+      // Trả lại chữ gốc React đã vẽ khi gỡ hiệu ứng
+      cleanups.push(() => {
+        element.textContent = original
+      })
       cleanups.push(
         inView(
           element,

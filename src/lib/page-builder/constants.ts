@@ -35,6 +35,7 @@ export const RESERVED_PAGE_SLUGS: readonly string[] = [
   "ve-chung-toi",
   "chinh-sach-bao-mat",
   "phu-huynh",
+  "xem-truoc",
   // Route hệ thống
   "admin",
   "admin-login",
