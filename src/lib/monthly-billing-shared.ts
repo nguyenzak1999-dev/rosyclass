@@ -49,7 +49,66 @@ export type PlannedClassMonth = {
   estimated: boolean
   /** Các ngày học "dd/MM" để in trên phiếu */
   dates: string[]
+  /** Ngày "dd/MM" của buổi GV nước ngoài (nằm trong dates); phiếu cũ không có */
+  foreignDates?: string[]
   amount: number
+}
+
+/** Điểm danh của bé ở một buổi tháng trước, in trên phiếu để phụ huynh đối chiếu */
+export type SessionMarkCode =
+  | "PRESENT"
+  | "LATE"
+  | "MADE_UP"
+  | "PENDING_MAKE_UP"
+  | "MISSED_MAKE_UP"
+  | "ABSENT"
+  | "CANCELLED"
+  | "UPCOMING"
+  | "UNMARKED"
+
+export type SessionMark = {
+  /** "dd/MM" */
+  date: string
+  mark: SessionMarkCode
+  foreign?: boolean
+  /** Ngày kèm bù "dd/MM" khi bé nghỉ và đã/được xếp kèm bù */
+  makeUpDate?: string
+}
+
+export const SESSION_MARK_LABELS: Record<SessionMarkCode, string> = {
+  PRESENT: "Có mặt",
+  LATE: "Đi muộn",
+  MADE_UP: "Nghỉ, đã kèm bù",
+  PENDING_MAKE_UP: "Nghỉ, chờ kèm bù",
+  MISSED_MAKE_UP: "Nghỉ, không bù được",
+  ABSENT: "Nghỉ",
+  CANCELLED: "Lớp nghỉ (huỷ)",
+  UPCOMING: "Chưa học",
+  UNMARKED: "Chưa điểm danh",
+}
+
+/** "09/10 nghỉ, đã kèm bù 10/10" — dùng cho tin nhắn, bản in và nhãn trên phiếu */
+export function sessionMarkText(item: SessionMark) {
+  const date = `${item.date}${item.foreign ? " (GVNN)" : ""}`
+  if (item.mark === "PRESENT") return `${date} ✓`
+  return `${date} ${SESSION_MARK_LABELS[item.mark].toLowerCase()}${item.makeUpDate ? ` ${item.makeUpDate}` : ""}`
+}
+
+/** Buổi cộng dồn sang phiếu này: "Trừ 3 buổi (-450.000đ) · Thu thêm 1 buổi (+200.000đ)" */
+export function carryOverText(item: Pick<PreviousClassMonth, "carryOver" | "carryAmount" | "extraSessions" | "extraAmount">) {
+  if (item.carryOver === undefined) return "—"
+  const money = (value = 0) => `${Math.abs(Math.round(value)).toLocaleString("vi-VN")}đ`
+  const parts = [
+    item.carryOver ? `Trừ ${item.carryOver} buổi (-${money(item.carryAmount)})` : null,
+    item.extraSessions ? `Thu thêm ${item.extraSessions} buổi (+${money(item.extraAmount)})` : null,
+  ].filter(Boolean)
+  return parts.length ? parts.join(" · ") : "Không"
+}
+
+/** Ngày học dự kiến của tháng thu, đánh dấu buổi GV nước ngoài */
+export function plannedDatesText(item: Pick<PlannedClassMonth, "dates" | "foreignDates">) {
+  const foreign = new Set(item.foreignDates ?? [])
+  return item.dates.map((date) => (foreign.has(date) ? `${date} (GVNN)` : date)).join(", ")
 }
 
 export type PreviousClassMonth = {
@@ -64,6 +123,19 @@ export type PreviousClassMonth = {
   madeUp: number
   pendingMakeUp: number
   missedMakeUp: number
+  // Các trường dưới có từ bản cộng dồn buổi; phiếu lập trước đó không có
+  /** Buổi lớp xếp trong tháng (không tính buổi huỷ), gồm cả buổi chưa tới ngày */
+  scheduledSessions?: number
+  /** Buổi bé đã học thực tế: có mặt/đi muộn + đã kèm bù */
+  learned?: number
+  /** Điểm danh từng buổi */
+  days?: SessionMark[]
+  /** Buổi cộng dồn được trừ vào phiếu này (đã thu mà lớp huỷ, nghỉ không kèm bù được) và số tiền trừ (âm) */
+  carryOver?: number
+  carryAmount?: number
+  /** Buổi phát sinh sau khi lập phiếu tháng trước, thu thêm ở phiếu này, và số tiền (dương) */
+  extraSessions?: number
+  extraAmount?: number
 }
 
 export type SiblingBill = {

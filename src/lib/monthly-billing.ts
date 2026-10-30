@@ -26,6 +26,8 @@ import {
   type BillingSummary,
   type PlannedClassMonth,
   type PreviousClassMonth,
+  type SessionMark,
+  type SessionMarkCode,
   type SiblingBill,
 } from "@/lib/monthly-billing-shared"
 
@@ -155,7 +157,7 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
             isForeignTeacher: true,
             surcharge: true,
             attendances: { where: { studentId }, select: { status: true } },
-            makeUpLessons: { where: { studentId }, select: { status: true } },
+            makeUpLessons: { where: { studentId }, select: { status: true, scheduledDate: true } },
           },
           orderBy: { sessionDate: "asc" },
         })
@@ -237,42 +239,133 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
       dates: [...regularDates, ...foreign.map((session) => session.sessionDate)]
         .sort((a, b) => a.getTime() - b.getTime())
         .map((date) => formatVietnam(date, "dd/MM")),
+      foreignDates: foreign.map((session) => formatVietnam(session.sessionDate, "dd/MM")),
       amount: regularDates.length * fee + foreign.length * fee + foreignSurcharge,
     }
   })
 
-  // --- Đối chiếu tháng trước ---
+  // --- Đối chiếu tháng trước: đã thu bao nhiêu buổi, bé học bao nhiêu, phần chênh cộng dồn sang phiếu này ---
   const previousPayment = paymentByMonth.get(previousMonth)
   const previousPlanned = parseBillingSummary(previousPayment?.billingSummary)?.planned ?? null
+  const previousLabel = formatBillingMonth(previousMonth)
+  const label = formatBillingMonth(month)
+  const lines: BillingLineDraft[] = []
+  // Tiền và số buổi cộng dồn theo lớp, ghi vào bảng đối chiếu sau khi lập xong các dòng
+  const carry = new Map<string, { credit: number; creditAmount: number; extra: number; extraAmount: number }>()
+  const addCarry = (classId: string, line: BillingLineDraft) => {
+    const current = carry.get(classId) ?? { credit: 0, creditAmount: 0, extra: 0, extraAmount: 0 }
+    if (line.unitAmount < 0) {
+      current.credit += line.quantity
+      current.creditAmount += lineTotal(line)
+    } else {
+      current.extra += line.quantity
+      current.extraAmount += lineTotal(line)
+    }
+    carry.set(classId, current)
+  }
+  const adjustments: { classId: string; line: BillingLineDraft }[] = []
+
   const previous: PreviousClassMonth[] = classes.map((cls) => {
-    const held = sessions.filter(
+    const monthSessions = sessions.filter(
       (session) =>
         session.classId === cls.id &&
-        session.status !== "CANCELLED" &&
         session.sessionDate >= previousStart &&
         session.sessionDate < start &&
-        session.sessionDate <= now &&
         vietnamDateKey(session.sessionDate) >= cls.joinedKey
     )
+    const scheduled = monthSessions.filter((session) => session.status !== "CANCELLED")
+    const held = scheduled.filter((session) => session.sessionDate <= now)
     const billed = previousPlanned?.find((item) => item.classId === cls.id)
     const absentSessions = held.filter((session) => ABSENT.has(session.attendances[0]?.status ?? ""))
     const makeUpStatus = (status: string) => absentSessions.filter((session) => session.makeUpLessons[0]?.status === status).length
+    const attended = held.filter((session) => ATTENDED.has(session.attendances[0]?.status ?? "")).length
+    const madeUp = makeUpStatus("DONE")
+
+    // Phiếu tháng trước thu theo lịch dự kiến: buổi lớp huỷ được trừ lại, buổi phát sinh thêm thì thu bù
+    if (billed && sessions.some((session) => session.classId === cls.id && session.sessionDate >= previousStart && session.sessionDate < start)) {
+      const regularDiff = billed.regularSessions - scheduled.filter((session) => !session.isForeignTeacher).length
+      const foreignScheduled = scheduled.filter((session) => session.isForeignTeacher)
+      const foreignDiff = billed.foreignSessions - foreignScheduled.length
+      const cancelledDates = monthSessions
+        .filter((session) => session.status === "CANCELLED")
+        .map((session) => formatVietnam(session.sessionDate, "dd/MM"))
+      const cancelledNote = cancelledDates.length ? ` (lớp nghỉ ${cancelledDates.join(", ")})` : ""
+      if (regularDiff !== 0) {
+        adjustments.push({
+          classId: cls.id,
+          line: {
+            description:
+              regularDiff > 0
+                ? `Trừ buổi đã thu tháng ${previousLabel} nhưng lớp không học – ${cls.name}${cancelledNote}`
+                : `Thu thêm buổi phát sinh tháng ${previousLabel} – ${cls.name}`,
+            category: regularDiff > 0 ? "DISCOUNT" : "TUITION",
+            quantity: Math.abs(regularDiff),
+            unitAmount: regularDiff > 0 ? -billed.sessionFee : billed.sessionFee,
+          },
+        })
+      }
+      if (foreignDiff !== 0) {
+        const billedUnit = billed.sessionFee + (billed.foreignSessions ? Math.round(billed.foreignSurcharge / billed.foreignSessions) : 0)
+        const extraUnit =
+          billed.sessionFee +
+          (foreignScheduled.length ? Math.round(foreignScheduled.reduce((sum, session) => sum + session.surcharge, 0) / foreignScheduled.length) : 0)
+        adjustments.push({
+          classId: cls.id,
+          line: {
+            description:
+              foreignDiff > 0
+                ? `Trừ buổi GV nước ngoài đã thu tháng ${previousLabel} nhưng không học – ${cls.name}`
+                : `Thu thêm buổi GV nước ngoài tháng ${previousLabel} (xếp sau khi lập phiếu) – ${cls.name}`,
+            category: foreignDiff > 0 ? "DISCOUNT" : "TUITION",
+            quantity: Math.abs(foreignDiff),
+            unitAmount: foreignDiff > 0 ? -billedUnit : extraUnit,
+          },
+        })
+      }
+    }
+
+    const days: SessionMark[] = monthSessions.map((session) => {
+      const attendance = session.attendances[0]?.status ?? ""
+      const makeUp = session.makeUpLessons[0]
+      let mark: SessionMarkCode
+      if (session.status === "CANCELLED") mark = "CANCELLED"
+      else if (attendance === "PRESENT" || attendance === "MAKE_UP") mark = "PRESENT"
+      else if (attendance === "LATE") mark = "LATE"
+      else if (ABSENT.has(attendance)) {
+        mark =
+          makeUp?.status === "DONE"
+            ? "MADE_UP"
+            : makeUp?.status === "PENDING"
+              ? "PENDING_MAKE_UP"
+              : makeUp?.status === "MISSED"
+                ? "MISSED_MAKE_UP"
+                : "ABSENT"
+      } else mark = session.sessionDate > now ? "UPCOMING" : "UNMARKED"
+      return {
+        date: formatVietnam(session.sessionDate, "dd/MM"),
+        mark,
+        ...(session.isForeignTeacher ? { foreign: true } : {}),
+        ...(makeUp && mark !== "MISSED_MAKE_UP" && mark !== "PRESENT" ? { makeUpDate: formatVietnam(makeUp.scheduledDate, "dd/MM") } : {}),
+      }
+    })
+
     return {
       classId: cls.id,
       className: cls.name,
       billedSessions: billed ? billed.regularSessions + billed.foreignSessions : null,
       heldSessions: held.length,
-      attended: held.filter((session) => ATTENDED.has(session.attendances[0]?.status ?? "")).length,
+      attended,
       absent: absentSessions.length,
-      madeUp: makeUpStatus("DONE"),
+      madeUp,
       pendingMakeUp: makeUpStatus("PENDING"),
       missedMakeUp: makeUpStatus("MISSED"),
+      scheduledSessions: scheduled.length,
+      learned: attended + madeUp,
+      days,
     }
   })
 
   // --- Dòng phiếu thu ---
-  const label = formatBillingMonth(month)
-  const lines: BillingLineDraft[] = []
   for (const item of planned) {
     const name = item.isOneOnOne ? `Học 1-1 với GV Việt Nam – ${item.className}` : `Học phí ${item.className}`
     lines.push({
@@ -292,8 +385,13 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
     }
   }
 
+  for (const adjustment of adjustments) {
+    lines.push(adjustment.line)
+    addCarry(adjustment.classId, adjustment.line)
+  }
+
   // Trừ buổi nghỉ không kèm bù được, chỉ khi tháng của buổi đó đã thu theo phiếu tháng có lớp này
-  const credits = new Map<string, BillingLineDraft>()
+  const credits = new Map<string, BillingLineDraft & { classId: string }>()
   const creditDates = new Map<string, string[]>()
   for (const makeUp of missedMakeUps) {
     const session = makeUp.session
@@ -302,7 +400,14 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
 
     const amount = classFee(session.class) + (session.isForeignTeacher ? session.surcharge : 0)
     const key = `${session.class.id}:${amount}`
-    const credit = credits.get(key) ?? { description: "", category: "DISCOUNT", quantity: 0, unitAmount: -amount, makeUpIds: [] }
+    const credit = credits.get(key) ?? {
+      classId: session.class.id,
+      description: "",
+      category: "DISCOUNT",
+      quantity: 0,
+      unitAmount: -amount,
+      makeUpIds: [],
+    }
     const dates = [...(creditDates.get(key) ?? []), formatVietnam(session.sessionDate, "dd/MM")]
     credit.quantity += 1
     credit.makeUpIds = [...(credit.makeUpIds ?? []), makeUp.id]
@@ -310,7 +415,18 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
     credits.set(key, credit)
     creditDates.set(key, dates)
   }
-  lines.push(...credits.values())
+  for (const { classId, ...line } of credits.values()) {
+    lines.push(line)
+    addCarry(classId, line)
+  }
+
+  for (const item of previous) {
+    const value = carry.get(item.classId)
+    item.carryOver = value?.credit ?? 0
+    item.carryAmount = value?.creditAmount ?? 0
+    item.extraSessions = value?.extra ?? 0
+    item.extraAmount = value?.extraAmount ?? 0
+  }
 
   const siblings = await siblingBills(student.id, student.parent?.phone, month)
 
