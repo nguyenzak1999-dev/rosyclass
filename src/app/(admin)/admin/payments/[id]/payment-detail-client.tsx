@@ -13,10 +13,12 @@ import {
   Undo2,
   CheckCircle2,
   AlertCircle,
+  Trash2,
 } from "lucide-react"
 import { formatVietnam } from "@/lib/curriculum"
 import { vi } from "date-fns/locale"
 import { refundPayment } from "../actions"
+import { DeletePaymentDialog } from "../components/delete-payment-dialog"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -72,6 +74,7 @@ export default function PaymentDetailClient({ payment, siteSettings }: PaymentDe
   const [receiptOpen, setReceiptOpen] = useState(false)
   const [refundOpen, setRefundOpen] = useState(false)
   const [isRefunding, setIsRefunding] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const percentPaid =
     payment.totalAmount > 0
@@ -139,6 +142,12 @@ export default function PaymentDetailClient({ payment, siteSettings }: PaymentDe
         <Button variant="outline" onClick={() => setReceiptOpen(true)}>
           <Printer className="w-4 h-4 mr-2" /> In biên lai
         </Button>
+        {/* Chỉ phiếu chưa thu tiền mới xoá được (lập nhầm) */}
+        {payment.paidAmount <= 0 ? (
+          <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => setDeleteOpen(true)}>
+            <Trash2 className="w-4 h-4 mr-2" /> Xoá phiếu
+          </Button>
+        ) : null}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -348,6 +357,12 @@ export default function PaymentDetailClient({ payment, siteSettings }: PaymentDe
         variant="destructive"
         onConfirm={handleRefund}
         isSubmitting={isRefunding}
+      />
+      <DeletePaymentDialog
+        payment={payment}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onDeleted={() => router.push("/admin/payments")}
       />
     </div>
   )

@@ -4,8 +4,10 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { BadgeStatus } from "@/components/ui/badge-status"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Trash2 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { formatVietnam } from "@/lib/curriculum"
 import {
   DropdownMenu,
@@ -39,6 +41,57 @@ export type PaymentData = {
 }
 
 import { PaymentDialog } from "./payment-dialog"
+import { DeletePaymentDialog } from "./delete-payment-dialog"
+
+function PaymentRowActions({
+  payment,
+  students,
+  onViewReceipt,
+}: {
+  payment: PaymentData
+  students: { id: string; fullName: string }[]
+  onViewReceipt: (payment: PaymentData) => void
+}) {
+  const router = useRouter()
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  // Phiếu đã thu tiền không xoá được (giữ dấu tiền đã nhận), chỉ hoàn tiền hoặc huỷ
+  const deletable = payment.paidAmount <= 0
+
+  return (
+    // Dialog render qua portal nhưng sự kiện React vẫn nổi lên hàng: chặn để click trong form sửa không mở biên lai
+    <div className="flex items-center justify-end" onClick={(event) => event.stopPropagation()}>
+      <PaymentDialog
+        initialData={payment}
+        students={students}
+        trigger={<Button variant="ghost" size="sm">Sửa</Button>}
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
+          <span className="sr-only">Mở menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => navigator.clipboard.writeText(payment.id)}>Sao chép ID</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => onViewReceipt(payment)}>Xem & In biên lai</DropdownMenuItem>
+          <DropdownMenuItem render={<Link href={`/admin/payments/${payment.id}`} />}>
+            Ghi nhận thanh toán / Hoàn tiền
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            disabled={!deletable}
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 /> {deletable ? "Xoá phiếu (lập nhầm)" : "Đã thu tiền – không xoá được"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DeletePaymentDialog payment={payment} open={deleteOpen} onOpenChange={setDeleteOpen} onDeleted={() => router.refresh()} />
+    </div>
+  )
+}
 
 export const getColumns = (
   students: { id: string; fullName: string }[],
@@ -122,40 +175,6 @@ export const getColumns = (
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const payment = row.original
-
-      return (
-        // Dialog render qua portal nhưng sự kiện React vẫn nổi lên hàng: chặn để click trong form sửa không mở biên lai
-        <div className="flex items-center justify-end" onClick={(event) => event.stopPropagation()}>
-          <PaymentDialog 
-            initialData={payment}
-            students={students} 
-            trigger={<Button variant="ghost" size="sm">Sửa</Button>} 
-          />
-          <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" className="h-8 w-8 p-0" />}>
-              <span className="sr-only">Mở menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(payment.id)}
-              >
-                Sao chép ID
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onViewReceipt(payment)}>
-                Xem & In biên lai
-              </DropdownMenuItem>
-              <DropdownMenuItem render={<Link href={`/admin/payments/${payment.id}`} />}>
-                Ghi nhận thanh toán / Hoàn tiền
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )
-    },
+    cell: ({ row }) => <PaymentRowActions payment={row.original} students={students} onViewReceipt={onViewReceipt} />,
   },
 ]

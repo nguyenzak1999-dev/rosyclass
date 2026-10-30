@@ -101,15 +101,43 @@ export async function upsertPayment(data: PaymentFormValues) {
   }
 }
 
+/**
+ * Xoá phiếu thu lập nhầm. Chỉ xoá được phiếu chưa thu đồng nào, để không mất dấu tiền đã nhận
+ * (phiếu đã thu thì hoàn tiền hoặc chuyển trạng thái Huỷ). Buổi kèm bù đã trừ vào phiếu được trả lại
+ * để phiếu lập lại vẫn trừ đúng.
+ */
 export async function deletePayment(id: string) {
   try {
-    await requirePermission(PERMISSIONS.paymentsWrite)
-    await prisma.payment.delete({ where: { id } })
+    const user = await requirePermission(PERMISSIONS.paymentsWrite)
+    const payment = await prisma.payment.findUnique({
+      where: { id },
+      select: { id: true, receiptCode: true, paidAmount: true, status: true, student: { select: { fullName: true } } },
+    })
+    if (!payment) return { success: false, error: "Không tìm thấy phiếu thu" }
+    if (payment.paidAmount > 0) {
+      return {
+        success: false,
+        error: `Phiếu đã thu ${payment.paidAmount.toLocaleString("vi-VN")}đ nên không xoá được. Hãy hoàn tiền hoặc sửa trạng thái thành Huỷ.`,
+      }
+    }
+
+    // D1 không có transaction tương tác: gom vào một batch
+    await prisma.$transaction([
+      prisma.makeUpLesson.updateMany({ where: { creditedPaymentId: id }, data: { creditedPaymentId: null } }),
+      prisma.payment.delete({ where: { id } }),
+    ])
+
+    await notifyAdmins(
+      "Xoá phiếu thu",
+      `${user.fullName} đã xoá phiếu ${payment.receiptCode ?? "chưa có mã"} của ${payment.student.fullName}`,
+      "/admin/payments"
+    )
     revalidatePath("/admin/payments")
+    revalidatePath(`/admin/payments/${id}`)
     return { success: true }
   } catch (error: unknown) {
     console.error("Payment delete error:", error)
-    return { success: false, error: "Không thể xóa thanh toán này" }
+    return { success: false, error: "Không thể xoá phiếu thu này" }
   }
 }
 
