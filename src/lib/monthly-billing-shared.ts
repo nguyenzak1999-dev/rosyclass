@@ -252,7 +252,9 @@ export type FamilyNoticeChild = {
   /** Mục 4–6: tháng thu */
   monthSessions: number
   monthAmount: number
-  extrasAmount: number
+  /** Mục 6: buổi học với giáo viên nước ngoài; mục 7: học liệu, sách và các khoản thu thêm khác */
+  foreignAmount: number
+  materialAmount: number
   discountAmount: number
   total: number
   paid: number
