@@ -14,6 +14,7 @@ import {
   vietnamMonthStart,
 } from "@/lib/curriculum"
 import { buildQrPayload, generateReceiptCode } from "@/lib/payment-receipt"
+import { getSiteSettings } from "@/lib/get-site-settings"
 import {
   billTotal,
   billingMonthKey,
@@ -22,8 +23,12 @@ import {
   normalizePhone,
   parseBillingSummary,
   shiftBillingMonth,
+  noticeLineKind,
+  plannedDatesText,
   type BillingLineDraft,
   type BillingSummary,
+  type FamilyNotice,
+  type FamilyNoticeChild,
   type PlannedClassMonth,
   type PreviousClassMonth,
   type SessionMark,
@@ -145,7 +150,7 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
   const classIds = classes.map((cls) => cls.id)
   const warnings: string[] = []
 
-  const [sessions, monthlyPayments, missedMakeUps] = await Promise.all([
+  const [sessions, monthlyPayments, missedMakeUps, legacyPayments] = await Promise.all([
     classIds.length
       ? prisma.classSession.findMany({
           where: { classId: { in: classIds }, sessionDate: { gte: previousStart, lt: end } },
@@ -170,6 +175,7 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
       where: { studentId, status: "MISSED", creditedPaymentId: null },
       select: {
         id: true,
+        sessionId: true,
         session: {
           select: {
             sessionDate: true,
@@ -178,6 +184,15 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
             class: { select: { id: true, name: true, sessionFee: true, course: { select: { sessionFee: true } } } },
           },
         },
+      },
+    }),
+    // Phiếu kiểu cũ (thu theo khoá, không theo tháng) gần đây: tháng trước có thể đã thu theo phiếu đó
+    prisma.payment.count({
+      where: {
+        studentId,
+        billingMonth: null,
+        status: { notIn: ["CANCELLED", "REFUNDED"] },
+        createdAt: { gte: new Date(previousStart.getTime() - 180 * DAY_MS) },
       },
     }),
   ])
@@ -264,6 +279,8 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
     carry.set(classId, current)
   }
   const adjustments: { classId: string; line: BillingLineDraft }[] = []
+  // Buổi kèm bù không bù được đã xử lý trong dòng thu bù tháng trước
+  const usedMakeUps = new Set<string>()
 
   const previous: PreviousClassMonth[] = classes.map((cls) => {
     const monthSessions = sessions.filter(
@@ -276,6 +293,10 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
     const scheduled = monthSessions.filter((session) => session.status !== "CANCELLED")
     const held = scheduled.filter((session) => session.sessionDate <= now)
     const billed = previousPlanned?.find((item) => item.classId === cls.id)
+    // Buổi thực tính phí: buổi lớp xếp, trừ buổi bé nghỉ mà không kèm bù được
+    const missedIn = (list: typeof scheduled) => list.filter((session) => session.makeUpLessons[0]?.status === "MISSED")
+    const chargeable = scheduled.length - missedIn(scheduled).length
+    let catchUp = false
     const absentSessions = held.filter((session) => ABSENT.has(session.attendances[0]?.status ?? ""))
     const makeUpStatus = (status: string) => absentSessions.filter((session) => session.makeUpLessons[0]?.status === status).length
     const attended = held.filter((session) => ATTENDED.has(session.attendances[0]?.status ?? "")).length
@@ -298,7 +319,7 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
               regularDiff > 0
                 ? `Trừ buổi đã thu tháng ${previousLabel} nhưng lớp không học – ${cls.name}${cancelledNote}`
                 : `Thu thêm buổi phát sinh tháng ${previousLabel} – ${cls.name}`,
-            category: regularDiff > 0 ? "DISCOUNT" : "TUITION",
+            category: "CARRY",
             quantity: Math.abs(regularDiff),
             unitAmount: regularDiff > 0 ? -billed.sessionFee : billed.sessionFee,
           },
@@ -316,11 +337,54 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
               foreignDiff > 0
                 ? `Trừ buổi GV nước ngoài đã thu tháng ${previousLabel} nhưng không học – ${cls.name}`
                 : `Thu thêm buổi GV nước ngoài tháng ${previousLabel} (xếp sau khi lập phiếu) – ${cls.name}`,
-            category: foreignDiff > 0 ? "DISCOUNT" : "TUITION",
+            category: "CARRY",
             quantity: Math.abs(foreignDiff),
             unitAmount: foreignDiff > 0 ? -billedUnit : extraUnit,
           },
         })
+      }
+    } else if (!billed && chargeable > 0) {
+      // Tháng trước chưa lập phiếu tháng cho lớp này: thu bù các buổi thực tính phí (đã tạm thu 0 buổi)
+      if (legacyPayments > 0) {
+        warnings.push(
+          `Tháng ${previousLabel} chưa có phiếu thu tháng cho lớp ${cls.name} nhưng bé có phiếu thu kiểu cũ gần đây: không tự thu bù ${chargeable} buổi tháng trước, thêm tay nếu cần`
+        )
+      } else {
+        catchUp = true
+        const fee = classFee(cls)
+        const regular = scheduled.filter((session) => !session.isForeignTeacher)
+        const foreign = scheduled.filter((session) => session.isForeignTeacher)
+        const regularCount = regular.length - missedIn(regular).length
+        const foreignCount = foreign.length - missedIn(foreign).length
+        // Buổi nghỉ không bù được đã không tính ở đây: đánh dấu đã trừ để phiếu sau không trừ lần nữa
+        const sessionIds = new Set(scheduled.map((session) => session.id))
+        const missedIds = missedMakeUps.filter((makeUp) => sessionIds.has(makeUp.sessionId)).map((makeUp) => makeUp.id)
+        missedIds.forEach((id) => usedMakeUps.add(id))
+        if (regularCount > 0) {
+          adjustments.push({
+            classId: cls.id,
+            line: {
+              description: `Thu buổi đã học tháng ${previousLabel} (chưa tạm thu) – ${cls.name}`,
+              category: "CARRY",
+              quantity: regularCount,
+              unitAmount: fee,
+              makeUpIds: missedIds,
+            },
+          })
+        }
+        if (foreignCount > 0) {
+          const surcharge = Math.round(foreign.reduce((sum, session) => sum + session.surcharge, 0) / foreign.length)
+          adjustments.push({
+            classId: cls.id,
+            line: {
+              description: `Thu buổi GV nước ngoài tháng ${previousLabel} (chưa tạm thu) – ${cls.name}`,
+              category: "CARRY",
+              quantity: foreignCount,
+              unitAmount: fee + surcharge,
+              ...(regularCount > 0 ? {} : { makeUpIds: missedIds }),
+            },
+          })
+        }
       }
     }
 
@@ -360,6 +424,8 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
       pendingMakeUp: makeUpStatus("PENDING"),
       missedMakeUp: makeUpStatus("MISSED"),
       scheduledSessions: scheduled.length,
+      chargeable,
+      ...(catchUp ? { catchUp } : {}),
       learned: attended + madeUp,
       days,
     }
@@ -378,7 +444,7 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
     if (item.foreignSessions > 0) {
       lines.push({
         description: `Buổi học thêm với GV nước ngoài – ${item.className} (đơn giá + phụ thu)`,
-        category: "TUITION",
+        category: "FOREIGN",
         quantity: item.foreignSessions,
         unitAmount: item.sessionFee + Math.round(item.foreignSurcharge / item.foreignSessions),
       })
@@ -393,17 +459,24 @@ export async function buildMonthlyBillDraft(studentId: string, month: string): P
   // Trừ buổi nghỉ không kèm bù được, chỉ khi tháng của buổi đó đã thu theo phiếu tháng có lớp này
   const credits = new Map<string, BillingLineDraft & { classId: string }>()
   const creditDates = new Map<string, string[]>()
+  // Tháng của buổi đã được thu: phiếu tháng đó có lớp này, hoặc phiếu tháng sau đã thu bù các buổi tháng đó
+  const monthBilled = (monthKey: string, classId: string) =>
+    Boolean(parseBillingSummary(paymentByMonth.get(monthKey)?.billingSummary)?.planned.some((item) => item.classId === classId)) ||
+    Boolean(
+      parseBillingSummary(paymentByMonth.get(shiftBillingMonth(monthKey, 1))?.billingSummary)?.previous.some(
+        (item) => item.classId === classId && item.catchUp
+      )
+    )
   for (const makeUp of missedMakeUps) {
     const session = makeUp.session
-    const billedPlan = parseBillingSummary(paymentByMonth.get(billingMonthKey(session.sessionDate))?.billingSummary)?.planned
-    if (!billedPlan?.some((item) => item.classId === session.class.id)) continue
+    if (usedMakeUps.has(makeUp.id) || !monthBilled(billingMonthKey(session.sessionDate), session.class.id)) continue
 
     const amount = classFee(session.class) + (session.isForeignTeacher ? session.surcharge : 0)
     const key = `${session.class.id}:${amount}`
     const credit = credits.get(key) ?? {
       classId: session.class.id,
       description: "",
-      category: "DISCOUNT",
+      category: "CARRY",
       quantity: 0,
       unitAmount: -amount,
       makeUpIds: [],
@@ -573,4 +646,122 @@ export async function saveMonthlyPaymentRecord(input: MonthlyPaymentRecordInput,
   }
 
   return { id: paymentId, totalAmount }
+}
+
+/** "Nguyễn Thùy Anh" → "Thùy Anh": phụ huynh quen gọi bé bằng tên, kèm tên đệm */
+function callName(fullName: string) {
+  const words = fullName.trim().split(/\s+/)
+  return words.length >= 3 ? words.slice(-2).join(" ") : fullName.trim()
+}
+
+function stripDiacritics(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+}
+
+/**
+ * Thông báo thu học phí cả nhà cho phiếu thu tháng: các bé cùng SĐT phụ huynh có phiếu cùng tháng,
+ * mỗi bé một cột (mục 1–6), tổng cả nhà và một mã QR cho tổng số tiền còn phải đóng.
+ */
+export async function buildFamilyNotice(paymentId: string): Promise<FamilyNotice | null> {
+  const payment = await prisma.payment.findUnique({
+    where: { id: paymentId },
+    select: {
+      billingMonth: true,
+      bankName: true,
+      bankAccountNo: true,
+      bankAccountName: true,
+      student: { select: { id: true, parent: { select: { fullName: true, phone: true } } } },
+    },
+  })
+  if (!payment?.billingMonth) return null
+  const month = payment.billingMonth
+
+  const siblings = await findSiblings(payment.student.id, payment.student.parent?.phone)
+  const studentIds = [payment.student.id, ...siblings.map((sibling) => sibling.id)]
+  const [payments, settings] = await Promise.all([
+    prisma.payment.findMany({
+      where: { studentId: { in: studentIds }, billingMonth: month, status: { notIn: ["CANCELLED", "REFUNDED"] } },
+      select: {
+        id: true,
+        receiptCode: true,
+        totalAmount: true,
+        paidAmount: true,
+        remainingAmount: true,
+        dueDate: true,
+        billingSummary: true,
+        student: { select: { id: true, fullName: true } },
+        lineItems: { select: { category: true, description: true, quantity: true, totalAmount: true } },
+      },
+    }),
+    getSiteSettings(),
+  ])
+  // Bé của phiếu đang xem đứng đầu, các anh chị em xếp theo tên
+  payments.sort((a, b) =>
+    a.student.id === payment.student.id ? -1 : b.student.id === payment.student.id ? 1 : a.student.fullName.localeCompare(b.student.fullName, "vi")
+  )
+
+  const children: FamilyNoticeChild[] = payments.map((item) => {
+    const summary = parseBillingSummary(item.billingSummary)
+    const sum = (kind: string, field: "quantity" | "totalAmount") =>
+      item.lineItems.filter((line) => noticeLineKind(line) === kind).reduce((total, line) => total + line[field], 0)
+    const classNames = summary?.planned.map((plan) => plan.className) ?? []
+    return {
+      paymentId: item.id,
+      receiptCode: item.receiptCode,
+      fullName: item.student.fullName,
+      label: [callName(item.student.fullName), ...classNames].join(" "),
+      prevBilled: summary?.previous.reduce((total, prev) => total + (prev.billedSessions ?? 0), 0) ?? 0,
+      prevChargeable:
+        summary?.previous.reduce((total, prev) => total + (prev.chargeable ?? prev.scheduledSessions ?? prev.heldSessions), 0) ?? 0,
+      carryAmount: sum("carry", "totalAmount"),
+      monthSessions: sum("tuition", "quantity"),
+      monthAmount: sum("tuition", "totalAmount"),
+      extrasAmount: sum("foreign", "totalAmount") + sum("extra", "totalAmount"),
+      discountAmount: sum("discount", "totalAmount"),
+      total: item.totalAmount,
+      paid: item.paidAmount,
+      remaining: item.remainingAmount,
+      attendance: (summary?.previous ?? [])
+        .filter((prev) => prev.days?.length)
+        .map((prev) => ({ className: prev.className, days: prev.days ?? [] })),
+      planned: (summary?.planned ?? [])
+        .filter((plan) => plan.dates.length)
+        .map((plan) => ({ className: plan.className, dates: plannedDatesText(plan) })),
+    }
+  })
+
+  const totalDue = children.reduce((total, child) => total + child.remaining, 0)
+  const monthNumber = month.slice(5)
+  const transferContent = `${children.map((child) => child.label).join(" ")} Thang ${monthNumber}`
+  const bank = {
+    code: (payment.bankName || settings.paymentBankCode || "MB").split(" ")[0].toUpperCase(),
+    accountNo: payment.bankAccountNo || settings.paymentBankAccountNo || "",
+    accountName: payment.bankAccountName || settings.paymentBankAccountName || "",
+  }
+  // Nội dung QR không dấu, tối đa 50 ký tự (giới hạn của nhiều ngân hàng)
+  const addInfo = stripDiacritics(transferContent).replace(/[^A-Za-z0-9 ]/g, "").replace(/\s+/g, " ").trim().slice(0, 50)
+  const qrUrl =
+    bank.accountNo && totalDue > 0
+      ? `https://img.vietqr.io/image/${bank.code}-${bank.accountNo}-compact2.svg?amount=${Math.round(totalDue)}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(bank.accountName)}`
+      : null
+  const dueDates = payments.map((item) => item.dueDate).filter((date): date is Date => Boolean(date))
+  const dueDate = dueDates.length ? new Date(Math.min(...dueDates.map((date) => date.getTime()))) : null
+
+  return {
+    month,
+    previousMonth: shiftBillingMonth(month, -1),
+    parentName: payment.student.parent?.fullName ?? null,
+    children,
+    totalAmount: children.reduce((total, child) => total + child.total, 0),
+    totalPaid: children.reduce((total, child) => total + child.paid, 0),
+    totalDue,
+    transferContent,
+    dueDate: dueDate ? formatVietnam(dueDate, "dd/MM/yyyy") : null,
+    bank,
+    qrUrl,
+  }
 }

@@ -1027,6 +1027,9 @@ enum PaymentCategory {
   MAKE_UP
   DISCOUNT
   OTHER
+  // Phiếu thu tháng: buổi học với giáo viên nước ngoài, và thừa/thiếu cộng dồn từ tháng trước
+  FOREIGN
+  CARRY
 }
 
 enum ScoreType {

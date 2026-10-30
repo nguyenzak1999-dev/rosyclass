@@ -16,10 +16,12 @@ export const MAKE_UP_STATUS_LABELS = {
 
 export type MakeUpStatusCode = keyof typeof MAKE_UP_STATUS_LABELS
 
-export type BillingCategory = "TUITION" | "MATERIAL" | "TEST" | "MAKE_UP" | "DISCOUNT" | "OTHER"
+export type BillingCategory = "TUITION" | "FOREIGN" | "CARRY" | "MATERIAL" | "TEST" | "MAKE_UP" | "DISCOUNT" | "OTHER"
 
 export const BILLING_CATEGORY_LABELS: Record<BillingCategory, string> = {
   TUITION: "Học phí",
+  FOREIGN: "Buổi GV nước ngoài",
+  CARRY: "Thừa/thiếu tháng trước",
   MATERIAL: "Học liệu / sách",
   TEST: "Kiểm tra",
   MAKE_UP: "Học bù",
@@ -126,6 +128,10 @@ export type PreviousClassMonth = {
   // Các trường dưới có từ bản cộng dồn buổi; phiếu lập trước đó không có
   /** Buổi lớp xếp trong tháng (không tính buổi huỷ), gồm cả buổi chưa tới ngày */
   scheduledSessions?: number
+  /** Buổi thực tính phí: buổi lớp xếp trừ buổi bé nghỉ không kèm bù được */
+  chargeable?: number
+  /** true khi tháng trước chưa có phiếu và phiếu này thu bù các buổi đã học */
+  catchUp?: boolean
   /** Buổi bé đã học thực tế: có mặt/đi muộn + đã kèm bù */
   learned?: number
   /** Điểm danh từng buổi */
@@ -213,4 +219,59 @@ export function normalizePhone(phone: string | null | undefined) {
   const digits = (phone ?? "").replace(/\D/g, "")
   if (digits.startsWith("84") && digits.length >= 11) return `0${digits.slice(2)}`
   return digits
+}
+
+// ------------------------------------------------------
+// Thông báo thu học phí cả nhà (mỗi bé một cột)
+// ------------------------------------------------------
+
+export type NoticeLineKind = "tuition" | "foreign" | "carry" | "extra" | "discount"
+
+/** Xếp dòng phiếu vào các mục của thông báo; phiếu lập trước khi có danh mục FOREIGN/CARRY thì đoán theo nội dung */
+export function noticeLineKind(line: { category: string; description: string }): NoticeLineKind {
+  if (line.category === "CARRY") return "carry"
+  if (line.category === "FOREIGN") return "foreign"
+  if (line.category === "TUITION" || line.category === "DISCOUNT") {
+    if (/^(Trừ buổi|Thu thêm buổi|Thu buổi)/.test(line.description)) return "carry"
+    if (line.category === "DISCOUNT") return "discount"
+    return /GV nước ngoài/.test(line.description) ? "foreign" : "tuition"
+  }
+  return "extra"
+}
+
+export type FamilyNoticeChild = {
+  paymentId: string
+  receiptCode: string | null
+  fullName: string
+  /** Tên gọi + lớp, vd. "Thùy Anh G3" */
+  label: string
+  /** Mục 1–3: tháng trước */
+  prevBilled: number
+  prevChargeable: number
+  carryAmount: number
+  /** Mục 4–6: tháng thu */
+  monthSessions: number
+  monthAmount: number
+  extrasAmount: number
+  discountAmount: number
+  total: number
+  paid: number
+  remaining: number
+  attendance: { className: string; days: SessionMark[] }[]
+  planned: { className: string; dates: string }[]
+}
+
+export type FamilyNotice = {
+  month: string
+  previousMonth: string
+  parentName: string | null
+  children: FamilyNoticeChild[]
+  totalAmount: number
+  totalPaid: number
+  totalDue: number
+  /** Nội dung chuyển khoản hiển thị, vd. "Thùy Anh G3 Minh Quang L5 Thang 10" */
+  transferContent: string
+  dueDate: string | null
+  bank: { code: string; accountNo: string; accountName: string }
+  qrUrl: string | null
 }

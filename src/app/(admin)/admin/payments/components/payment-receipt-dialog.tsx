@@ -12,9 +12,11 @@ import { Badge } from "@/components/ui/badge"
 import { Printer, QrCode, CreditCard, User, BookOpen, Clock, FileText, Send, Mail } from "lucide-react"
 import { toast } from "sonner"
 import { VIETNAM_TIME_ZONE } from "@/lib/curriculum"
-import { parseBillingSummary, type BillingSummary } from "@/lib/monthly-billing-shared"
+import { parseBillingSummary, type BillingSummary, type FamilyNotice } from "@/lib/monthly-billing-shared"
 import { BillingSummaryView, familyRemaining } from "./billing-summary-view"
 import { billingSummaryHtml, billingSummaryText } from "./billing-summary-print"
+import { FamilyNoticeView } from "./family-notice-view"
+import { getFamilyNotice } from "../monthly-actions"
 
 interface PaymentReceiptDialogProps {
   payment: any | null
@@ -49,6 +51,8 @@ const paymentMethodLabels: Record<string, string> = {
 
 const paymentCategoryLabels: Record<string, string> = {
   TUITION: "Học phí",
+  FOREIGN: "Buổi GV nước ngoài",
+  CARRY: "Thừa/thiếu tháng trước",
   MATERIAL: "Giáo trình/Tài liệu",
   TEST: "Lệ phí thi",
   MAKE_UP: "Học bù",
@@ -76,8 +80,27 @@ function removeDiacritics(str: string): string {
 export function PaymentReceiptDialog({ payment, open, onOpenChange, siteSettings }: PaymentReceiptDialogProps) {
   const [zaloSending, setZaloSending] = React.useState(false)
   const [emailSending, setEmailSending] = React.useState(false)
+  // Phiếu thu tháng: thông báo cả nhà (mỗi bé một cột) đọc mới mỗi lần mở
+  const [noticeState, setNoticeState] = React.useState<{ id: string; notice?: FamilyNotice; error?: string } | null>(null)
+  const paymentId: string | undefined = payment?.id
+  const isMonthly = Boolean(payment?.billingMonth)
+
+  React.useEffect(() => {
+    if (!open || !paymentId || !isMonthly) return
+    let cancelled = false
+    getFamilyNotice(paymentId).then((result) => {
+      if (cancelled) return
+      setNoticeState(result.success ? { id: paymentId, notice: result.data } : { id: paymentId, error: result.error })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [open, paymentId, isMonthly])
 
   if (!payment) return null
+  const notice = noticeState?.id === payment.id ? noticeState : null
+  // Thông báo tháng chưa tải xong thì chưa có gì để in / chụp gửi phụ huynh
+  const contentReady = !isMonthly || Boolean(notice?.notice)
 
   const displayCode = payment.receiptCode || `PT-${payment.id.slice(0, 8).toUpperCase()}`
 
@@ -327,7 +350,39 @@ Trân trọng cảm ơn quý phụ huynh!`
     }
   }
 
+  // Thông báo tháng in đúng như ảnh gửi phụ huynh: chụp lại rồi in ảnh
+  const printNoticeImage = async () => {
+    const win = window.open("", "_blank")
+    if (!win) return
+    try {
+      const blob = await captureReceiptAsBlob()
+      if (!blob) throw new Error("Cannot capture notice")
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result))
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(blob)
+      })
+      win.document.write(`<html><head><title>Thông báo học phí - ${escapeHtml(displayCode)}</title>
+        <style>@page { size: A4 landscape; margin: 8mm; } body { margin: 0; } img { width: 100%; height: auto; }</style>
+        </head><body><img src="${dataUrl}" alt="Thông báo học phí" /></body></html>`)
+      win.document.close()
+      win.addEventListener("load", () => {
+        win.focus()
+        win.print()
+      })
+    } catch (error) {
+      console.error(error)
+      win.close()
+      toast.error("Không tạo được bản in thông báo học phí")
+    }
+  }
+
   const handlePrint = () => {
+    if (isMonthly) {
+      void printNoticeImage()
+      return
+    }
     const printArea = document.getElementById("receipt-print-content")
     if (!printArea) return
 
@@ -473,14 +528,14 @@ Trân trọng cảm ơn quý phụ huynh!`
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[94vw] sm:max-w-4xl p-6 max-h-[95vh] overflow-y-auto">
+      <DialogContent className={`w-[94vw] ${isMonthly ? "sm:max-w-[1100px]" : "sm:max-w-4xl"} p-6 max-h-[95vh] overflow-y-auto`}>
         <DialogHeader className="border-b pb-3 flex flex-row items-center justify-between">
           <DialogTitle className="text-lg font-bold flex items-center gap-2 text-primary">
             <FileText className="h-5 w-5" />
-            Biên lai thu học phí
+            {isMonthly ? "Thông báo thu học phí" : "Biên lai thu học phí"}
           </DialogTitle>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1.5 h-8">
+            <Button size="sm" variant="outline" onClick={handlePrint} disabled={!contentReady} className="gap-1.5 h-8">
               <Printer className="h-3.5 w-3.5" />
               In biên lai
             </Button>
@@ -488,7 +543,7 @@ Trân trọng cảm ơn quý phụ huynh!`
               size="sm" 
               variant="outline" 
               onClick={handleSendZalo} 
-              disabled={zaloSending}
+              disabled={zaloSending || !contentReady}
               className="gap-1.5 h-8 border-[#0068ff]/30 text-[#0068ff] hover:bg-[#0068ff]/5 hover:text-[#0054d1]"
             >
               <Send className="h-3.5 w-3.5" />
@@ -498,7 +553,7 @@ Trân trọng cảm ơn quý phụ huynh!`
               size="sm" 
               variant="outline" 
               onClick={handleSendEmail} 
-              disabled={emailSending}
+              disabled={emailSending || !contentReady}
               className="gap-1.5 h-8 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
             >
               <Mail className="h-3.5 w-3.5" />
@@ -507,7 +562,20 @@ Trân trọng cảm ơn quý phụ huynh!`
           </div>
         </DialogHeader>
 
-        {/* Receipt content displayed inside modal */}
+        {isMonthly ? (
+          <div className="mt-4 overflow-x-auto">
+            {notice?.notice ? (
+              <div id="receipt-print-content" className="w-max min-w-full bg-white">
+                <FamilyNoticeView notice={notice.notice} siteName={siteSettings?.siteName || "RosyClass"} />
+              </div>
+            ) : notice?.error ? (
+              <p className="py-10 text-center text-sm text-destructive">{notice.error}</p>
+            ) : (
+              <p className="py-10 text-center text-sm text-muted-foreground">Đang tạo thông báo học phí…</p>
+            )}
+          </div>
+        ) : (
+        /* Receipt content displayed inside modal */
         <div id="receipt-print-content" className="space-y-6 mt-4">
           <div className="border border-dashed border-muted-foreground/40 rounded-lg p-5 bg-card">
             {/* Header */}
@@ -709,6 +777,7 @@ Trân trọng cảm ơn quý phụ huynh!`
             </div>
           </div>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   )

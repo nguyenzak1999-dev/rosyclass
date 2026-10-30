@@ -5,12 +5,12 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { PERMISSIONS, requirePermission } from "@/lib/auth/permissions"
 import { getErrorMessage } from "@/lib/errors"
-import { buildMonthlyBillDraft, saveMonthlyPaymentRecord, type MonthlyBillDraft } from "@/lib/monthly-billing"
-import { isBillingMonth } from "@/lib/monthly-billing-shared"
+import { buildFamilyNotice, buildMonthlyBillDraft, saveMonthlyPaymentRecord, type MonthlyBillDraft } from "@/lib/monthly-billing"
+import { isBillingMonth, type FamilyNotice } from "@/lib/monthly-billing-shared"
 
 const lineSchema = z.object({
   description: z.string().trim().min(1, "Mỗi dòng cần có nội dung").max(300),
-  category: z.enum(["TUITION", "MATERIAL", "TEST", "MAKE_UP", "DISCOUNT", "OTHER"]),
+  category: z.enum(["TUITION", "FOREIGN", "CARRY", "MATERIAL", "TEST", "MAKE_UP", "DISCOUNT", "OTHER"]),
   quantity: z.coerce.number().int("Số lượng phải là số nguyên").min(0, "Số lượng không được âm").max(100),
   unitAmount: z.coerce.number().min(-100_000_000).max(100_000_000),
   makeUpIds: z.array(z.string()).max(50).optional(),
@@ -40,6 +40,18 @@ export async function getMonthlyBillDraft(studentId: string, month: string): Pro
     return { success: true, data: await buildMonthlyBillDraft(studentId, month) }
   } catch (error) {
     return { success: false, error: getErrorMessage(error, "Không tính được phiếu thu tháng") }
+  }
+}
+
+/** Thông báo thu học phí cả nhà để in / gửi Zalo phụ huynh */
+export async function getFamilyNotice(paymentId: string): Promise<ActionResult<FamilyNotice>> {
+  try {
+    await requirePermission(PERMISSIONS.paymentsRead)
+    const notice = await buildFamilyNotice(z.string().min(1).parse(paymentId))
+    if (!notice) return { success: false, error: "Phiếu này không phải phiếu thu tháng" }
+    return { success: true, data: notice }
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error, "Không tạo được thông báo học phí") }
   }
 }
 
