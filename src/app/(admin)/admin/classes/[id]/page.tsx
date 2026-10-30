@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { notFound } from "next/navigation"
 import ClassDetailClient from "./class-detail-client"
-import { buildClassroomSeats } from "./components/classroom-3d/seats"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
@@ -66,7 +65,7 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
   })
 
   // Lookup data cho schedule & session dialogs
-  const [teachers, rooms, scores, attendances, feedbacks] = await Promise.all([
+  const [teachers, rooms, scores] = await Promise.all([
     prisma.teacher.findMany({
       where: { status: "ACTIVE" },
       select: { id: true, fullName: true },
@@ -85,14 +84,6 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
         session: { select: { id: true, sessionDate: true, topic: true } }
       }
     }),
-    prisma.attendance.findMany({
-      where: { session: { classId: id } },
-      select: { studentId: true, status: true, session: { select: { sessionDate: true } } }
-    }),
-    prisma.sessionFeedback.findMany({
-      where: { session: { classId: id } },
-      select: { studentId: true, stars: true, session: { select: { sessionDate: true, startTime: true } } }
-    })
   ])
 
   // Bài tập, đánh giá kỹ năng, báo cáo tiến bộ (phân hệ lớp 1)
@@ -174,12 +165,6 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
       }`,
     }))
 
-  const classroomSeats = buildClassroomSeats({
-    students: classData.students,
-    attendances,
-    scores,
-    feedbacks,
-  })
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -203,13 +188,6 @@ export default async function ClassDetailPage({ params }: { params: Promise<{ id
         teachers={teachers}
         rooms={rooms}
         scores={JSON.parse(JSON.stringify(scores))}
-        classroom={{
-          className: classData.name,
-          courseName: classData.course.name,
-          teacherName: classData.teacher?.fullName ?? null,
-          roomName: classData.room?.name ?? null,
-          seats: classroomSeats,
-        }}
         learning={{
           canWrite: canWriteLearning,
           homework,

@@ -246,7 +246,7 @@ export function TeachClient({
               href={`/admin/classes/${session.classId}`}
               className="kid-border kid-focus inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-bold"
             >
-              <School className="h-4 w-4" /> Lớp học (3D)
+              <School className="h-4 w-4" /> Trang lớp học
             </Link>
             <Link
               href={`/admin/schedules/${session.id}`}
